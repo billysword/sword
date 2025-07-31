@@ -1,0 +1,85 @@
+package main
+
+import (
+	"bytes"
+	"image"
+	_ "image/png"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"sword/gamestate"
+	"sword/resources/images/platformer"
+)
+
+const (
+	// Settings
+	screenWidth  = 960
+	screenHeight = 540
+)
+
+var (
+	leftSprite      *ebiten.Image
+	rightSprite     *ebiten.Image
+	idleSprite      *ebiten.Image
+	backgroundImage *ebiten.Image
+)
+
+func init() {
+	// Load background image
+	img, _, err := image.Decode(bytes.NewReader(platformer.Background_png))
+	if err != nil {
+		panic(err)
+	}
+	backgroundImage = ebiten.NewImageFromImage(img)
+
+	// Load character sprites
+	img, _, err = image.Decode(bytes.NewReader(platformer.Left_png))
+	if err != nil {
+		panic(err)
+	}
+	leftSprite = ebiten.NewImageFromImage(img)
+
+	img, _, err = image.Decode(bytes.NewReader(platformer.Right_png))
+	if err != nil {
+		panic(err)
+	}
+	rightSprite = ebiten.NewImageFromImage(img)
+
+	img, _, err = image.Decode(bytes.NewReader(platformer.MainChar_png))
+	if err != nil {
+		panic(err)
+	}
+	idleSprite = ebiten.NewImageFromImage(img)
+}
+
+type Game struct {
+	stateManager *gamestate.StateManager
+}
+
+func (g *Game) Update() error {
+	if g.stateManager == nil {
+		g.stateManager = gamestate.NewStateManager()
+		startState := gamestate.NewStartState(g.stateManager)
+		// Pass sprites to the state manager for use by game states
+		gamestate.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
+		g.stateManager.ChangeState(startState)
+	}
+	return g.stateManager.Update()
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	if g.stateManager != nil {
+		g.stateManager.Draw(screen)
+	}
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
+}
+
+func main() {
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowTitle("Platformer (Ebitengine Demo)")
+	if err := ebiten.RunGame(&Game{}); err != nil {
+		panic(err)
+	}
+}
