@@ -53,18 +53,13 @@ func init() {
 	}
 	idleSprite = ebiten.NewImageFromImage(img)
 
-	// Load tile sprites
-	img, _, err = image.Decode(bytes.NewReader(images.Tile_png))
+	// Load forest tile sprites
+	img, _, err = image.Decode(bytes.NewReader(images.ForestTiles_png))
 	if err != nil {
 		panic(err)
 	}
 	tileSprite = ebiten.NewImageFromImage(img)
-
-	img, _, err = image.Decode(bytes.NewReader(images.Tiles_png))
-	if err != nil {
-		panic(err)
-	}
-	tilesSprite = ebiten.NewImageFromImage(img)
+	tilesSprite = tileSprite // Use the same forest tilemap for both tile references
 }
 
 type Game struct {
