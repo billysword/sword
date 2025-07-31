@@ -8,6 +8,8 @@ var (
 	globalRightSprite     *ebiten.Image
 	globalIdleSprite      *ebiten.Image
 	globalBackgroundImage *ebiten.Image
+	globalTileSprite      *ebiten.Image
+	globalTilesSprite     *ebiten.Image
 )
 
 // SetGlobalSprites sets the global sprite references for use by all states
@@ -16,6 +18,12 @@ func SetGlobalSprites(left, right, idle, background *ebiten.Image) {
 	globalRightSprite = right
 	globalIdleSprite = idle
 	globalBackgroundImage = background
+}
+
+// SetGlobalTileSprites sets the global tile sprite references
+func SetGlobalTileSprites(tile, tiles *ebiten.Image) {
+	globalTileSprite = tile
+	globalTilesSprite = tiles
 }
 
 // State represents a game state that can handle input, update logic, and rendering

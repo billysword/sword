@@ -41,12 +41,12 @@ func (p *PauseState) Draw(screen *ebiten.Image) {
 	if p.backgroundState != nil {
 		p.backgroundState.Draw(screen)
 	}
-	
+
 	// Draw semi-transparent overlay
 	overlay := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
 	overlay.Fill(color.RGBA{0x00, 0x00, 0x00, 0xaa}) // Semi-transparent black
 	screen.DrawImage(overlay, nil)
-	
+
 	// Draw pause menu
 	msg := "PAUSED\n\nP/ESC - Resume\nQ - Main Menu"
 	ebitenutil.DebugPrintAt(screen, msg, 400, 250)

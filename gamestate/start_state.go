@@ -10,9 +10,9 @@ import (
 
 // StartState represents the game start/menu screen
 type StartState struct {
-	stateManager     *StateManager
-	selectedOption   int  // 0 = Continue, 1 = Quit
-	totalOptions     int
+	stateManager   *StateManager
+	selectedOption int // 0 = Continue, 1 = Quit
+	totalOptions   int
 }
 
 // NewStartState creates a new start state
@@ -55,25 +55,25 @@ func (s *StartState) Update() error {
 // Draw renders the start screen
 func (s *StartState) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x00, 0x11, 0x22, 0xff})
-	
+
 	// Title
 	title := "SWORD PLATFORMER"
 	ebitenutil.DebugPrintAt(screen, title, 50, 150)
-	
+
 	// Menu options
 	continueText := "Continue"
 	quitText := "Quit"
-	
+
 	if s.selectedOption == 0 {
 		continueText = "> " + continueText + " <"
 	}
 	if s.selectedOption == 1 {
 		quitText = "> " + quitText + " <"
 	}
-	
+
 	ebitenutil.DebugPrintAt(screen, continueText, 50, 220)
 	ebitenutil.DebugPrintAt(screen, quitText, 50, 250)
-	
+
 	// Instructions
 	instructions := "\nControls:\nW/S or Arrow Keys - Navigate menu\nENTER/SPACE - Select option\nESC - Continue (default)\n\nGame Controls:\nWASD/Arrow Keys - Move\nSpace - Jump"
 	ebitenutil.DebugPrintAt(screen, instructions, 50, 300)

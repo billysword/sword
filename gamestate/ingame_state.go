@@ -60,6 +60,7 @@ func (c *Character) draw(screen *ebiten.Image) {
 type InGameState struct {
 	stateManager *StateManager
 	character    *Character
+	currentRoom  Room
 }
 
 // NewInGameState creates a new in-game state
@@ -67,6 +68,7 @@ func NewInGameState(sm *StateManager) *InGameState {
 	return &InGameState{
 		stateManager: sm,
 		character:    &Character{x: 50 * unit, y: groundY * unit},
+		currentRoom:  NewSimpleRoom("main"),
 	}
 }
 
@@ -87,27 +89,51 @@ func (ig *InGameState) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		ig.character.tryJump()
 	}
+	
+	// Room transition test - press R to switch rooms
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		ig.switchRoom()
+	}
 
 	ig.character.update()
+
+	// Let the current room handle its own logic
+	if ig.currentRoom != nil {
+		if err := ig.currentRoom.Update(ig.character); err != nil {
+			return err
+		}
+		// Let the room handle collisions
+		ig.currentRoom.HandleCollisions(ig.character)
+	}
+
 	return nil
 }
 
 // Draw renders the game world
 func (ig *InGameState) Draw(screen *ebiten.Image) {
-	// Draw background
-	if globalBackgroundImage != nil {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(0.5, 0.5)
-		screen.DrawImage(globalBackgroundImage, op)
+	// Let the current room draw itself (includes background and tiles)
+	if ig.currentRoom != nil {
+		ig.currentRoom.Draw(screen)
+	} else {
+		// Fallback: draw background if no room
+		if globalBackgroundImage != nil {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(0.5, 0.5)
+			screen.DrawImage(globalBackgroundImage, op)
+		}
 	}
 
-	// Draw character
+	// Draw character on top of room
 	if ig.character != nil {
 		ig.character.draw(screen)
 	}
 
 	// Show debug info
-	msg := fmt.Sprintf("TPS: %0.2f\nPress SPACE to jump\nP/ESC - Pause", ebiten.ActualTPS())
+	roomInfo := "No Room"
+	if ig.currentRoom != nil {
+		roomInfo = ig.currentRoom.GetZoneID()
+	}
+	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause", ebiten.ActualTPS(), roomInfo)
 	ebitenutil.DebugPrint(screen, msg)
 }
 
@@ -117,9 +143,49 @@ func (ig *InGameState) OnEnter() {
 	if ig.character == nil {
 		ig.character = &Character{x: 50 * unit, y: groundY * unit}
 	}
+
+	// Initialize room if needed
+	if ig.currentRoom == nil {
+		ig.currentRoom = NewSimpleRoom("main")
+	}
+
+	// Let the room know we're entering
+	ig.currentRoom.OnEnter(ig.character)
 }
 
 // OnExit is called when leaving the game state
 func (ig *InGameState) OnExit() {
+	// Let the room know we're leaving
+	if ig.currentRoom != nil {
+		ig.currentRoom.OnExit(ig.character)
+	}
 	// Save game state or cleanup resources
+}
+
+// switchRoom demonstrates room transitions
+func (ig *InGameState) switchRoom() {
+	if ig.currentRoom == nil {
+		return
+	}
+	
+	// Let the current room know we're leaving
+	ig.currentRoom.OnExit(ig.character)
+	
+	// Create a new room based on current room ID
+	currentZone := ig.currentRoom.GetZoneID()
+	switch currentZone {
+	case "main":
+		ig.currentRoom = NewSimpleRoom("alternate")
+		// Reset character position for new room
+		ig.character.x = 50 * unit
+		ig.character.y = groundY * unit
+	default:
+		ig.currentRoom = NewSimpleRoom("main")
+		// Reset character position for new room
+		ig.character.x = 50 * unit
+		ig.character.y = groundY * unit
+	}
+	
+	// Let the new room know we're entering
+	ig.currentRoom.OnEnter(ig.character)
 }

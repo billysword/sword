@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"sword/gamestate"
+	"sword/resources/images"
 	"sword/resources/images/platformer"
 )
 
@@ -21,6 +22,8 @@ var (
 	rightSprite     *ebiten.Image
 	idleSprite      *ebiten.Image
 	backgroundImage *ebiten.Image
+	tileSprite      *ebiten.Image
+	tilesSprite     *ebiten.Image
 )
 
 func init() {
@@ -49,6 +52,19 @@ func init() {
 		panic(err)
 	}
 	idleSprite = ebiten.NewImageFromImage(img)
+
+	// Load tile sprites
+	img, _, err = image.Decode(bytes.NewReader(images.Tile_png))
+	if err != nil {
+		panic(err)
+	}
+	tileSprite = ebiten.NewImageFromImage(img)
+
+	img, _, err = image.Decode(bytes.NewReader(images.Tiles_png))
+	if err != nil {
+		panic(err)
+	}
+	tilesSprite = ebiten.NewImageFromImage(img)
 }
 
 type Game struct {
@@ -61,6 +77,7 @@ func (g *Game) Update() error {
 		startState := gamestate.NewStartState(g.stateManager)
 		// Pass sprites to the state manager for use by game states
 		gamestate.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
+		gamestate.SetGlobalTileSprites(tileSprite, tilesSprite)
 		g.stateManager.ChangeState(startState)
 	}
 	return g.stateManager.Update()
