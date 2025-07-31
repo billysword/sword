@@ -85,12 +85,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return ebiten.WindowSize()
 }
 
 func main() {
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Platformer (Ebitengine Demo)")
+	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
+	
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		panic(err)
 	}
