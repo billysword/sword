@@ -4,16 +4,32 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// Tile indices for the forest tilemap (assuming a typical 16x16 tile grid)
+// Forest tile indices based on the actual tilemap layout
 const (
-	TILE_GRASS = iota
-	TILE_DIRT
-	TILE_STONE
-	TILE_TREE_TOP
-	TILE_TREE_TRUNK
-	TILE_FLOWER
-	TILE_MOSS_STONE
-	TILE_DARK_DIRT
+	TILE_DIRT = 0
+	TILE_TOP_LEFT_CORNER = 1
+	TILE_RIGHT_WALL_1 = 2
+	TILE_RIGHT_WALL_2 = 3
+	TILE_BOTTOM_LEFT_CORNER = 4
+	TILE_TOP_RIGHT_CORNER = 5
+	TILE_LEFT_WALL_1 = 6
+	TILE_CEILING_1 = 7
+	TILE_CEILING_2 = 8
+	TILE_SINGLE_TOP = 9
+	TILE_SINGLE_BOTTOM = 10
+	TILE_SINGLE_LEFT = 11
+	TILE_SINGLE_RIGHT = 12
+	TILE_FLOATING = 13
+	TILE_SINGLE_HORIZONTAL = 14
+	TILE_SINGLE_VERTICAL = 15
+	TILE_INNER_CORNER_TOP_LEFT = 16
+	TILE_INNER_CORNER_TOP_RIGHT = 17
+	TILE_INNER_CORNER_BOTTOM_RIGHT = 18
+	TILE_INNER_CORNER_BOTTOM_LEFT = 19
+	TILE_FLOOR_1 = 20
+	TILE_FLOOR_2 = 21
+	TILE_LEFT_WALL_2 = 22
+	TILE_BOTTOM_RIGHT_CORNER = 23
 )
 
 // SimpleRoom is a basic room implementation with a forest theme
@@ -50,8 +66,8 @@ func (sr *SimpleRoom) extractForestTiles() {
 	}
 
 	// Extract individual tiles from the forest tilemap
-	// Assuming the tilemap is 8x8 tiles of 16x16 pixels each
-	for i := 0; i < 8; i++ { // Extract 8 different tile types
+	// Assuming 24 tiles total (0-23) arranged in rows of 8
+	for i := 0; i <= 23; i++ {
 		x := (i % sr.tilesPerRow) * sr.tileSize
 		y := (i / sr.tilesPerRow) * sr.tileSize
 		
@@ -69,8 +85,8 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	if sprite, exists := sr.forestTiles[tileIndex]; exists {
 		return sprite
 	}
-	// Fallback to the first tile if not found
-	if sprite, exists := sr.forestTiles[0]; exists {
+	// Fallback to dirt if not found
+	if sprite, exists := sr.forestTiles[TILE_DIRT]; exists {
 		return sprite
 	}
 	return globalTileSprite
@@ -85,52 +101,70 @@ func (sr *SimpleRoom) initializeLayout() {
 	// Create ground tiles at the bottom rows
 	groundRow := groundY / unit
 
-	// Add varied ground tiles across the width
+	// Create main ground platform with proper corners and edges
+	platformStart := 5
+	platformEnd := sr.tileMap.Width - 5
+
 	for x := 0; x < sr.tileMap.Width; x++ {
-		// Create varied ground surface
-		groundTileType := TILE_GRASS
-		if x%7 == 0 {
-			groundTileType = TILE_FLOWER // Add some flowers
-		} else if x%11 == 0 {
-			groundTileType = TILE_MOSS_STONE // Add some moss stones
+		if x >= platformStart && x <= platformEnd {
+			// Main platform surface
+			tileType := TILE_FLOOR_1
+			if x%3 == 0 {
+				tileType = TILE_FLOOR_2 // Alternate floor tiles for variation
+			}
+			sr.tileMap.SetTile(x, groundRow, TileGround, sr.getTileSprite(tileType))
+			
+			// Underground layers with dirt
+			for y := groundRow + 1; y < sr.tileMap.Height; y++ {
+				sr.tileMap.SetTile(x, y, TileGround, sr.getTileSprite(TILE_DIRT))
+			}
+		} else {
+			// Areas without platform - just dirt underground
+			for y := groundRow + 1; y < sr.tileMap.Height; y++ {
+				sr.tileMap.SetTile(x, y, TileGround, sr.getTileSprite(TILE_DIRT))
+			}
+		}
+	}
+
+	// Add floating platforms with proper edges
+	sr.createPlatform(15, 25, groundRow-5)
+	sr.createPlatform(35, 45, groundRow-8)
+	sr.createPlatform(50, 55, groundRow-3)
+
+	// Add some single floating tiles
+	sr.tileMap.SetTile(10, groundRow-2, TilePlatform, sr.getTileSprite(TILE_FLOATING))
+	sr.tileMap.SetTile(30, groundRow-6, TilePlatform, sr.getTileSprite(TILE_FLOATING))
+	sr.tileMap.SetTile(48, groundRow-10, TilePlatform, sr.getTileSprite(TILE_FLOATING))
+}
+
+// createPlatform creates a platform with proper corners and edges
+func (sr *SimpleRoom) createPlatform(startX, endX, y int) {
+	if startX >= endX || y < 0 || y >= sr.tileMap.Height {
+		return
+	}
+
+	for x := startX; x <= endX; x++ {
+		var tileType int
+		
+		if x == startX && x == endX {
+			// Single tile platform
+			tileType = TILE_SINGLE_HORIZONTAL
+		} else if x == startX {
+			// Left edge
+			tileType = TILE_SINGLE_LEFT
+		} else if x == endX {
+			// Right edge
+			tileType = TILE_SINGLE_RIGHT
+		} else {
+			// Middle tiles
+			if (x-startX)%2 == 0 {
+				tileType = TILE_FLOOR_1
+			} else {
+				tileType = TILE_FLOOR_2
+			}
 		}
 		
-		sr.tileMap.SetTile(x, groundRow, TileGround, sr.getTileSprite(groundTileType))
-		
-		// Sub-ground layers with dirt and stone
-		for y := groundRow + 1; y < sr.tileMap.Height; y++ {
-			subGroundTile := TILE_DIRT
-			if y > groundRow + 2 {
-				subGroundTile = TILE_STONE // Stone deeper underground
-			} else if (x+y)%3 == 0 {
-				subGroundTile = TILE_DARK_DIRT // Some variation
-			}
-			sr.tileMap.SetTile(x, y, TileGround, sr.getTileSprite(subGroundTile))
-		}
-	}
-
-	// Add forest platforms with tree elements
-	for x := 15; x < 25; x++ {
-		sr.tileMap.SetTile(x, groundRow-5, TilePlatform, sr.getTileSprite(TILE_MOSS_STONE))
-	}
-
-	for x := 35; x < 45; x++ {
-		sr.tileMap.SetTile(x, groundRow-8, TilePlatform, sr.getTileSprite(TILE_STONE))
-	}
-
-	// Add some trees in the background
-	treePositions := []int{10, 30, 50}
-	for _, x := range treePositions {
-		if x < sr.tileMap.Width {
-			// Tree trunk
-			for y := groundRow - 4; y < groundRow; y++ {
-				sr.tileMap.SetTile(x, y, TileBackground, sr.getTileSprite(TILE_TREE_TRUNK))
-			}
-			// Tree top
-			sr.tileMap.SetTile(x, groundRow-5, TileBackground, sr.getTileSprite(TILE_TREE_TOP))
-			sr.tileMap.SetTile(x-1, groundRow-4, TileBackground, sr.getTileSprite(TILE_TREE_TOP))
-			sr.tileMap.SetTile(x+1, groundRow-4, TileBackground, sr.getTileSprite(TILE_TREE_TOP))
-		}
+		sr.tileMap.SetTile(x, y, TilePlatform, sr.getTileSprite(tileType))
 	}
 }
 
