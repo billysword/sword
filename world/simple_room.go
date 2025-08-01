@@ -1,9 +1,11 @@
-package gamestate
+package world
 
 import (
 	"image"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"sword/engine"
+	"sword/entities"
 )
 
 // Forest tile indices based on the actual tilemap layout
@@ -46,8 +48,8 @@ type SimpleRoom struct {
 func NewSimpleRoom(zoneID string) *SimpleRoom {
 	// Create room based on config settings
 	room := &SimpleRoom{
-		BaseRoom: NewBaseRoom(zoneID, GameConfig.RoomWidthTiles, GameConfig.RoomHeightTiles),
-		tileSize: GameConfig.TileSize,
+		BaseRoom: NewBaseRoom(zoneID, engine.GameConfig.RoomWidthTiles, engine.GameConfig.RoomHeightTiles),
+		tileSize: engine.GameConfig.TileSize,
 		tilesPerRow: 8, // Forest tilemap has 8 tiles per row
 		forestTiles: make(map[int]*ebiten.Image),
 	}
@@ -59,7 +61,7 @@ func NewSimpleRoom(zoneID string) *SimpleRoom {
 
 // initializeForestTiles extracts individual tiles from the forest tilemap
 func (sr *SimpleRoom) initializeForestTiles() {
-	if globalTileSprite == nil {
+	if engine.GetTileSprite() == nil {
 		return
 	}
 
@@ -69,7 +71,7 @@ func (sr *SimpleRoom) initializeForestTiles() {
 		y := (i / sr.tilesPerRow) * sr.tileSize
 		
 		// Use SubImage to extract the tile from the tilemap
-		subImg := globalTileSprite.SubImage(image.Rect(x, y, x+sr.tileSize, y+sr.tileSize)).(*ebiten.Image)
+		subImg := engine.GetTileSprite().SubImage(image.Rect(x, y, x+sr.tileSize, y+sr.tileSize)).(*ebiten.Image)
 		sr.forestTiles[i] = subImg
 	}
 }
@@ -83,39 +85,39 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	if sprite, exists := sr.forestTiles[TILE_DIRT]; exists {
 		return sprite
 	}
-	return globalTileSprite
+	return engine.GetTileSprite()
 }
 
 // buildRoom sets up the forest tile layout for this larger metroidvania-style room
 func (sr *SimpleRoom) buildRoom() {
-	if globalTileSprite == nil {
+	if engine.GetTileSprite() == nil {
 		return
 	}
 
 	// Create a room based on config dimensions
 	// Fill the bottom 15 rows with ground tiles
-	groundStartY := GameConfig.RoomHeightTiles - 15
-	for y := groundStartY; y < GameConfig.RoomHeightTiles; y++ {
-		for x := 0; x < GameConfig.RoomWidthTiles; x++ {
+	groundStartY := engine.GameConfig.RoomHeightTiles - 15
+	for y := groundStartY; y < engine.GameConfig.RoomHeightTiles; y++ {
+		for x := 0; x < engine.GameConfig.RoomWidthTiles; x++ {
 			sr.tileMap.SetTile(x, y, TILE_DIRT)
 		}
 	}
 	
 	// Create the main ground level with proper edges
-	groundY := GameConfig.GroundLevel
+	groundY := engine.GameConfig.GroundLevel
 	// Left edge
 	sr.tileMap.SetTile(0, groundY, TILE_TOP_LEFT_CORNER)
 	// Top surface
-	for x := 1; x < GameConfig.RoomWidthTiles-1; x++ {
+	for x := 1; x < engine.GameConfig.RoomWidthTiles-1; x++ {
 		sr.tileMap.SetTile(x, groundY, TILE_CEILING_1)
 	}
 	// Right edge
-	sr.tileMap.SetTile(GameConfig.RoomWidthTiles-1, groundY, TILE_TOP_RIGHT_CORNER)
+	sr.tileMap.SetTile(engine.GameConfig.RoomWidthTiles-1, groundY, TILE_TOP_RIGHT_CORNER)
 	
 	// Add platforms dynamically based on room size
 	// Calculate platform positions as percentages of room dimensions
-	roomWidth := GameConfig.RoomWidthTiles
-	roomHeight := GameConfig.RoomHeightTiles
+	roomWidth := engine.GameConfig.RoomWidthTiles
+	roomHeight := engine.GameConfig.RoomHeightTiles
 	
 	// Lower platforms (80-90% height)
 	sr.createPlatform(roomWidth*8/100, roomHeight*80/100, 10)
@@ -203,7 +205,7 @@ func (sr *SimpleRoom) createWall(x, startY, endY int) {
 
 // initializeLayout sets up the forest tile layout for this room using a simple tile array
 func (sr *SimpleRoom) initializeLayout() {
-	if globalTileSprite == nil {
+	if engine.GetTileSprite() == nil {
 		return
 	}
 
@@ -652,17 +654,17 @@ func (sr *SimpleRoom) loadFromLayout(layout [][]int) {
 }
 
 // Update handles room-specific logic
-func (sr *SimpleRoom) Update(player *Player) error {
+func (sr *SimpleRoom) Update(player *entities.Player) error {
 	// Add any room-specific update logic here
 	// For now, just use the base implementation
 	return sr.BaseRoom.Update(player)
 }
 
 // HandleCollisions provides collision detection for this room
-func (sr *SimpleRoom) HandleCollisions(player *Player) {
+func (sr *SimpleRoom) HandleCollisions(player *entities.Player) {
 	// Get player position
 	playerX, playerY := player.GetPosition()
-	physicsUnit := GetPhysicsUnit()
+	physicsUnit := engine.GetPhysicsUnit()
 	
 	// Convert player position to tile coordinates
 	charTileX := playerX / physicsUnit
@@ -693,37 +695,37 @@ func (sr *SimpleRoom) HandleCollisions(player *Player) {
 // Draw renders the room and its tiles
 func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 	// Draw background first (if enabled)
-	if GetBackgroundVisible() && globalBackgroundImage != nil {
+	if engine.GetBackgroundVisible() && engine.GetBackgroundImage() != nil {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(0.5, 0.5)
-		screen.DrawImage(globalBackgroundImage, op)
+		screen.DrawImage(engine.GetBackgroundImage(), op)
 	}
 
 	// Draw tiles using sprite provider function
 	sr.DrawTiles(screen, sr.getTileSprite)
 	
 	// Draw debug grid overlay (if enabled)
-	DrawGrid(screen)
+	engine.DrawGrid(screen)
 }
 
 // DrawWithCamera renders the room with camera offset
 func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Draw background with parallax effect (slower movement)
-	if GetBackgroundVisible() && globalBackgroundImage != nil {
+	if engine.GetBackgroundVisible() && engine.GetBackgroundImage() != nil {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(0.5, 0.5)
 		// Apply parallax scrolling to background (moves slower than foreground)
-		bgOffsetX := cameraOffsetX * GameConfig.ParallaxFactor
-		bgOffsetY := cameraOffsetY * GameConfig.ParallaxFactor
+		bgOffsetX := cameraOffsetX * engine.GameConfig.ParallaxFactor
+		bgOffsetY := cameraOffsetY * engine.GameConfig.ParallaxFactor
 		op.GeoM.Translate(bgOffsetX, bgOffsetY)
-		screen.DrawImage(globalBackgroundImage, op)
+		screen.DrawImage(engine.GetBackgroundImage(), op)
 	}
 
 	// Draw tiles with camera offset
 	sr.DrawTilesWithCamera(screen, sr.getTileSprite, cameraOffsetX, cameraOffsetY)
 	
 	// Draw debug grid overlay (if enabled) - grid moves with camera
-	if GetGridVisible() {
-		DrawGridWithCamera(screen, cameraOffsetX, cameraOffsetY)
+	if engine.GetGridVisible() {
+		engine.DrawGridWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}
 }

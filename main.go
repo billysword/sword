@@ -6,9 +6,10 @@ import (
 	_ "image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"sword/gamestate"
+	"sword/engine"
 	"sword/resources/images"
 	"sword/resources/images/platformer"
+	"sword/states"
 )
 
 var (
@@ -68,7 +69,7 @@ The Game struct serves as the entry point for Ebitengine and handles:
   - Window lifecycle management
 */
 type Game struct {
-	stateManager *gamestate.StateManager  // Manages all game states and transitions
+	stateManager *engine.StateManager  // Manages all game states and transitions
 }
 
 /*
@@ -81,11 +82,11 @@ Returns any error from the current game state's update logic.
 */
 func (g *Game) Update() error {
 	if g.stateManager == nil {
-		g.stateManager = gamestate.NewStateManager()
-		startState := gamestate.NewStartState(g.stateManager)
+		g.stateManager = engine.NewStateManager()
+		startState := states.NewStartState(g.stateManager)
 		// Pass sprites to the state manager for use by game states
-		gamestate.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
-		gamestate.SetGlobalTileSprites(tileSprite, tilesSprite)
+		engine.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
+		engine.SetGlobalTileSprites(tileSprite, tilesSprite)
 		g.stateManager.ChangeState(startState)
 	}
 	return g.stateManager.Update()
@@ -136,7 +137,7 @@ The function:
 */
 func main() {
 	// Get config for window settings
-	config := gamestate.GameConfig
+	config := engine.GameConfig
 	
 	ebiten.SetWindowSize(config.WindowWidth, config.WindowHeight)
 	ebiten.SetWindowTitle(config.WindowTitle)

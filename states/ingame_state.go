@@ -1,4 +1,4 @@
-package gamestate
+package states
 
 import (
 	"fmt"
@@ -6,6 +6,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"sword/engine"
+	"sword/entities"
+	"sword/world"
 )
 
 /*
@@ -22,10 +25,10 @@ Key responsibilities:
   - Pause state transitions
 */
 type InGameState struct {
-	stateManager *StateManager  // Reference to state manager for transitions
-	player       *Player        // The player character instance
-	currentRoom  Room           // Current room/level being played
-	camera       *Camera        // Camera for world scrolling
+	stateManager *engine.StateManager  // Reference to state manager for transitions
+	player       *entities.Player        // The player character instance
+	currentRoom  world.Room           // Current room/level being played
+	camera       *world.Camera        // Camera for world scrolling
 }
 
 /*
@@ -38,18 +41,18 @@ Parameters:
 
 Returns a pointer to the new InGameState instance.
 */
-func NewInGameState(sm *StateManager) *InGameState {
+func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get the actual window size for camera viewport
 	windowWidth, windowHeight := ebiten.WindowSize()
 	
-	physicsUnit := GetPhysicsUnit()
-	groundY := GameConfig.GroundLevel * physicsUnit
+	physicsUnit := engine.GetPhysicsUnit()
+	groundY := engine.GameConfig.GroundLevel * physicsUnit
 	
 	return &InGameState{
 		stateManager: sm,
-		player:       NewPlayer(50*physicsUnit, groundY),
-		currentRoom:  NewSimpleRoom("main"),
-		camera:       NewCamera(windowWidth, windowHeight),
+		player:       entities.NewPlayer(50*physicsUnit, groundY),
+		currentRoom:  world.NewSimpleRoom("main"),
+		camera:       world.NewCamera(windowWidth, windowHeight),
 	}
 }
 
@@ -75,10 +78,10 @@ func (ig *InGameState) Update() error {
 
 	// Debug toggle keys
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
-		ToggleBackground()
+		engine.ToggleBackground()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
-		ToggleGrid()
+		engine.ToggleGrid()
 	}
 
 	ig.player.HandleInput()
@@ -88,7 +91,7 @@ func (ig *InGameState) Update() error {
 	if ig.camera != nil && ig.player != nil {
 		px, py := ig.player.GetPosition()
 		// Convert physics units to pixels for camera
-		ig.camera.Update(px/PHYSICS_UNIT, py/PHYSICS_UNIT)
+		ig.camera.Update(px/engine.GetPhysicsUnit(), py/engine.GetPhysicsUnit())
 	}
 
 	// Let the current room handle its own logic
@@ -130,11 +133,11 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		ig.currentRoom.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	} else {
 		// Fallback: draw background if no room
-		if globalBackgroundImage != nil {
+		if engine.GetBackgroundImage() != nil {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(0.5, 0.5)
 			op.GeoM.Translate(cameraOffsetX, cameraOffsetY)
-			screen.DrawImage(globalBackgroundImage, op)
+			screen.DrawImage(engine.GetBackgroundImage(), op)
 		}
 	}
 
@@ -150,12 +153,12 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	}
 	
 	backgroundStatus := "ON"
-	if !GetBackgroundVisible() {
+	if !engine.GetBackgroundVisible() {
 		backgroundStatus = "OFF"
 	}
 	
 	gridStatus := "OFF"
-	if GetGridVisible() {
+	if engine.GetGridVisible() {
 		gridStatus = "ON" 
 	}
 	
@@ -179,14 +182,14 @@ Called when transitioning from menu or resume from pause.
 func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
 	if ig.player == nil {
-		physicsUnit := GetPhysicsUnit()
-		groundY := GameConfig.GroundLevel * physicsUnit
-		ig.player = NewPlayer(50*physicsUnit, groundY)
+		physicsUnit := engine.GetPhysicsUnit()
+		groundY := engine.GameConfig.GroundLevel * physicsUnit
+		ig.player = entities.NewPlayer(50*physicsUnit, groundY)
 	}
 
 	// Initialize room if needed
 	if ig.currentRoom == nil {
-		ig.currentRoom = NewSimpleRoom("main")
+		ig.currentRoom = world.NewSimpleRoom("main")
 	}
 
 	// Set up camera bounds based on room size
@@ -194,7 +197,7 @@ func (ig *InGameState) OnEnter() {
 		tileMap := ig.currentRoom.GetTileMap()
 		if tileMap != nil {
 			// Convert tile dimensions to pixel dimensions
-			physicsUnit := GetPhysicsUnit()
+			physicsUnit := engine.GetPhysicsUnit()
 			worldWidth := tileMap.Width * physicsUnit
 			worldHeight := tileMap.Height * physicsUnit
 			ig.camera.SetWorldBounds(worldWidth, worldHeight)

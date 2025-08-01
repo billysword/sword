@@ -1,18 +1,10 @@
-package gamestate
+package engine
 
 import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-)
-
-// Legacy constants for backward compatibility - use GameConfig instead
-const (
-	TILE_SIZE         = 16   // Deprecated: use GameConfig.TileSize
-	TILE_SCALE_FACTOR = 1.0  // Deprecated: use GameConfig.TileScaleFactor
-	CHAR_SCALE_FACTOR = 0.4  // Deprecated: use GameConfig.CharScaleFactor
-	PHYSICS_UNIT      = 16   // Deprecated: use GetPhysicsUnit()
 )
 
 // Global sprite storage
@@ -60,6 +52,48 @@ Parameters:
 func SetGlobalTileSprites(tile, tiles *ebiten.Image) {
 	globalTileSprite = tile
 	globalTilesSprite = tiles
+}
+
+/*
+GetLeftSprite returns the global left-facing sprite.
+*/
+func GetLeftSprite() *ebiten.Image {
+	return globalLeftSprite
+}
+
+/*
+GetRightSprite returns the global right-facing sprite.
+*/
+func GetRightSprite() *ebiten.Image {
+	return globalRightSprite
+}
+
+/*
+GetIdleSprite returns the global idle sprite.
+*/
+func GetIdleSprite() *ebiten.Image {
+	return globalIdleSprite
+}
+
+/*
+GetBackgroundImage returns the global background image.
+*/
+func GetBackgroundImage() *ebiten.Image {
+	return globalBackgroundImage
+}
+
+/*
+GetTileSprite returns the global tile sprite.
+*/
+func GetTileSprite() *ebiten.Image {
+	return globalTileSprite
+}
+
+/*
+GetTilesSprite returns the global tiles sprite.
+*/
+func GetTilesSprite() *ebiten.Image {
+	return globalTilesSprite
 }
 
 /*

@@ -1,8 +1,9 @@
-package gamestate
+package entities
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"sword/engine"
 )
 
 /*
@@ -11,7 +12,7 @@ Handles movement, physics, input processing, and rendering for the
 main character. Uses physics units for all position and velocity
 calculations to ensure consistent behavior across different scale factors.
 
-Position and velocity are stored in physics units (see GetPhysicsUnit()).
+Position and velocity are stored in physics units (see engine.GetPhysicsUnit()).
 */
 type Player struct {
 	x  int
@@ -45,7 +46,7 @@ func NewPlayer(x, y int) *Player {
 /*
 HandleInput processes player input for movement and actions.
 Reads keyboard input and updates player velocity accordingly.
-Uses GameConfig values for movement speeds and physics calculations.
+Uses engine.GameConfig values for movement speeds and physics calculations.
 
 Input mapping:
   - A/Left Arrow: Move left
@@ -53,13 +54,13 @@ Input mapping:
   - Space: Jump
 */
 func (p *Player) HandleInput() {
-	physicsUnit := GetPhysicsUnit()
+	physicsUnit := engine.GetPhysicsUnit()
 	
 	// Horizontal movement - using config values
 	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		p.vx = -GameConfig.PlayerMoveSpeed * physicsUnit
+		p.vx = -engine.GameConfig.PlayerMoveSpeed * physicsUnit
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		p.vx = GameConfig.PlayerMoveSpeed * physicsUnit
+		p.vx = engine.GameConfig.PlayerMoveSpeed * physicsUnit
 	}
 
 	// Jumping
@@ -70,9 +71,9 @@ func (p *Player) HandleInput() {
 
 // tryJump makes the player jump if possible
 func (p *Player) tryJump() {
-	physicsUnit := GetPhysicsUnit()
+	physicsUnit := engine.GetPhysicsUnit()
 	// Allow jumping even if not on ground (mid-air jumping as per original design)
-	p.vy = -GameConfig.PlayerJumpPower * physicsUnit
+	p.vy = -engine.GameConfig.PlayerJumpPower * physicsUnit
 }
 
 /*
@@ -80,18 +81,18 @@ Update handles player physics and movement.
 Applies velocity to position, handles ground collision, applies friction
 to horizontal movement, and applies gravity. Should be called once per frame.
 
-Uses values from GameConfig for all physics calculations including friction,
+Uses values from engine.GameConfig for all physics calculations including friction,
 gravity, and ground level.
 */
 func (p *Player) Update() {
-	physicsUnit := GetPhysicsUnit()
+	physicsUnit := engine.GetPhysicsUnit()
 	
 	// Apply movement
 	p.x += p.vx
 	p.y += p.vy
 
 	// Ground collision - using config ground level
-	groundY := GameConfig.GroundLevel * physicsUnit
+	groundY := engine.GameConfig.GroundLevel * physicsUnit
 	if p.y > groundY {
 		p.y = groundY
 		p.onGround = true
@@ -101,27 +102,27 @@ func (p *Player) Update() {
 
 	// Apply friction to horizontal movement
 	if p.vx > 0 {
-		p.vx -= GameConfig.PlayerFriction
+		p.vx -= engine.GameConfig.PlayerFriction
 		if p.vx < 0 {
 			p.vx = 0
 		}
 	} else if p.vx < 0 {
-		p.vx += GameConfig.PlayerFriction
+		p.vx += engine.GameConfig.PlayerFriction
 		if p.vx > 0 {
 			p.vx = 0
 		}
 	}
 
 	// Apply gravity
-	if p.vy < GameConfig.MaxFallSpeed*physicsUnit {
-		p.vy += GameConfig.Gravity
+	if p.vy < engine.GameConfig.MaxFallSpeed*physicsUnit {
+		p.vy += engine.GameConfig.Gravity
 	}
 }
 
 /*
 Draw renders the player character.
 Chooses the appropriate sprite based on movement direction and renders
-it at the player's current position. Uses GameConfig.CharScaleFactor
+it at the player's current position. Uses engine.GameConfig.CharScaleFactor
 for consistent scaling.
 
 Parameters:
@@ -129,18 +130,18 @@ Parameters:
 */
 func (p *Player) Draw(screen *ebiten.Image) {
 	// Choose sprite based on movement direction
-	sprite := globalIdleSprite
+	sprite := engine.GetIdleSprite()
 	switch {
 	case p.vx > 0:
-		sprite = globalRightSprite
+		sprite = engine.GetRightSprite()
 	case p.vx < 0:
-		sprite = globalLeftSprite
+		sprite = engine.GetLeftSprite()
 	}
 
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(GameConfig.CharScaleFactor, GameConfig.CharScaleFactor)
-	op.GeoM.Translate(float64(p.x)/float64(GetPhysicsUnit()), float64(p.y)/float64(GetPhysicsUnit()))
+	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
+	op.GeoM.Translate(float64(p.x)/float64(engine.GetPhysicsUnit()), float64(p.y)/float64(engine.GetPhysicsUnit()))
 	
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
@@ -158,20 +159,20 @@ Parameters:
 */
 func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Choose sprite based on movement direction
-	sprite := globalIdleSprite
+	sprite := engine.GetIdleSprite()
 	switch {
 	case p.vx > 0:
-		sprite = globalRightSprite
+		sprite = engine.GetRightSprite()
 	case p.vx < 0:
-		sprite = globalLeftSprite
+		sprite = engine.GetLeftSprite()
 	}
 
 	// Set up drawing options with camera offset
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(GameConfig.CharScaleFactor, GameConfig.CharScaleFactor)
+	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
 	// Convert player position from physics units to pixels and apply camera offset
-	renderX := float64(p.x)/float64(GetPhysicsUnit()) + cameraOffsetX
-	renderY := float64(p.y)/float64(GetPhysicsUnit()) + cameraOffsetY
+	renderX := float64(p.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
+	renderY := float64(p.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
 	op.GeoM.Translate(renderX, renderY)
 	
 	// Draw the sprite

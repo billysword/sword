@@ -1,4 +1,4 @@
-package gamestate
+package states
 
 import (
 	"image/color"
@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"sword/engine"
 )
 
 /*
@@ -21,8 +22,8 @@ Features:
   - Keyboard controls for navigation
 */
 type PauseState struct {
-	stateManager    *StateManager  // Reference to state manager for transitions
-	backgroundState State          // Store the previous state to draw behind pause menu
+	stateManager    *engine.StateManager  // Reference to state manager for transitions
+	backgroundState engine.State          // Store the previous state to draw behind pause menu
 }
 
 /*
@@ -36,7 +37,7 @@ Parameters:
 
 Returns a pointer to the new PauseState instance.
 */
-func NewPauseState(sm *StateManager, background State) *PauseState {
+func NewPauseState(sm *engine.StateManager, background engine.State) *PauseState {
 	return &PauseState{
 		stateManager:    sm,
 		backgroundState: background,
