@@ -8,15 +8,36 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-// InGameState represents the actual gameplay state
+/*
+InGameState represents the actual gameplay state.
+Manages the core game loop including player input, physics updates,
+camera movement, and rendering. Coordinates between the player,
+current room, and camera systems.
+
+Key responsibilities:
+  - Player input processing and movement
+  - Camera following and world rendering
+  - Room management and collision handling
+  - Debug feature toggles (background, grid)
+  - Pause state transitions
+*/
 type InGameState struct {
-	stateManager *StateManager
-	player       *Player
-	currentRoom  Room
-	camera       *Camera
+	stateManager *StateManager  // Reference to state manager for transitions
+	player       *Player        // The player character instance
+	currentRoom  Room           // Current room/level being played
+	camera       *Camera        // Camera for world scrolling
 }
 
-// NewInGameState creates a new in-game state
+/*
+NewInGameState creates a new in-game state.
+Initializes all core game systems including the player, camera, and room.
+Sets up the initial game world with proper camera bounds and player positioning.
+
+Parameters:
+  - sm: StateManager instance for handling state transitions
+
+Returns a pointer to the new InGameState instance.
+*/
 func NewInGameState(sm *StateManager) *InGameState {
 	// Get the actual window size for camera viewport
 	windowWidth, windowHeight := ebiten.WindowSize()
@@ -32,7 +53,19 @@ func NewInGameState(sm *StateManager) *InGameState {
 	}
 }
 
-// Update handles game logic and input
+/*
+Update handles game logic and input.
+Processes all game systems in the correct order: input handling,
+player physics, camera updates, and room logic. Also handles
+debug toggles and pause state transitions.
+
+Input handling:
+  - P/ESC: Pause game
+  - B: Toggle background rendering
+  - G: Toggle debug grid overlay
+
+Returns any error from game systems, or ebiten.Termination to quit.
+*/
 func (ig *InGameState) Update() error {
 	// Check for pause
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) || inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -70,7 +103,21 @@ func (ig *InGameState) Update() error {
 	return nil
 }
 
-// Draw renders the game world
+/*
+Draw renders the game world.
+Handles all rendering with proper camera transformation including
+background, room tiles, player character, and debug information.
+Uses camera offset to create scrolling world effect.
+
+Rendering order:
+  1. Room background and tiles (with camera offset)
+  2. Player character (with camera offset)
+  3. Debug grid overlay (if enabled)
+  4. UI and debug information (no camera offset)
+
+Parameters:
+  - screen: The target screen/image to render to
+*/
 func (ig *InGameState) Draw(screen *ebiten.Image) {
 	// Apply camera transformation
 	cameraOffsetX, cameraOffsetY := float64(0), float64(0)
@@ -123,7 +170,12 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, msg)
 }
 
-// OnEnter is called when entering the game state
+/*
+OnEnter is called when entering the game state.
+Initializes or resets all game systems when starting gameplay.
+Sets up camera bounds, player positioning, and room state.
+Called when transitioning from menu or resume from pause.
+*/
 func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
 	if ig.player == nil {
@@ -154,7 +206,12 @@ func (ig *InGameState) OnEnter() {
 	}
 }
 
-// OnExit is called when leaving the game state
+/*
+OnExit is called when leaving the game state.
+Handles cleanup and state preservation when transitioning away
+from gameplay (to pause, menu, or quit). Notifies the current
+room of the exit and can save game state.
+*/
 func (ig *InGameState) OnExit() {
 	// Let the room know we're leaving
 	if ig.currentRoom != nil {

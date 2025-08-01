@@ -1,6 +1,11 @@
 package gamestate
 
-// Config holds all the adjustable game settings in one place
+/*
+Config holds all the adjustable game settings in one place.
+This struct centralizes all configuration values for easy tweaking
+and different game modes (zoomed in vs zoomed out, different difficulties, etc.).
+All values use consistent units and naming conventions.
+*/
 type Config struct {
 	// Window settings
 	WindowWidth  int
@@ -39,7 +44,14 @@ type Config struct {
 	GridColor        [4]uint8 // RGBA color for debug grid
 }
 
-// DefaultConfig returns the default game configuration
+/*
+DefaultConfig returns the default game configuration.
+This configuration provides a balanced zoomed-out view suitable for
+platformer gameplay with good visibility of the surrounding environment.
+Window size is 800x450 with 1.0 tile scaling for crisp pixel art.
+
+Returns a pointer to a new Config struct with default values.
+*/
 func DefaultConfig() *Config {
 	return &Config{
 		// Window settings - 800x450 for zoomed out view
@@ -80,7 +92,14 @@ func DefaultConfig() *Config {
 	}
 }
 
-// ZoomedInConfig returns a configuration for a more zoomed-in view
+/*
+ZoomedInConfig returns a configuration for a more zoomed-in view.
+This configuration is better suited for detailed gameplay or smaller
+screens. Uses larger tile scaling and a smaller window size for a
+more intimate view of the game world.
+
+Returns a pointer to a new Config struct optimized for zoomed-in gameplay.
+*/
 func ZoomedInConfig() *Config {
 	config := DefaultConfig()
 	
@@ -107,10 +126,24 @@ func ZoomedInConfig() *Config {
 	return config
 }
 
-// Global config instance
+/*
+GameConfig is the global config instance used throughout the game.
+This variable holds the currently active configuration and can be
+swapped out to change game behavior (e.g., switching between zoomed
+in and zoomed out modes). Defaults to DefaultConfig().
+*/
 var GameConfig = DefaultConfig()
 
-// GetPhysicsUnit returns the physics unit size based on current config
+/*
+GetPhysicsUnit returns the physics unit size based on current config.
+The physics unit is the fundamental measurement used for all game physics
+and positioning calculations. It's calculated as TileSize * TileScaleFactor.
+
+This ensures consistent scaling across all game elements when the tile
+scale factor changes.
+
+Returns the physics unit size in pixels.
+*/
 func GetPhysicsUnit() int {
 	return int(float64(GameConfig.TileSize) * GameConfig.TileScaleFactor)
 }
