@@ -1,7 +1,9 @@
-package gamestate
+package world
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"sword/engine"
+	"sword/entities"
 )
 
 /*
@@ -134,12 +136,12 @@ type Room interface {
 	GetZoneID() string
 
 	// Game logic that can be extracted from main loop
-	Update(player *Player) error
-	HandleCollisions(player *Player)
+	Update(player *entities.Player) error
+	HandleCollisions(player *entities.Player)
 
 	// Room-specific events
-	OnEnter(player *Player)
-	OnExit(player *Player)
+	OnEnter(player *entities.Player)
+	OnExit(player *entities.Player)
 
 	// Rendering
 	Draw(screen *ebiten.Image)
@@ -212,7 +214,7 @@ Parameters:
 
 Returns any error from room update logic.
 */
-func (br *BaseRoom) Update(player *Player) error {
+func (br *BaseRoom) Update(player *entities.Player) error {
 	// Default: no special room logic
 	return nil
 }
@@ -226,10 +228,10 @@ collision detection and platform behavior.
 Parameters:
   - player: The player instance to check collisions for
 */
-func (br *BaseRoom) HandleCollisions(player *Player) {
+func (br *BaseRoom) HandleCollisions(player *entities.Player) {
 	// Default: basic ground collision using config ground level
-	physicsUnit := GetPhysicsUnit()
-	groundY := GameConfig.GroundLevel * physicsUnit
+	physicsUnit := engine.GetPhysicsUnit()
+	groundY := engine.GameConfig.GroundLevel * physicsUnit
 	
 	x, y := player.GetPosition()
 	if y > groundY {
@@ -277,7 +279,7 @@ to implement room entry effects, music changes, or setup logic.
 Parameters:
   - player: The player entering the room
 */
-func (br *BaseRoom) OnEnter(player *Player) {
+func (br *BaseRoom) OnEnter(player *entities.Player) {
 	// Default: no special entry logic
 }
 
@@ -289,7 +291,7 @@ to implement cleanup, save room state, or exit effects.
 Parameters:
   - player: The player leaving the room
 */
-func (br *BaseRoom) OnExit(player *Player) {
+func (br *BaseRoom) OnExit(player *entities.Player) {
 	// Default: no special exit logic
 }
 
@@ -351,7 +353,7 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 		return
 	}
 
-	physicsUnit := GetPhysicsUnit()
+	physicsUnit := engine.GetPhysicsUnit()
 	
 	for y := 0; y < br.tileMap.Height; y++ {
 		for x := 0; x < br.tileMap.Width; x++ {
@@ -361,7 +363,7 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 				if sprite != nil {
 					op := &ebiten.DrawImageOptions{}
 					// Scale tiles using global scale factor
-					op.GeoM.Scale(GameConfig.TileScaleFactor, GameConfig.TileScaleFactor)
+					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
 					renderX := float64(x * physicsUnit) + cameraOffsetX
 					renderY := float64(y * physicsUnit) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
@@ -372,4 +374,3 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 		}
 	}
 }
-

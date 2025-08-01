@@ -1,4 +1,4 @@
-package gamestate
+package engine
 
 import (
 	"math"

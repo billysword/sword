@@ -1,4 +1,4 @@
-package gamestate
+package states
 
 import (
 	"image/color"
@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"sword/engine"
 )
 
 /*
@@ -20,7 +21,7 @@ Features:
   - Smooth transition to gameplay
 */
 type StartState struct {
-	stateManager   *StateManager  // Reference to state manager for transitions
+	stateManager   *engine.StateManager  // Reference to state manager for transitions
 	selectedOption int            // Currently selected menu option (0-based)
 	totalOptions   int            // Total number of menu options available
 }
@@ -36,7 +37,7 @@ Parameters:
 
 Returns a pointer to the new StartState instance.
 */
-func NewStartState(sm *StateManager) *StartState {
+func NewStartState(sm *engine.StateManager) *StartState {
 	return &StartState{
 		stateManager:   sm,
 		selectedOption: 0, // Default to "Continue"
