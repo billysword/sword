@@ -28,7 +28,7 @@ type InGameState struct {
 	stateManager *engine.StateManager  // Reference to state manager for transitions
 	player       *entities.Player        // The player character instance
 	currentRoom  world.Room           // Current room/level being played
-	camera       *world.Camera        // Camera for world scrolling
+	camera       *engine.Camera        // Camera for world scrolling
 }
 
 /*
@@ -52,7 +52,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		stateManager: sm,
 		player:       entities.NewPlayer(50*physicsUnit, groundY),
 		currentRoom:  world.NewSimpleRoom("main"),
-		camera:       world.NewCamera(windowWidth, windowHeight),
+		camera:       engine.NewCamera(windowWidth, windowHeight),
 	}
 }
 

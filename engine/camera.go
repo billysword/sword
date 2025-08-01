@@ -1,8 +1,7 @@
-package world
+package engine
 
 import (
 	"math"
-	"sword/engine"
 )
 
 /*
@@ -38,7 +37,7 @@ type Camera struct {
 
 /*
 NewCamera creates a new camera with specified viewport dimensions.
-Initializes camera settings from engine.GameConfig and sets up dead zones
+Initializes camera settings from GameConfig and sets up dead zones
 and margins based on the viewport size and configuration values.
 
 Parameters:
@@ -51,13 +50,13 @@ func NewCamera(viewportWidth, viewportHeight int) *Camera {
 	return &Camera{
 		width:        viewportWidth,
 		height:       viewportHeight,
-		smoothing:    engine.GameConfig.CameraSmoothing,
-		deadZoneX:    int(float64(viewportWidth) * engine.GameConfig.CameraDeadZoneX),
-		deadZoneY:    int(float64(viewportHeight) * engine.GameConfig.CameraDeadZoneY),
-		marginLeft:   engine.GameConfig.CameraMarginLeft,
-		marginRight:  engine.GameConfig.CameraMarginRight,
-		marginTop:    engine.GameConfig.CameraMarginTop,
-		marginBottom: engine.GameConfig.CameraMarginBottom,
+		smoothing:    GameConfig.CameraSmoothing,
+		deadZoneX:    int(float64(viewportWidth) * GameConfig.CameraDeadZoneX),
+		deadZoneY:    int(float64(viewportHeight) * GameConfig.CameraDeadZoneY),
+		marginLeft:   GameConfig.CameraMarginLeft,
+		marginRight:  GameConfig.CameraMarginRight,
+		marginTop:    GameConfig.CameraMarginTop,
+		marginBottom: GameConfig.CameraMarginBottom,
 	}
 }
 
