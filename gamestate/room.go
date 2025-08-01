@@ -86,6 +86,7 @@ type Room interface {
 
 	// Rendering
 	Draw(screen *ebiten.Image)
+	DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64)
 	DrawTiles(screen *ebiten.Image, spriteProvider func(int) *ebiten.Image)
 }
 
@@ -167,8 +168,19 @@ func (br *BaseRoom) Draw(screen *ebiten.Image) {
 	// Individual room implementations should override this method
 }
 
+// DrawWithCamera renders the room with camera offset
+func (br *BaseRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
+	// Base implementation - rooms should override this
+	br.Draw(screen)
+}
+
 // DrawTiles renders the room's tile map using a sprite provider function
 func (br *BaseRoom) DrawTiles(screen *ebiten.Image, spriteProvider func(int) *ebiten.Image) {
+	br.DrawTilesWithCamera(screen, spriteProvider, 0, 0)
+}
+
+// DrawTilesWithCamera renders the room's tile map with camera offset
+func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider func(int) *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	if br.tileMap == nil {
 		return
 	}
@@ -182,8 +194,8 @@ func (br *BaseRoom) DrawTiles(screen *ebiten.Image, spriteProvider func(int) *eb
 					op := &ebiten.DrawImageOptions{}
 					// Scale tiles using global scale factor
 					op.GeoM.Scale(TILE_SCALE_FACTOR, TILE_SCALE_FACTOR)
-					renderX := float64(x * PHYSICS_UNIT)
-					renderY := float64(y * PHYSICS_UNIT)
+					renderX := float64(x * PHYSICS_UNIT) + cameraOffsetX
+					renderY := float64(y * PHYSICS_UNIT) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
 					
 					screen.DrawImage(sprite, op)

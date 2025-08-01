@@ -99,6 +99,29 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	screen.DrawImage(sprite, op)
 }
 
+// DrawWithCamera renders the player character with camera offset
+func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
+	// Choose sprite based on movement direction
+	sprite := globalIdleSprite
+	switch {
+	case p.vx > 0:
+		sprite = globalRightSprite
+	case p.vx < 0:
+		sprite = globalLeftSprite
+	}
+
+	// Set up drawing options with camera offset
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR)
+	// Convert player position from physics units to pixels and apply camera offset
+	renderX := float64(p.x)/float64(PHYSICS_UNIT) + cameraOffsetX
+	renderY := float64(p.y)/float64(PHYSICS_UNIT) + cameraOffsetY
+	op.GeoM.Translate(renderX, renderY)
+	
+	// Draw the sprite
+	screen.DrawImage(sprite, op)
+}
+
 // GetPosition returns the player's current position
 func (p *Player) GetPosition() (int, int) {
 	return p.x, p.y

@@ -90,6 +90,34 @@ func DrawGrid(screen *ebiten.Image) {
 	}
 }
 
+// DrawGridWithCamera renders a faint grid overlay that moves with the camera
+func DrawGridWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
+	if !showGrid {
+		return
+	}
+
+	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
+	gridColor := color.RGBA{100, 100, 100, 80} // Faint gray
+	
+	// Calculate grid offset to ensure grid lines align with tiles
+	gridOffsetX := int(cameraOffsetX) % PHYSICS_UNIT
+	gridOffsetY := int(cameraOffsetY) % PHYSICS_UNIT
+	
+	// Draw vertical lines
+	for x := gridOffsetX; x < screenWidth+PHYSICS_UNIT; x += PHYSICS_UNIT {
+		if x >= 0 {
+			vector.StrokeLine(screen, float32(x), 0, float32(x), float32(screenHeight), 1, gridColor, false)
+		}
+	}
+	
+	// Draw horizontal lines
+	for y := gridOffsetY; y < screenHeight+PHYSICS_UNIT; y += PHYSICS_UNIT {
+		if y >= 0 {
+			vector.StrokeLine(screen, 0, float32(y), float32(screenWidth), float32(y), 1, gridColor, false)
+		}
+	}
+}
+
 // State represents a game state that can handle input, update logic, and rendering
 type State interface {
 	Update() error

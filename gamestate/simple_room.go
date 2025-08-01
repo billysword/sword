@@ -44,32 +44,28 @@ type SimpleRoom struct {
 
 // NewSimpleRoom creates a new simple room with forest tiles
 func NewSimpleRoom(zoneID string) *SimpleRoom {
-	// Create a room that fits the screen (960x540 with 16px tiles = 60x33 tiles)
+	// Create a larger room for metroidvania style (80x40 tiles = 2560x1280 pixels)
+	// This is much larger than our 640x360 viewport
 	room := &SimpleRoom{
-		BaseRoom: NewBaseRoom(zoneID, 60, 34),
+		BaseRoom: NewBaseRoom(zoneID, 80, 40),
 		tileSize: TILE_SIZE,
-		tilesPerRow: 25, // 400px width ÷ TILE_SIZE per tile = 25 tiles per row
+		tilesPerRow: 8, // Forest tilemap has 8 tiles per row
 		forestTiles: make(map[int]*ebiten.Image),
 	}
 
-	// Extract individual tiles from the forest tilemap
-	room.extractForestTiles()
-	
-	// Initialize with a forest layout
-	room.initializeLayout()
-
+	room.initializeForestTiles()
+	room.buildRoom()
 	return room
 }
 
-// extractForestTiles extracts individual tiles from the forest tilemap
-func (sr *SimpleRoom) extractForestTiles() {
+// initializeForestTiles extracts individual tiles from the forest tilemap
+func (sr *SimpleRoom) initializeForestTiles() {
 	if globalTileSprite == nil {
 		return
 	}
 
-	// Extract individual tiles from the forest tilemap  
-	// 25 tiles total (0-24) arranged in a single horizontal row
-	for i := 0; i <= 24; i++ {
+	// The forest tilemap has 8 tiles per row and 3 rows (24 tiles total, indices 0-23)
+	for i := 0; i <= 23; i++ {
 		x := (i % sr.tilesPerRow) * sr.tileSize
 		y := (i / sr.tilesPerRow) * sr.tileSize
 		
@@ -89,6 +85,92 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 		return sprite
 	}
 	return globalTileSprite
+}
+
+// buildRoom sets up the forest tile layout for this larger metroidvania-style room
+func (sr *SimpleRoom) buildRoom() {
+	if globalTileSprite == nil {
+		return
+	}
+
+	// Create a larger room with multiple platforms and areas to explore
+	// The room is 80x40 tiles (2560x1280 pixels)
+	
+	// Fill the bottom with ground tiles
+	for y := 30; y < 40; y++ {
+		for x := 0; x < 80; x++ {
+			sr.tileMap.SetTile(x, y, TILE_DIRT)
+		}
+	}
+	
+	// Create the main ground level with proper edges
+	groundY := 29
+	// Left edge
+	sr.tileMap.SetTile(0, groundY, TILE_TOP_LEFT_CORNER)
+	// Top surface
+	for x := 1; x < 79; x++ {
+		sr.tileMap.SetTile(x, groundY, TILE_CEILING_1)
+	}
+	// Right edge
+	sr.tileMap.SetTile(79, groundY, TILE_TOP_RIGHT_CORNER)
+	
+	// Add some floating platforms at various heights
+	// Platform 1 (left side, mid height)
+	sr.createPlatform(10, 20, 8)
+	
+	// Platform 2 (center, higher)
+	sr.createPlatform(35, 15, 10)
+	
+	// Platform 3 (right side, mid height)
+	sr.createPlatform(60, 22, 8)
+	
+	// Platform 4 (far left, low)
+	sr.createPlatform(5, 25, 6)
+	
+	// Platform 5 (center-right, high)
+	sr.createPlatform(50, 10, 12)
+	
+	// Add some walls and structures
+	// Left wall structure
+	sr.createWall(15, 20, 29)
+	
+	// Right wall structure
+	sr.createWall(65, 15, 29)
+	
+	// Center pillar
+	sr.createWall(40, 25, 29)
+	sr.createWall(41, 25, 29)
+}
+
+// createPlatform creates a floating platform at the specified position
+func (sr *SimpleRoom) createPlatform(x, y, width int) {
+	if width < 2 {
+		return
+	}
+	
+	// Left edge
+	sr.tileMap.SetTile(x, y, TILE_SINGLE_LEFT)
+	
+	// Middle tiles
+	for i := 1; i < width-1; i++ {
+		sr.tileMap.SetTile(x+i, y, TILE_SINGLE_HORIZONTAL)
+	}
+	
+	// Right edge
+	sr.tileMap.SetTile(x+width-1, y, TILE_SINGLE_RIGHT)
+}
+
+// createWall creates a vertical wall from startY to endY
+func (sr *SimpleRoom) createWall(x, startY, endY int) {
+	for y := startY; y <= endY; y++ {
+		if y == startY {
+			sr.tileMap.SetTile(x, y, TILE_SINGLE_TOP)
+		} else if y == endY {
+			sr.tileMap.SetTile(x, y, TILE_SINGLE_BOTTOM)
+		} else {
+			sr.tileMap.SetTile(x, y, TILE_SINGLE_VERTICAL)
+		}
+	}
 }
 
 // initializeLayout sets up the forest tile layout for this room using a simple tile array
@@ -121,12 +203,12 @@ func (sr *SimpleRoom) initializeLayout() {
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		// Ground level starts here (around row 23)
 		{-1, -1, -1, -1, -1, 1, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 5, -1, -1, -1, -1},
 		{20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -211,4 +293,26 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 	
 	// Draw debug grid overlay (if enabled)
 	DrawGrid(screen)
+}
+
+// DrawWithCamera renders the room with camera offset
+func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
+	// Draw background with parallax effect (slower movement)
+	if GetBackgroundVisible() && globalBackgroundImage != nil {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(0.5, 0.5)
+		// Apply parallax scrolling to background (moves slower than foreground)
+		bgOffsetX := cameraOffsetX * 0.3 // 30% of camera movement for parallax
+		bgOffsetY := cameraOffsetY * 0.3
+		op.GeoM.Translate(bgOffsetX, bgOffsetY)
+		screen.DrawImage(globalBackgroundImage, op)
+	}
+
+	// Draw tiles with camera offset
+	sr.DrawTilesWithCamera(screen, sr.getTileSprite, cameraOffsetX, cameraOffsetY)
+	
+	// Draw debug grid overlay (if enabled) - grid moves with camera
+	if GetGridVisible() {
+		DrawGridWithCamera(screen, cameraOffsetX, cameraOffsetY)
+	}
 }
