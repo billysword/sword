@@ -15,6 +15,14 @@ const (
 	TileBackground
 )
 
+// CollisionInfo represents collision data for physics resolution
+type CollisionInfo struct {
+	HasCollision bool
+	CollisionX   int  // X position where collision occurs
+	CollisionY   int  // Y position where collision occurs
+	SurfaceType  TileType // Type of surface collided with
+}
+
 // Tile represents a single tile in the tile map
 type Tile struct {
 	Type   TileType
@@ -22,18 +30,22 @@ type Tile struct {
 	Sprite *ebiten.Image
 }
 
-// TileMap represents a 2D grid of tiles for a zone
+// TileMap represents a 2D grid of tile indices for a zone
 type TileMap struct {
 	Width  int
 	Height int
-	Tiles  [][]Tile
+	Tiles  [][]int  // Just store tile indices, -1 for empty
 }
 
 // NewTileMap creates a new tile map with specified dimensions
 func NewTileMap(width, height int) *TileMap {
-	tiles := make([][]Tile, height)
+	tiles := make([][]int, height)
 	for i := range tiles {
-		tiles[i] = make([]Tile, width)
+		tiles[i] = make([]int, width)
+		// Initialize with -1 (empty)
+		for j := range tiles[i] {
+			tiles[i][j] = -1
+		}
 	}
 
 	return &TileMap{
@@ -43,24 +55,19 @@ func NewTileMap(width, height int) *TileMap {
 	}
 }
 
-// SetTile sets a tile at the specified position
-func (tm *TileMap) SetTile(x, y int, tileType TileType, sprite *ebiten.Image) {
+// SetTile sets a tile index at the specified position
+func (tm *TileMap) SetTile(x, y, tileIndex int) {
 	if x >= 0 && x < tm.Width && y >= 0 && y < tm.Height {
-		tm.Tiles[y][x] = Tile{
-			Type:   tileType,
-			X:      x,
-			Y:      y,
-			Sprite: sprite,
-		}
+		tm.Tiles[y][x] = tileIndex
 	}
 }
 
-// GetTile returns the tile at the specified position
-func (tm *TileMap) GetTile(x, y int) *Tile {
+// GetTileIndex returns the tile index at the specified position
+func (tm *TileMap) GetTileIndex(x, y int) int {
 	if x >= 0 && x < tm.Width && y >= 0 && y < tm.Height {
-		return &tm.Tiles[y][x]
+		return tm.Tiles[y][x]
 	}
-	return nil
+	return -1
 }
 
 // Room represents a modular game area with its own tile map and logic
@@ -79,7 +86,7 @@ type Room interface {
 
 	// Rendering
 	Draw(screen *ebiten.Image)
-	DrawTiles(screen *ebiten.Image)
+	DrawTiles(screen *ebiten.Image, spriteProvider func(int) *ebiten.Image)
 }
 
 // BaseRoom provides default implementation for common room functionality
@@ -121,6 +128,29 @@ func (br *BaseRoom) HandleCollisions(player *Player) {
 	}
 }
 
+// IsSolidTile checks if a tile index represents a solid tile for collision
+func IsSolidTile(tileIndex int) bool {
+	// Define which tile indices are solid for collision
+	switch tileIndex {
+	case -1: // empty
+		return false
+	case 0: // dirt - solid
+		return true
+	case 1, 2, 3, 4, 5, 6, 7, 8: // walls, corners, ceilings - solid
+		return true
+	case 9, 10, 11, 12, 13, 14, 15: // platform tiles - solid
+		return true
+	case 16, 17, 18, 19: // inner corners - solid
+		return true
+	case 20, 21: // floor tiles - solid
+		return true
+	case 22, 23: // more walls - solid
+		return true
+	default:
+		return false
+	}
+}
+
 // OnEnter is called when entering the room
 func (br *BaseRoom) OnEnter(player *Player) {
 	// Default: no special entry logic
@@ -131,26 +161,30 @@ func (br *BaseRoom) OnExit(player *Player) {
 	// Default: no special exit logic
 }
 
-// Draw renders the room
+// Draw renders the room (base implementation - rooms should override this)
 func (br *BaseRoom) Draw(screen *ebiten.Image) {
-	// Draw tiles first
-	br.DrawTiles(screen)
+	// Base rooms need a sprite provider, so this is just a placeholder
+	// Individual room implementations should override this method
 }
 
-// DrawTiles renders the room's tile map
-func (br *BaseRoom) DrawTiles(screen *ebiten.Image) {
+// DrawTiles renders the room's tile map using a sprite provider function
+func (br *BaseRoom) DrawTiles(screen *ebiten.Image, spriteProvider func(int) *ebiten.Image) {
 	if br.tileMap == nil {
 		return
 	}
 
 	for y := 0; y < br.tileMap.Height; y++ {
 		for x := 0; x < br.tileMap.Width; x++ {
-			tile := &br.tileMap.Tiles[y][x]
-			if tile.Type != TileEmpty && tile.Sprite != nil {
-				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Translate(float64(x*unit), float64(y*unit))
-				screen.DrawImage(tile.Sprite, op)
+			tileIndex := br.tileMap.Tiles[y][x]
+			if tileIndex != -1 {
+				sprite := spriteProvider(tileIndex)
+				if sprite != nil {
+					op := &ebiten.DrawImageOptions{}
+					op.GeoM.Translate(float64(x*unit), float64(y*unit))
+					screen.DrawImage(sprite, op)
+				}
 			}
 		}
 	}
 }
+
