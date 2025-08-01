@@ -11,13 +11,13 @@ import (
 const (
 	// Tile system constants
 	TILE_SIZE           = 16    // Base size of tiles in pixels (from tilemap)
-	TILE_SCALE_FACTOR   = 2.0   // Scale factor for tile rendering (16x16 -> 32x32)
+	TILE_SCALE_FACTOR   = 1.0   // Scale factor for tile rendering (16x16 -> 16x16) - zoomed out
 	
 	// Character scale constants
-	CHAR_SCALE_FACTOR   = 0.5   // Scale factor for character sprites
+	CHAR_SCALE_FACTOR   = 0.4   // Scale factor for character sprites (adjusted for new zoom)
 	
 	// Physics unit (should match tile render size after scaling)
-	PHYSICS_UNIT        = int(TILE_SIZE * TILE_SCALE_FACTOR) // 32 pixels
+	PHYSICS_UNIT        = int(TILE_SIZE * TILE_SCALE_FACTOR) // 16 pixels
 )
 
 // Global sprite storage

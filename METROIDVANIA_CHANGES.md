@@ -6,11 +6,17 @@ This document summarizes the changes made to transform the game into a proper me
 ## Key Changes
 
 ### 1. Window Resolution (main.go)
-- Changed from 960x540 to **640x360** pixels
-- This is a standard metroidvania resolution with 16:9 aspect ratio
-- Provides good pixel art visibility while allowing for larger explorable rooms
+- Changed from 960x540 to **800x450** pixels
+- Maintains 16:9 aspect ratio
+- Larger window to show more of the zoomed-out world
 
-### 2. Camera System (gamestate/camera.go - NEW FILE)
+### 2. Zoom Level (gamestate/state.go)
+- **Tile Scale**: Reduced from 2.0 to 1.0 (tiles now render at 16x16 instead of 32x32)
+- **Character Scale**: Adjusted to 0.4 to make player approximately 3 tiles wide
+- **Physics Unit**: Now 16 pixels (matching the rendered tile size)
+- Result: More of the world visible on screen at once
+
+### 3. Camera System (gamestate/camera.go - NEW FILE)
 - Implemented a smooth-following camera with:
   - Dead zones (25% width, 16% height) for player movement without camera motion
   - Smooth interpolation (10% smoothing factor)
@@ -18,13 +24,24 @@ This document summarizes the changes made to transform the game into a proper me
   - Parallax background scrolling (30% speed)
   - Helper methods for coordinate conversion and visibility checks
 
-### 3. Room Size (gamestate/simple_room.go)
-- Increased room size from 60x34 tiles to **80x40 tiles**
-- This creates a 2560x1280 pixel world (much larger than the 640x360 viewport)
-- Added multiple platforms at various heights for exploration
-- Added wall structures and pillars for more interesting level design
+### 4. Room Size (gamestate/simple_room.go)
+- Increased room size to **120x60 tiles** (1920x960 pixels)
+- This creates a massive explorable area with the 800x450 viewport
+- Added extensive platform layouts:
+  - 5 lower platforms (heights 35-39)
+  - 5 mid-level platforms (heights 25-30)
+  - 4 high platforms (heights 14-18)
+  - 3 very high platforms (heights 7-9)
+- Added 6 wall structures throughout the room for vertical navigation
+- Decorative floating tiles for visual interest
 
-### 4. Rendering Updates
+### 5. Physics Adjustments (gamestate/player.go)
+- **Movement Speed**: Reduced from 4 to 3 units (adjusted for smaller scale)
+- **Jump Height**: Reduced from 10 to 8 units
+- **Friction**: Reduced from 4 to 2 for smoother movement
+- **Gravity**: Reduced from 8 to 4, max velocity from 20 to 15 units
+
+### 6. Rendering Updates
 - **InGameState** (gamestate/ingame_state.go):
   - Added camera instance and updates
   - Modified Draw method to apply camera transformations
@@ -32,6 +49,7 @@ This document summarizes the changes made to transform the game into a proper me
   
 - **Player** (gamestate/player.go):
   - Added `DrawWithCamera` method for camera-relative rendering
+  - Player now appears approximately 3 tiles wide as requested
   
 - **Room Interface** (gamestate/room.go):
   - Added `DrawWithCamera` method to interface
@@ -41,28 +59,19 @@ This document summarizes the changes made to transform the game into a proper me
   - Implemented `DrawWithCamera` with parallax background
   - Updated tile rendering to use camera offset
 
-### 5. Debug Features (gamestate/state.go)
+### 7. Debug Features (gamestate/state.go)
 - Added `DrawGridWithCamera` function that moves the debug grid with the camera
 - Grid lines properly align with tiles regardless of camera position
 
-## Room Layout Features
-The new room design includes:
-- Main ground level spanning the entire width
-- 5 floating platforms at different heights
-- 3 wall structures for vertical navigation
-- Proper tile edges and corners for visual polish
-
-## Camera Behavior
-- Follows the player smoothly with a slight delay
-- Stays within world bounds with margins:
-  - 32 pixels on left/right/top
-  - 48 pixels on bottom (for potential HUD)
-- Background scrolls at 30% speed for parallax effect
-- Debug grid moves with the camera for easier tile alignment
+## Visual Scale Comparison
+- **Before**: Tiles were 32x32 pixels, player was about 1.5 tiles wide
+- **After**: Tiles are 16x16 pixels, player is approximately 3 tiles wide
+- **Viewport**: Shows approximately 50x28 tiles (vs 20x11 before)
 
 ## Benefits
-1. **Exploration**: Large rooms encourage exploration beyond the visible screen
-2. **Polish**: Smooth camera and parallax create professional feel
-3. **HUD Space**: Margins ensure space for UI elements
-4. **Standard Size**: 640x360 is widely used in modern pixel art games
-5. **Scalability**: Camera system makes it easy to add larger rooms or connected areas
+1. **Better Overview**: Players can see much more of the level at once
+2. **Exploration**: The massive room size (120x60) provides extensive exploration
+3. **Player Size**: At ~3 tiles wide, the player has better visual presence
+4. **Performance**: Smaller tile rendering can be more efficient
+5. **Level Design**: More room for complex platforming challenges
+6. **Professional Feel**: The zoom level matches many successful metroidvania games

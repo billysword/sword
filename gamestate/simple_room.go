@@ -44,10 +44,10 @@ type SimpleRoom struct {
 
 // NewSimpleRoom creates a new simple room with forest tiles
 func NewSimpleRoom(zoneID string) *SimpleRoom {
-	// Create a larger room for metroidvania style (80x40 tiles = 2560x1280 pixels)
-	// This is much larger than our 640x360 viewport
+	// Create an even larger room for the zoomed out view (120x60 tiles = 1920x960 pixels at 1x scale)
+	// With 800x450 viewport, this gives plenty of room to explore
 	room := &SimpleRoom{
-		BaseRoom: NewBaseRoom(zoneID, 80, 40),
+		BaseRoom: NewBaseRoom(zoneID, 120, 60),
 		tileSize: TILE_SIZE,
 		tilesPerRow: 8, // Forest tilemap has 8 tiles per row
 		forestTiles: make(map[int]*ebiten.Image),
@@ -94,52 +94,78 @@ func (sr *SimpleRoom) buildRoom() {
 	}
 
 	// Create a larger room with multiple platforms and areas to explore
-	// The room is 80x40 tiles (2560x1280 pixels)
+	// The room is 120x60 tiles (1920x960 pixels at 1x scale)
 	
 	// Fill the bottom with ground tiles
-	for y := 30; y < 40; y++ {
-		for x := 0; x < 80; x++ {
+	for y := 45; y < 60; y++ {
+		for x := 0; x < 120; x++ {
 			sr.tileMap.SetTile(x, y, TILE_DIRT)
 		}
 	}
 	
 	// Create the main ground level with proper edges
-	groundY := 29
+	groundY := 44
 	// Left edge
 	sr.tileMap.SetTile(0, groundY, TILE_TOP_LEFT_CORNER)
 	// Top surface
-	for x := 1; x < 79; x++ {
+	for x := 1; x < 119; x++ {
 		sr.tileMap.SetTile(x, groundY, TILE_CEILING_1)
 	}
 	// Right edge
-	sr.tileMap.SetTile(79, groundY, TILE_TOP_RIGHT_CORNER)
+	sr.tileMap.SetTile(119, groundY, TILE_TOP_RIGHT_CORNER)
 	
-	// Add some floating platforms at various heights
-	// Platform 1 (left side, mid height)
-	sr.createPlatform(10, 20, 8)
+	// Add more platforms spread across the larger room
+	// Lower platforms
+	sr.createPlatform(10, 35, 10)
+	sr.createPlatform(30, 38, 8)
+	sr.createPlatform(50, 36, 12)
+	sr.createPlatform(75, 39, 10)
+	sr.createPlatform(95, 37, 15)
 	
-	// Platform 2 (center, higher)
-	sr.createPlatform(35, 15, 10)
+	// Mid-level platforms
+	sr.createPlatform(15, 28, 8)
+	sr.createPlatform(40, 25, 10)
+	sr.createPlatform(65, 27, 12)
+	sr.createPlatform(85, 26, 10)
+	sr.createPlatform(105, 30, 10)
 	
-	// Platform 3 (right side, mid height)
-	sr.createPlatform(60, 22, 8)
+	// High platforms
+	sr.createPlatform(20, 18, 10)
+	sr.createPlatform(45, 15, 12)
+	sr.createPlatform(70, 17, 8)
+	sr.createPlatform(90, 14, 14)
 	
-	// Platform 4 (far left, low)
-	sr.createPlatform(5, 25, 6)
+	// Very high platforms for skilled players
+	sr.createPlatform(35, 8, 8)
+	sr.createPlatform(60, 7, 10)
+	sr.createPlatform(80, 9, 8)
 	
-	// Platform 5 (center-right, high)
-	sr.createPlatform(50, 10, 12)
+	// Add walls and structures throughout the room
+	// Left area structures
+	sr.createWall(25, 35, 44)
+	sr.createWall(26, 35, 44)
 	
-	// Add some walls and structures
-	// Left wall structure
-	sr.createWall(15, 20, 29)
+	// Center-left structures
+	sr.createWall(45, 30, 44)
+	sr.createWall(46, 30, 44)
 	
-	// Right wall structure
-	sr.createWall(65, 15, 29)
+	// Center structures
+	sr.createWall(60, 25, 44)
+	sr.createWall(61, 25, 44)
 	
-	// Center pillar
-	sr.createWall(40, 25, 29)
-	sr.createWall(41, 25, 29)
+	// Center-right structures
+	sr.createWall(80, 32, 44)
+	sr.createWall(81, 32, 44)
+	
+	// Right area structures
+	sr.createWall(100, 28, 44)
+	sr.createWall(101, 28, 44)
+	
+	// Add some floating single tiles for decoration
+	sr.tileMap.SetTile(55, 20, TILE_FLOATING)
+	sr.tileMap.SetTile(35, 22, TILE_FLOATING)
+	sr.tileMap.SetTile(75, 21, TILE_FLOATING)
+	sr.tileMap.SetTile(95, 19, TILE_FLOATING)
 }
 
 // createPlatform creates a floating platform at the specified position
@@ -203,9 +229,16 @@ func (sr *SimpleRoom) initializeLayout() {
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+		{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 		// Ground level starts here (around row 23)
 		{-1, -1, -1, -1, -1, 1, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 5, -1, -1, -1, -1},
 		{20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21, 20, 21},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},

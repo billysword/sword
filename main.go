@@ -13,8 +13,8 @@ import (
 
 const (
 	// Settings
-	screenWidth  = 640  // Standard metroidvania width
-	screenHeight = 360  // Standard metroidvania height (16:9 aspect ratio)
+	screenWidth  = 800  // Increased width to show more of the world
+	screenHeight = 450  // Increased height while maintaining 16:9 aspect ratio
 )
 
 var (

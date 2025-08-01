@@ -27,11 +27,11 @@ func NewPlayer(x, y int) *Player {
 
 // HandleInput processes player input
 func (p *Player) HandleInput() {
-	// Horizontal movement
+	// Horizontal movement - adjusted for new scale
 	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		p.vx = -4 * PHYSICS_UNIT
+		p.vx = -3 * PHYSICS_UNIT
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		p.vx = 4 * PHYSICS_UNIT
+		p.vx = 3 * PHYSICS_UNIT
 	}
 
 	// Jumping
@@ -43,7 +43,7 @@ func (p *Player) HandleInput() {
 // tryJump makes the player jump if possible
 func (p *Player) tryJump() {
 	// Allow jumping even if not on ground (mid-air jumping as per original design)
-	p.vy = -10 * PHYSICS_UNIT
+	p.vy = -8 * PHYSICS_UNIT
 }
 
 // Update handles player physics and movement
@@ -62,20 +62,20 @@ func (p *Player) Update() {
 
 	// Apply friction to horizontal movement
 	if p.vx > 0 {
-		p.vx -= 4
+		p.vx -= 2
 		if p.vx < 0 {
 			p.vx = 0
 		}
 	} else if p.vx < 0 {
-		p.vx += 4
+		p.vx += 2
 		if p.vx > 0 {
 			p.vx = 0
 		}
 	}
 
 	// Apply gravity
-	if p.vy < 20*PHYSICS_UNIT {
-		p.vy += 8
+	if p.vy < 15*PHYSICS_UNIT {
+		p.vy += 4
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	groundY = 380
+	groundY = 380  // This stays the same in tile coordinates
 )
 
 // InGameState represents the actual gameplay state
