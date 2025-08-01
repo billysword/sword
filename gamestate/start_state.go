@@ -8,14 +8,34 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-// StartState represents the game start/menu screen
+/*
+StartState represents the game start/menu screen.
+Provides the main menu interface where players can choose to start the game
+or quit. Handles menu navigation and transitions to the in-game state.
+
+Features:
+  - Menu navigation with keyboard controls
+  - Visual feedback for selected options
+  - Control instructions display
+  - Smooth transition to gameplay
+*/
 type StartState struct {
-	stateManager   *StateManager
-	selectedOption int // 0 = Continue, 1 = Quit
-	totalOptions   int
+	stateManager   *StateManager  // Reference to state manager for transitions
+	selectedOption int            // Currently selected menu option (0-based)
+	totalOptions   int            // Total number of menu options available
 }
 
-// NewStartState creates a new start state
+/*
+NewStartState creates a new start state.
+Initializes the start state with default menu selection and sets up
+the available menu options. The state manager reference is required
+for transitioning to other game states.
+
+Parameters:
+  - sm: StateManager instance for handling state transitions
+
+Returns a pointer to the new StartState instance.
+*/
 func NewStartState(sm *StateManager) *StartState {
 	return &StartState{
 		stateManager:   sm,
@@ -24,7 +44,17 @@ func NewStartState(sm *StateManager) *StartState {
 	}
 }
 
-// Update handles input and logic for the start screen
+/*
+Update handles input and logic for the start screen.
+Processes menu navigation input (up/down arrows, WASD) and selection
+input (Enter, Space). Also handles the ESC key as a quick-start option.
+
+Menu options:
+  - 0: Continue (start game)
+  - 1: Quit (exit application)
+
+Returns ebiten.Termination if quit is selected, nil otherwise.
+*/
 func (s *StartState) Update() error {
 	// Handle menu navigation
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) || inpututil.IsKeyJustPressed(ebiten.KeyW) {
@@ -52,7 +82,15 @@ func (s *StartState) Update() error {
 	return nil
 }
 
-// Draw renders the start screen
+/*
+Draw renders the start screen.
+Displays the game title, menu options with selection indicators,
+and control instructions. Uses a dark blue background and positions
+text elements for good readability.
+
+Parameters:
+  - screen: The target screen/image to render to
+*/
 func (s *StartState) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0x00, 0x11, 0x22, 0xff})
 
@@ -79,12 +117,20 @@ func (s *StartState) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, instructions, 50, 300)
 }
 
-// OnEnter is called when entering this state
+/*
+OnEnter is called when entering this state.
+Performs any necessary initialization when the start state becomes active.
+Currently used for potential resource setup or state reset.
+*/
 func (s *StartState) OnEnter() {
 	// Initialize start state resources if needed
 }
 
-// OnExit is called when leaving this state
+/*
+OnExit is called when leaving this state.
+Handles cleanup when transitioning away from the start state.
+Currently used for potential resource cleanup or final preparations.
+*/
 func (s *StartState) OnExit() {
 	// Cleanup start state resources if needed
 }

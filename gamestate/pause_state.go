@@ -8,13 +8,34 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-// PauseState represents the pause menu overlay
+/*
+PauseState represents the pause menu overlay.
+Provides a pause menu that overlays on top of the frozen game world.
+Allows players to resume gameplay or return to the main menu while
+preserving the current game state.
+
+Features:
+  - Semi-transparent overlay showing frozen game state
+  - Simple menu with resume and quit options
+  - Preserves background state for seamless resume
+  - Keyboard controls for navigation
+*/
 type PauseState struct {
-	stateManager    *StateManager
-	backgroundState State // Store the previous state to draw behind pause menu
+	stateManager    *StateManager  // Reference to state manager for transitions
+	backgroundState State          // Store the previous state to draw behind pause menu
 }
 
-// NewPauseState creates a new pause state
+/*
+NewPauseState creates a new pause state.
+Initializes the pause state with a reference to the background state
+that should continue to be displayed (but frozen) behind the pause overlay.
+
+Parameters:
+  - sm: StateManager instance for handling state transitions
+  - background: The game state to display frozen behind the pause menu
+
+Returns a pointer to the new PauseState instance.
+*/
 func NewPauseState(sm *StateManager, background State) *PauseState {
 	return &PauseState{
 		stateManager:    sm,
@@ -22,7 +43,18 @@ func NewPauseState(sm *StateManager, background State) *PauseState {
 	}
 }
 
-// Update handles input for the pause menu
+/*
+Update handles input for the pause menu.
+Processes pause menu controls for resuming gameplay or returning
+to the main menu. Does not update the background state, keeping
+the game world frozen.
+
+Input handling:
+  - P/ESC: Resume game (return to background state)
+  - Q: Quit to main menu
+
+Returns any error from state transitions.
+*/
 func (p *PauseState) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) || inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		// Resume game
@@ -35,7 +67,15 @@ func (p *PauseState) Update() error {
 	return nil
 }
 
-// Draw renders the pause overlay
+/*
+Draw renders the pause overlay.
+Draws the frozen background state first, then applies a semi-transparent
+overlay and renders the pause menu on top. This creates the effect of
+the game being frozen behind a darkened overlay.
+
+Parameters:
+  - screen: The target screen/image to render to
+*/
 func (p *PauseState) Draw(screen *ebiten.Image) {
 	// Draw the background state (frozen game)
 	if p.backgroundState != nil {
@@ -52,12 +92,20 @@ func (p *PauseState) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, msg, 400, 250)
 }
 
-// OnEnter is called when entering pause state
+/*
+OnEnter is called when entering pause state.
+Performs any necessary setup when the pause state becomes active.
+Currently used for potential pause-specific initialization.
+*/
 func (p *PauseState) OnEnter() {
 	// Pause state setup
 }
 
-// OnExit is called when leaving pause state
+/*
+OnExit is called when leaving pause state.
+Handles cleanup when transitioning away from the pause state.
+Currently used for potential pause-specific cleanup operations.
+*/
 func (p *PauseState) OnExit() {
 	// Pause state cleanup
 }
