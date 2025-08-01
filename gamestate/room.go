@@ -123,8 +123,8 @@ func (br *BaseRoom) Update(player *Player) error {
 func (br *BaseRoom) HandleCollisions(player *Player) {
 	// Default: basic ground collision using existing groundY
 	x, y := player.GetPosition()
-	if y > groundY*unit {
-		player.SetPosition(x, groundY*unit)
+	if y > groundY*PHYSICS_UNIT {
+		player.SetPosition(x, groundY*PHYSICS_UNIT)
 	}
 }
 
@@ -180,7 +180,12 @@ func (br *BaseRoom) DrawTiles(screen *ebiten.Image, spriteProvider func(int) *eb
 				sprite := spriteProvider(tileIndex)
 				if sprite != nil {
 					op := &ebiten.DrawImageOptions{}
-					op.GeoM.Translate(float64(x*unit), float64(y*unit))
+					// Scale tiles using global scale factor
+					op.GeoM.Scale(TILE_SCALE_FACTOR, TILE_SCALE_FACTOR)
+					renderX := float64(x * PHYSICS_UNIT)
+					renderY := float64(y * PHYSICS_UNIT)
+					op.GeoM.Translate(renderX, renderY)
+					
 					screen.DrawImage(sprite, op)
 				}
 			}

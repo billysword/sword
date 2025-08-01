@@ -1,6 +1,24 @@
 package gamestate
 
-import "github.com/hajimehoshi/ebiten/v2"
+import (
+	"image/color"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
+)
+
+// Global scale and size constants
+const (
+	// Tile system constants
+	TILE_SIZE           = 16    // Base size of tiles in pixels (from tilemap)
+	TILE_SCALE_FACTOR   = 2.0   // Scale factor for tile rendering (16x16 -> 32x32)
+	
+	// Character scale constants
+	CHAR_SCALE_FACTOR   = 0.5   // Scale factor for character sprites
+	
+	// Physics unit (should match tile render size after scaling)
+	PHYSICS_UNIT        = int(TILE_SIZE * TILE_SCALE_FACTOR) // 32 pixels
+)
 
 // Global sprite storage
 var (
@@ -10,6 +28,12 @@ var (
 	globalBackgroundImage *ebiten.Image
 	globalTileSprite      *ebiten.Image
 	globalTilesSprite     *ebiten.Image
+)
+
+// Global debug rendering settings
+var (
+	showBackground = true
+	showGrid      = false
 )
 
 // SetGlobalSprites sets the global sprite references for use by all states
@@ -24,6 +48,46 @@ func SetGlobalSprites(left, right, idle, background *ebiten.Image) {
 func SetGlobalTileSprites(tile, tiles *ebiten.Image) {
 	globalTileSprite = tile
 	globalTilesSprite = tiles
+}
+
+// ToggleBackground toggles the background visibility
+func ToggleBackground() {
+	showBackground = !showBackground
+}
+
+// ToggleGrid toggles the grid visibility
+func ToggleGrid() {
+	showGrid = !showGrid
+}
+
+// GetBackgroundVisible returns whether background is visible
+func GetBackgroundVisible() bool {
+	return showBackground
+}
+
+// GetGridVisible returns whether grid is visible
+func GetGridVisible() bool {
+	return showGrid
+}
+
+// DrawGrid renders a faint grid overlay for debugging tile positions
+func DrawGrid(screen *ebiten.Image) {
+	if !showGrid {
+		return
+	}
+
+	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
+	gridColor := color.RGBA{100, 100, 100, 80} // Faint gray
+	
+	// Draw vertical lines
+	for x := 0; x < screenWidth; x += PHYSICS_UNIT {
+		vector.StrokeLine(screen, float32(x), 0, float32(x), float32(screenHeight), 1, gridColor, false)
+	}
+	
+	// Draw horizontal lines
+	for y := 0; y < screenHeight; y += PHYSICS_UNIT {
+		vector.StrokeLine(screen, 0, float32(y), float32(screenWidth), float32(y), 1, gridColor, false)
+	}
 }
 
 // State represents a game state that can handle input, update logic, and rendering

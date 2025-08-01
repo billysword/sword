@@ -1,6 +1,8 @@
 package gamestate
 
 import (
+	"image"
+
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -45,8 +47,8 @@ func NewSimpleRoom(zoneID string) *SimpleRoom {
 	// Create a room that fits the screen (960x540 with 16px tiles = 60x33 tiles)
 	room := &SimpleRoom{
 		BaseRoom: NewBaseRoom(zoneID, 60, 34),
-		tileSize: 16,
-		tilesPerRow: 24, // Assuming 8 tiles per row in forest-tiles.png
+		tileSize: TILE_SIZE,
+		tilesPerRow: 25, // 400px width ÷ TILE_SIZE per tile = 25 tiles per row
 		forestTiles: make(map[int]*ebiten.Image),
 	}
 
@@ -65,18 +67,15 @@ func (sr *SimpleRoom) extractForestTiles() {
 		return
 	}
 
-	// Extract individual tiles from the forest tilemap
-	// Assuming 24 tiles total (0-23) arranged in rows of 8
-	for i := 0; i <= 23; i++ {
+	// Extract individual tiles from the forest tilemap  
+	// 25 tiles total (0-24) arranged in a single horizontal row
+	for i := 0; i <= 24; i++ {
 		x := (i % sr.tilesPerRow) * sr.tileSize
 		y := (i / sr.tilesPerRow) * sr.tileSize
 		
-		tileImg := ebiten.NewImage(sr.tileSize, sr.tileSize)
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(-x), float64(-y))
-		tileImg.DrawImage(globalTileSprite, op)
-		
-		sr.forestTiles[i] = tileImg
+		// Use SubImage to extract the tile from the tilemap
+		subImg := globalTileSprite.SubImage(image.Rect(x, y, x+sr.tileSize, y+sr.tileSize)).(*ebiten.Image)
+		sr.forestTiles[i] = subImg
 	}
 }
 
@@ -173,8 +172,8 @@ func (sr *SimpleRoom) HandleCollisions(player *Player) {
 	playerX, playerY := player.GetPosition()
 	
 	// Convert player position to tile coordinates
-	charTileX := playerX / (unit * unit)
-	charTileY := playerY / (unit * unit)
+	charTileX := playerX / PHYSICS_UNIT
+	charTileY := playerY / PHYSICS_UNIT
 
 	// Check collision with ground tiles
 	if charTileY >= 0 && charTileY < sr.tileMap.Height {
@@ -183,8 +182,8 @@ func (sr *SimpleRoom) HandleCollisions(player *Player) {
 				tileIndex := sr.tileMap.GetTileIndex(charTileX, checkY)
 				if IsSolidTile(tileIndex) {
 					// Found solid ground, stop falling
-					if playerY > checkY*unit*unit {
-						player.SetPosition(playerX, checkY*unit*unit)
+					if playerY > checkY*PHYSICS_UNIT {
+						player.SetPosition(playerX, checkY*PHYSICS_UNIT)
 						vx, _ := player.GetVelocity()
 						player.SetVelocity(vx, 0)
 					}
@@ -200,8 +199,8 @@ func (sr *SimpleRoom) HandleCollisions(player *Player) {
 
 // Draw renders the room and its tiles
 func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
-	// Draw background first
-	if globalBackgroundImage != nil {
+	// Draw background first (if enabled)
+	if GetBackgroundVisible() && globalBackgroundImage != nil {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(0.5, 0.5)
 		screen.DrawImage(globalBackgroundImage, op)
@@ -209,4 +208,7 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 
 	// Draw tiles using sprite provider function
 	sr.DrawTiles(screen, sr.getTileSprite)
+	
+	// Draw debug grid overlay (if enabled)
+	DrawGrid(screen)
 }

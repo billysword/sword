@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	unit    = 16
 	groundY = 380
 )
 
@@ -24,7 +23,7 @@ type InGameState struct {
 func NewInGameState(sm *StateManager) *InGameState {
 	return &InGameState{
 		stateManager: sm,
-		player:       NewPlayer(50*unit, groundY*unit),
+		player:       NewPlayer(50*PHYSICS_UNIT, groundY*PHYSICS_UNIT),
 		currentRoom:  NewSimpleRoom("main"),
 	}
 }
@@ -35,6 +34,14 @@ func (ig *InGameState) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) || inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		ig.stateManager.ChangeState(NewPauseState(ig.stateManager, ig))
 		return nil
+	}
+
+	// Debug toggle keys
+	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
+		ToggleBackground()
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
+		ToggleGrid()
 	}
 
 	ig.player.HandleInput()
@@ -76,7 +83,18 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	if ig.currentRoom != nil {
 		roomInfo = ig.currentRoom.GetZoneID()
 	}
-	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause", ebiten.ActualTPS(), roomInfo)
+	
+	backgroundStatus := "ON"
+	if !GetBackgroundVisible() {
+		backgroundStatus = "OFF"
+	}
+	
+	gridStatus := "OFF"
+	if GetGridVisible() {
+		gridStatus = "ON" 
+	}
+	
+	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s", ebiten.ActualTPS(), roomInfo, backgroundStatus, gridStatus)
 	ebitenutil.DebugPrint(screen, msg)
 }
 
@@ -84,7 +102,7 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
 	if ig.player == nil {
-		ig.player = NewPlayer(50*unit, groundY*unit)
+		ig.player = NewPlayer(50*PHYSICS_UNIT, groundY*PHYSICS_UNIT)
 	}
 
 	// Initialize room if needed

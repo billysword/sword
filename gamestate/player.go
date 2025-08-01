@@ -29,9 +29,9 @@ func NewPlayer(x, y int) *Player {
 func (p *Player) HandleInput() {
 	// Horizontal movement
 	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		p.vx = -4 * unit
+		p.vx = -4 * PHYSICS_UNIT
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		p.vx = 4 * unit
+		p.vx = 4 * PHYSICS_UNIT
 	}
 
 	// Jumping
@@ -43,7 +43,7 @@ func (p *Player) HandleInput() {
 // tryJump makes the player jump if possible
 func (p *Player) tryJump() {
 	// Allow jumping even if not on ground (mid-air jumping as per original design)
-	p.vy = -10 * unit
+	p.vy = -10 * PHYSICS_UNIT
 }
 
 // Update handles player physics and movement
@@ -53,8 +53,8 @@ func (p *Player) Update() {
 	p.y += p.vy
 
 	// Ground collision
-	if p.y > groundY*unit {
-		p.y = groundY * unit
+	if p.y > groundY*PHYSICS_UNIT {
+		p.y = groundY * PHYSICS_UNIT
 		p.onGround = true
 	} else {
 		p.onGround = false
@@ -74,7 +74,7 @@ func (p *Player) Update() {
 	}
 
 	// Apply gravity
-	if p.vy < 20*unit {
+	if p.vy < 20*PHYSICS_UNIT {
 		p.vy += 8
 	}
 }
@@ -92,8 +92,8 @@ func (p *Player) Draw(screen *ebiten.Image) {
 
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(0.5, 0.5)
-	op.GeoM.Translate(float64(p.x)/unit, float64(p.y)/unit)
+	op.GeoM.Scale(CHAR_SCALE_FACTOR, CHAR_SCALE_FACTOR)
+	op.GeoM.Translate(float64(p.x)/float64(PHYSICS_UNIT), float64(p.y)/float64(PHYSICS_UNIT))
 	
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
