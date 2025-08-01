@@ -122,10 +122,13 @@ func (br *BaseRoom) Update(player *Player) error {
 
 // HandleCollisions provides default collision handling
 func (br *BaseRoom) HandleCollisions(player *Player) {
-	// Default: basic ground collision using existing groundY
+	// Default: basic ground collision using config ground level
+	physicsUnit := GetPhysicsUnit()
+	groundY := GameConfig.GroundLevel * physicsUnit
+	
 	x, y := player.GetPosition()
-	if y > groundY*PHYSICS_UNIT {
-		player.SetPosition(x, groundY*PHYSICS_UNIT)
+	if y > groundY {
+		player.SetPosition(x, groundY)
 	}
 }
 
@@ -185,6 +188,8 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 		return
 	}
 
+	physicsUnit := GetPhysicsUnit()
+	
 	for y := 0; y < br.tileMap.Height; y++ {
 		for x := 0; x < br.tileMap.Width; x++ {
 			tileIndex := br.tileMap.Tiles[y][x]
@@ -193,9 +198,9 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 				if sprite != nil {
 					op := &ebiten.DrawImageOptions{}
 					// Scale tiles using global scale factor
-					op.GeoM.Scale(TILE_SCALE_FACTOR, TILE_SCALE_FACTOR)
-					renderX := float64(x * PHYSICS_UNIT) + cameraOffsetX
-					renderY := float64(y * PHYSICS_UNIT) + cameraOffsetY
+					op.GeoM.Scale(GameConfig.TileScaleFactor, GameConfig.TileScaleFactor)
+					renderX := float64(x * physicsUnit) + cameraOffsetX
+					renderY := float64(y * physicsUnit) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
 					
 					screen.DrawImage(sprite, op)

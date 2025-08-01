@@ -8,10 +8,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
-const (
-	groundY = 380  // This stays the same in tile coordinates
-)
-
 // InGameState represents the actual gameplay state
 type InGameState struct {
 	stateManager *StateManager
@@ -25,9 +21,12 @@ func NewInGameState(sm *StateManager) *InGameState {
 	// Get the actual window size for camera viewport
 	windowWidth, windowHeight := ebiten.WindowSize()
 	
+	physicsUnit := GetPhysicsUnit()
+	groundY := GameConfig.GroundLevel * physicsUnit
+	
 	return &InGameState{
 		stateManager: sm,
-		player:       NewPlayer(50*PHYSICS_UNIT, groundY*PHYSICS_UNIT),
+		player:       NewPlayer(50*physicsUnit, groundY),
 		currentRoom:  NewSimpleRoom("main"),
 		camera:       NewCamera(windowWidth, windowHeight),
 	}
@@ -128,7 +127,9 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
 	if ig.player == nil {
-		ig.player = NewPlayer(50*PHYSICS_UNIT, groundY*PHYSICS_UNIT)
+		physicsUnit := GetPhysicsUnit()
+		groundY := GameConfig.GroundLevel * physicsUnit
+		ig.player = NewPlayer(50*physicsUnit, groundY)
 	}
 
 	// Initialize room if needed
@@ -141,18 +142,16 @@ func (ig *InGameState) OnEnter() {
 		tileMap := ig.currentRoom.GetTileMap()
 		if tileMap != nil {
 			// Convert tile dimensions to pixel dimensions
-			worldWidth := tileMap.Width * PHYSICS_UNIT
-			worldHeight := tileMap.Height * PHYSICS_UNIT
+			physicsUnit := GetPhysicsUnit()
+			worldWidth := tileMap.Width * physicsUnit
+			worldHeight := tileMap.Height * physicsUnit
 			ig.camera.SetWorldBounds(worldWidth, worldHeight)
 			
 			// Center camera on player initially
 			px, py := ig.player.GetPosition()
-			ig.camera.CenterOn(px/PHYSICS_UNIT, py/PHYSICS_UNIT)
+			ig.camera.CenterOn(px/physicsUnit, py/physicsUnit)
 		}
 	}
-
-	// Let the room know we're entering
-	ig.currentRoom.OnEnter(ig.player)
 }
 
 // OnExit is called when leaving the game state

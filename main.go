@@ -11,12 +11,6 @@ import (
 	"sword/resources/images/platformer"
 )
 
-const (
-	// Settings
-	screenWidth  = 800  // Increased width to show more of the world
-	screenHeight = 450  // Increased height while maintaining 16:9 aspect ratio
-)
-
 var (
 	leftSprite      *ebiten.Image
 	rightSprite     *ebiten.Image
@@ -89,8 +83,11 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowTitle("Platformer (Ebitengine Demo)")
+	// Get config for window settings
+	config := gamestate.GameConfig
+	
+	ebiten.SetWindowSize(config.WindowWidth, config.WindowHeight)
+	ebiten.SetWindowTitle(config.WindowTitle)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	
 	if err := ebiten.RunGame(&Game{}); err != nil {

@@ -7,17 +7,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-// Global scale and size constants
+// Legacy constants for backward compatibility - use GameConfig instead
 const (
-	// Tile system constants
-	TILE_SIZE           = 16    // Base size of tiles in pixels (from tilemap)
-	TILE_SCALE_FACTOR   = 1.0   // Scale factor for tile rendering (16x16 -> 16x16) - zoomed out
-	
-	// Character scale constants
-	CHAR_SCALE_FACTOR   = 0.4   // Scale factor for character sprites (adjusted for new zoom)
-	
-	// Physics unit (should match tile render size after scaling)
-	PHYSICS_UNIT        = int(TILE_SIZE * TILE_SCALE_FACTOR) // 16 pixels
+	TILE_SIZE         = 16   // Deprecated: use GameConfig.TileSize
+	TILE_SCALE_FACTOR = 1.0  // Deprecated: use GameConfig.TileScaleFactor
+	CHAR_SCALE_FACTOR = 0.4  // Deprecated: use GameConfig.CharScaleFactor
+	PHYSICS_UNIT      = 16   // Deprecated: use GetPhysicsUnit()
 )
 
 // Global sprite storage
@@ -50,19 +45,19 @@ func SetGlobalTileSprites(tile, tiles *ebiten.Image) {
 	globalTilesSprite = tiles
 }
 
-// ToggleBackground toggles the background visibility
+// ToggleBackground toggles background rendering on/off
 func ToggleBackground() {
 	showBackground = !showBackground
-}
-
-// ToggleGrid toggles the grid visibility
-func ToggleGrid() {
-	showGrid = !showGrid
 }
 
 // GetBackgroundVisible returns whether background is visible
 func GetBackgroundVisible() bool {
 	return showBackground
+}
+
+// ToggleGrid toggles grid overlay on/off
+func ToggleGrid() {
+	showGrid = !showGrid
 }
 
 // GetGridVisible returns whether grid is visible
@@ -77,15 +72,22 @@ func DrawGrid(screen *ebiten.Image) {
 	}
 
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
-	gridColor := color.RGBA{100, 100, 100, 80} // Faint gray
+	gridColor := color.RGBA{
+		GameConfig.GridColor[0], 
+		GameConfig.GridColor[1], 
+		GameConfig.GridColor[2], 
+		GameConfig.GridColor[3],
+	}
+	
+	physicsUnit := GetPhysicsUnit()
 	
 	// Draw vertical lines
-	for x := 0; x < screenWidth; x += PHYSICS_UNIT {
+	for x := 0; x < screenWidth; x += physicsUnit {
 		vector.StrokeLine(screen, float32(x), 0, float32(x), float32(screenHeight), 1, gridColor, false)
 	}
 	
 	// Draw horizontal lines
-	for y := 0; y < screenHeight; y += PHYSICS_UNIT {
+	for y := 0; y < screenHeight; y += physicsUnit {
 		vector.StrokeLine(screen, 0, float32(y), float32(screenWidth), float32(y), 1, gridColor, false)
 	}
 }
@@ -97,21 +99,28 @@ func DrawGridWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float
 	}
 
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
-	gridColor := color.RGBA{100, 100, 100, 80} // Faint gray
+	gridColor := color.RGBA{
+		GameConfig.GridColor[0], 
+		GameConfig.GridColor[1], 
+		GameConfig.GridColor[2], 
+		GameConfig.GridColor[3],
+	}
+	
+	physicsUnit := GetPhysicsUnit()
 	
 	// Calculate grid offset to ensure grid lines align with tiles
-	gridOffsetX := int(cameraOffsetX) % PHYSICS_UNIT
-	gridOffsetY := int(cameraOffsetY) % PHYSICS_UNIT
+	gridOffsetX := int(cameraOffsetX) % physicsUnit
+	gridOffsetY := int(cameraOffsetY) % physicsUnit
 	
 	// Draw vertical lines
-	for x := gridOffsetX; x < screenWidth+PHYSICS_UNIT; x += PHYSICS_UNIT {
+	for x := gridOffsetX; x < screenWidth+physicsUnit; x += physicsUnit {
 		if x >= 0 {
 			vector.StrokeLine(screen, float32(x), 0, float32(x), float32(screenHeight), 1, gridColor, false)
 		}
 	}
 	
 	// Draw horizontal lines
-	for y := gridOffsetY; y < screenHeight+PHYSICS_UNIT; y += PHYSICS_UNIT {
+	for y := gridOffsetY; y < screenHeight+physicsUnit; y += physicsUnit {
 		if y >= 0 {
 			vector.StrokeLine(screen, 0, float32(y), float32(screenWidth), float32(y), 1, gridColor, false)
 		}
@@ -126,7 +135,7 @@ type State interface {
 	OnExit()
 }
 
-// StateManager manages the current game state and transitions
+// StateManager manages game states and transitions
 type StateManager struct {
 	currentState State
 	nextState    State
@@ -137,12 +146,12 @@ func NewStateManager() *StateManager {
 	return &StateManager{}
 }
 
-// ChangeState queues a state change for the next update cycle
+// ChangeState transitions to a new state
 func (sm *StateManager) ChangeState(newState State) {
 	sm.nextState = newState
 }
 
-// Update handles state transitions and updates the current state
+// Update processes state transitions and updates the current state
 func (sm *StateManager) Update() error {
 	// Handle state transition
 	if sm.nextState != nil {

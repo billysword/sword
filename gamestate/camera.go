@@ -29,13 +29,13 @@ func NewCamera(viewportWidth, viewportHeight int) *Camera {
 	return &Camera{
 		width:        viewportWidth,
 		height:       viewportHeight,
-		smoothing:    0.1, // Smooth camera movement
-		deadZoneX:    viewportWidth / 4,  // 25% of screen width
-		deadZoneY:    viewportHeight / 6, // ~16% of screen height
-		marginLeft:   32,  // Border margin for HUD elements
-		marginRight:  32,
-		marginTop:    32,
-		marginBottom: 48,  // Larger bottom margin for potential HUD
+		smoothing:    GameConfig.CameraSmoothing,
+		deadZoneX:    int(float64(viewportWidth) * GameConfig.CameraDeadZoneX),
+		deadZoneY:    int(float64(viewportHeight) * GameConfig.CameraDeadZoneY),
+		marginLeft:   GameConfig.CameraMarginLeft,
+		marginRight:  GameConfig.CameraMarginRight,
+		marginTop:    GameConfig.CameraMarginTop,
+		marginBottom: GameConfig.CameraMarginBottom,
 	}
 }
 
