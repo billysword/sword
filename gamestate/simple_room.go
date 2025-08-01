@@ -169,17 +169,20 @@ func (sr *SimpleRoom) createPlatform(startX, endX, y int) {
 }
 
 // Update handles room-specific logic
-func (sr *SimpleRoom) Update(character *Character) error {
+func (sr *SimpleRoom) Update(player *Player) error {
 	// Add any room-specific update logic here
 	// For now, just use the base implementation
-	return sr.BaseRoom.Update(character)
+	return sr.BaseRoom.Update(player)
 }
 
 // HandleCollisions provides collision detection for this room
-func (sr *SimpleRoom) HandleCollisions(character *Character) {
-	// Convert character position to tile coordinates
-	charTileX := character.x / (unit * unit)
-	charTileY := character.y / (unit * unit)
+func (sr *SimpleRoom) HandleCollisions(player *Player) {
+	// Get player position
+	playerX, playerY := player.GetPosition()
+	
+	// Convert player position to tile coordinates
+	charTileX := playerX / (unit * unit)
+	charTileY := playerY / (unit * unit)
 
 	// Check collision with ground tiles
 	if charTileY >= 0 && charTileY < sr.tileMap.Height {
@@ -188,9 +191,10 @@ func (sr *SimpleRoom) HandleCollisions(character *Character) {
 				tile := sr.tileMap.GetTile(charTileX, checkY)
 				if tile != nil && (tile.Type == TileGround || tile.Type == TilePlatform) {
 					// Found ground, stop falling
-					if character.y > checkY*unit*unit {
-						character.y = checkY * unit * unit
-						character.vy = 0
+					if playerY > checkY*unit*unit {
+						player.SetPosition(playerX, checkY*unit*unit)
+						vx, _ := player.GetVelocity()
+						player.SetVelocity(vx, 0)
 					}
 					return
 				}
@@ -199,7 +203,7 @@ func (sr *SimpleRoom) HandleCollisions(character *Character) {
 	}
 
 	// Fallback to original ground collision
-	sr.BaseRoom.HandleCollisions(character)
+	sr.BaseRoom.HandleCollisions(player)
 }
 
 // Draw renders the room and its tiles

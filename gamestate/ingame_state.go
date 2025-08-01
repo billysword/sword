@@ -13,53 +13,10 @@ const (
 	groundY = 380
 )
 
-// Character represents the player character
-type Character struct {
-	x  int
-	y  int
-	vx int
-	vy int
-}
-
-func (c *Character) tryJump() {
-	c.vy = -10 * unit
-}
-
-func (c *Character) update() {
-	c.x += c.vx
-	c.y += c.vy
-	if c.y > groundY*unit {
-		c.y = groundY * unit
-	}
-	if c.vx > 0 {
-		c.vx -= 4
-	} else if c.vx < 0 {
-		c.vx += 4
-	}
-	if c.vy < 20*unit {
-		c.vy += 8
-	}
-}
-
-func (c *Character) draw(screen *ebiten.Image) {
-	s := globalIdleSprite
-	switch {
-	case c.vx > 0:
-		s = globalRightSprite
-	case c.vx < 0:
-		s = globalLeftSprite
-	}
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(0.5, 0.5)
-	op.GeoM.Translate(float64(c.x)/unit, float64(c.y)/unit)
-	screen.DrawImage(s, op)
-}
-
 // InGameState represents the actual gameplay state
 type InGameState struct {
 	stateManager *StateManager
-	character    *Character
+	player       *Player
 	currentRoom  Room
 }
 
@@ -67,7 +24,7 @@ type InGameState struct {
 func NewInGameState(sm *StateManager) *InGameState {
 	return &InGameState{
 		stateManager: sm,
-		character:    &Character{x: 50 * unit, y: groundY * unit},
+		player:       NewPlayer(50*unit, groundY*unit),
 		currentRoom:  NewSimpleRoom("main"),
 	}
 }
@@ -80,30 +37,16 @@ func (ig *InGameState) Update() error {
 		return nil
 	}
 
-	// Character controls
-	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		ig.character.vx = -4 * unit
-	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		ig.character.vx = 4 * unit
-	}
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		ig.character.tryJump()
-	}
-	
-	// Room transition test - press R to switch rooms
-	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-		ig.switchRoom()
-	}
-
-	ig.character.update()
+	ig.player.HandleInput()
+	ig.player.Update()
 
 	// Let the current room handle its own logic
 	if ig.currentRoom != nil {
-		if err := ig.currentRoom.Update(ig.character); err != nil {
+		if err := ig.currentRoom.Update(ig.player); err != nil {
 			return err
 		}
 		// Let the room handle collisions
-		ig.currentRoom.HandleCollisions(ig.character)
+		ig.currentRoom.HandleCollisions(ig.player)
 	}
 
 	return nil
@@ -123,9 +66,9 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Draw character on top of room
-	if ig.character != nil {
-		ig.character.draw(screen)
+	// Draw player on top of room
+	if ig.player != nil {
+		ig.player.Draw(screen)
 	}
 
 	// Show debug info
@@ -139,9 +82,9 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 
 // OnEnter is called when entering the game state
 func (ig *InGameState) OnEnter() {
-	// Reset character position or load level data
-	if ig.character == nil {
-		ig.character = &Character{x: 50 * unit, y: groundY * unit}
+	// Reset player position or load level data
+	if ig.player == nil {
+		ig.player = NewPlayer(50*unit, groundY*unit)
 	}
 
 	// Initialize room if needed
@@ -150,42 +93,15 @@ func (ig *InGameState) OnEnter() {
 	}
 
 	// Let the room know we're entering
-	ig.currentRoom.OnEnter(ig.character)
+	ig.currentRoom.OnEnter(ig.player)
 }
 
 // OnExit is called when leaving the game state
 func (ig *InGameState) OnExit() {
 	// Let the room know we're leaving
 	if ig.currentRoom != nil {
-		ig.currentRoom.OnExit(ig.character)
+		ig.currentRoom.OnExit(ig.player)
 	}
 	// Save game state or cleanup resources
 }
 
-// switchRoom demonstrates room transitions
-func (ig *InGameState) switchRoom() {
-	if ig.currentRoom == nil {
-		return
-	}
-	
-	// Let the current room know we're leaving
-	ig.currentRoom.OnExit(ig.character)
-	
-	// Create a new room based on current room ID
-	currentZone := ig.currentRoom.GetZoneID()
-	switch currentZone {
-	case "main":
-		ig.currentRoom = NewSimpleRoom("alternate")
-		// Reset character position for new room
-		ig.character.x = 50 * unit
-		ig.character.y = groundY * unit
-	default:
-		ig.currentRoom = NewSimpleRoom("main")
-		// Reset character position for new room
-		ig.character.x = 50 * unit
-		ig.character.y = groundY * unit
-	}
-	
-	// Let the new room know we're entering
-	ig.currentRoom.OnEnter(ig.character)
-}

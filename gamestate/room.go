@@ -70,12 +70,12 @@ type Room interface {
 	GetZoneID() string
 
 	// Game logic that can be extracted from main loop
-	Update(character *Character) error
-	HandleCollisions(character *Character)
+	Update(player *Player) error
+	HandleCollisions(player *Player)
 
 	// Room-specific events
-	OnEnter(character *Character)
-	OnExit(character *Character)
+	OnEnter(player *Player)
+	OnExit(player *Player)
 
 	// Rendering
 	Draw(screen *ebiten.Image)
@@ -107,26 +107,27 @@ func (br *BaseRoom) GetZoneID() string {
 }
 
 // Update provides default room update logic
-func (br *BaseRoom) Update(character *Character) error {
+func (br *BaseRoom) Update(player *Player) error {
 	// Default: no special room logic
 	return nil
 }
 
 // HandleCollisions provides default collision handling
-func (br *BaseRoom) HandleCollisions(character *Character) {
+func (br *BaseRoom) HandleCollisions(player *Player) {
 	// Default: basic ground collision using existing groundY
-	if character.y > groundY*unit {
-		character.y = groundY * unit
+	x, y := player.GetPosition()
+	if y > groundY*unit {
+		player.SetPosition(x, groundY*unit)
 	}
 }
 
 // OnEnter is called when entering the room
-func (br *BaseRoom) OnEnter(character *Character) {
+func (br *BaseRoom) OnEnter(player *Player) {
 	// Default: no special entry logic
 }
 
 // OnExit is called when leaving the room
-func (br *BaseRoom) OnExit(character *Character) {
+func (br *BaseRoom) OnExit(player *Player) {
 	// Default: no special exit logic
 }
 
