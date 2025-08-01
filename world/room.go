@@ -374,3 +374,13 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 		}
 	}
 }
+
+/*
+LogRoomDebug logs the ASCII representation of this room on first render.
+This method can be called by any room implementation to enable debugging.
+It will only log each room once per session.
+*/
+func (br *BaseRoom) LogRoomDebug() {
+	debugger := GetRoomDebugger()
+	debugger.LogRoomFirstRender(br.zoneID, br.tileMap)
+}
