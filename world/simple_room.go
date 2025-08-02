@@ -163,7 +163,7 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	return engine.GetTileSprite()
 }
 
-// buildRoom sets up the forest tile layout based on the room's tilemap dimensions
+// buildRoom sets up the tile layout based on the room's tilemap dimensions
 func (sr *SimpleRoom) buildRoom() {
 	if engine.GetTileSprite() == nil {
 		return
@@ -173,25 +173,27 @@ func (sr *SimpleRoom) buildRoom() {
 	width := sr.tileMap.Width
 	height := sr.tileMap.Height
 	
-	// For very small rooms (<=10x10), create a simple enclosed space
+	// Last row is always ground
+	groundY := height - 1
+	for x := 0; x < width; x++ {
+		sr.tileMap.SetTile(x, groundY, TILE_DIRT)
+	}
+	
+	// Add walls on sides
+	for y := 0; y < height-1; y++ {  // Don't overwrite ground corners
+		// Left wall
+		sr.tileMap.SetTile(0, y, TILE_DIRT)
+		// Right wall
+		sr.tileMap.SetTile(width-1, y, TILE_DIRT)
+	}
+	
+	// Add ceiling
+	for x := 1; x < width-1; x++ {  // Don't overwrite wall corners
+		sr.tileMap.SetTile(x, 0, TILE_DIRT)
+	}
+	
+	// For small rooms, add a simple platform
 	if width <= 10 && height <= 10 {
-		// Create walls on all sides
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				// Top and bottom walls
-				if y == 0 || y == height-1 {
-					sr.tileMap.SetTile(x, y, TILE_DIRT)
-				} else if x == 0 || x == width-1 {
-					// Left and right walls
-					sr.tileMap.SetTile(x, y, TILE_DIRT)
-				} else if y == height-2 {
-					// Floor (one tile above bottom)
-					sr.tileMap.SetTile(x, y, TILE_DIRT)
-				}
-			}
-		}
-		
-		// Add a small platform in the middle if there's room
 		if width >= 7 && height >= 7 {
 			platformY := height / 2
 			platformStartX := width / 3
@@ -864,15 +866,17 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 
 // DrawWithCamera renders the room with camera offset
 func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Draw enhanced multi-layer parallax background/foreground
+	// Layer 2: Parallax background
 	if sr.parallaxRenderer != nil {
 		sr.parallaxRenderer.DrawParallaxLayers(screen, cameraOffsetX, cameraOffsetY)
 	}
 
-	// Draw tiles with camera offset
+	// Layer 3: Room tiles
 	sr.DrawTilesWithCamera(screen, sr.getTileSprite, cameraOffsetX, cameraOffsetY)
 	
-	// Draw debug grid overlay (if enabled) - grid moves with camera
+	// Layer 5: Foreground (could be implemented here if needed)
+	
+	// Debug grid overlay (if enabled) - grid moves with camera
 	if engine.GetGridVisible() {
 		engine.DrawGridWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}

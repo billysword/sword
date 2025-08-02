@@ -32,6 +32,7 @@ type InGameState struct {
 	currentRoom  world.Room           // Current room/level being played
 	camera       *engine.Camera       // Camera for world scrolling
 	parallaxConfigIndex int           // Index for cycling through parallax configurations
+	viewportRenderer *engine.ViewportRenderer // Handles viewport frame rendering
 }
 
 /*
@@ -60,7 +61,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	
 	// Calculate spawn position based on room size
 	playerSpawnX := (roomWidth / 2) * physicsUnit  // Center horizontally
-	playerSpawnY := (roomHeight - 3) * physicsUnit  // Above the floor
+	playerSpawnY := (roomHeight - 2) * physicsUnit  // One tile above ground (last row)
 	
 	// For larger rooms, use floor detection
 	if roomWidth > 10 || roomHeight > 10 {
@@ -78,6 +79,12 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		worldHeight := tileMap.Height * physicsUnit
 		camera.SetWorldBounds(worldWidth, worldHeight)
 	}
+	
+	// Create viewport renderer
+	viewportRenderer := engine.NewViewportRenderer(windowWidth, windowHeight)
+	if tileMap != nil {
+		viewportRenderer.SetWorldBounds(tileMap.Width * physicsUnit, tileMap.Height * physicsUnit)
+	}
 
 	return &InGameState{
 		stateManager: sm,
@@ -85,6 +92,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		enemies:      make([]entities.Enemy, 0), // Initialize empty enemies slice
 		currentRoom:  room,
 		camera:       camera,
+		viewportRenderer: viewportRenderer,
 	}
 }
 
@@ -176,45 +184,72 @@ func (ig *InGameState) Update() error {
 
 /*
 Draw renders the game world.
-Handles all rendering with proper camera transformation including
-background, room tiles, player character, and debug information.
-Uses camera offset to create scrolling world effect.
-
-Rendering order:
- 1. Room background and tiles (with camera offset)
- 2. Player character (with camera offset)
- 3. Debug grid overlay (if enabled)
- 4. UI and debug information (no camera offset)
+Renders all game layers in the correct order:
+1. Primary background
+2. Parallax background
+3. Room tiles
+4. Entities (enemies, player)
+5. Foreground
+6. Viewport frame (black borders)
+7. HUD
 
 Parameters:
   - screen: The target screen/image to render to
 */
 func (ig *InGameState) Draw(screen *ebiten.Image) {
-	// First, fill the entire screen with black for dead areas
-	screen.Fill(color.Black)
-	
-	// Apply camera transformation
+	// Get camera offset
 	cameraOffsetX, cameraOffsetY := float64(0), float64(0)
 	if ig.camera != nil {
 		cameraOffsetX, cameraOffsetY = ig.camera.GetOffset()
 	}
+	
+	// Update viewport renderer
+	if ig.viewportRenderer != nil {
+		ig.viewportRenderer.SetOffset(cameraOffsetX, cameraOffsetY)
+	}
 
-	// Let the current room draw itself with camera offset
+	// Layer 1: Primary background (fills entire screen)
+	backgroundImage := engine.GetBackgroundImage()
+	if backgroundImage != nil {
+		opts := &ebiten.DrawImageOptions{}
+		// Scale background to fill screen
+		bgWidth := float64(backgroundImage.Bounds().Dx())
+		bgHeight := float64(backgroundImage.Bounds().Dy())
+		screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
+		scaleX := float64(screenWidth) / bgWidth
+		scaleY := float64(screenHeight) / bgHeight
+		opts.GeoM.Scale(scaleX, scaleY)
+		screen.DrawImage(backgroundImage, opts)
+	}
+
+	// Layers 2-5: Let the room handle its own rendering layers
 	if ig.currentRoom != nil {
 		ig.currentRoom.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}
 
+	// Layer 4: Entities (part of room rendering, but we handle enemies and player here)
 	// Draw all enemies with camera offset
 	for _, enemy := range ig.enemies {
 		enemy.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}
 
-	// Draw player on top of room and enemies with camera offset
+	// Draw player on top of enemies with camera offset
 	if ig.player != nil {
 		ig.player.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}
 
-	// Show debug info (HUD elements don't move with camera)
+	// Layer 6: Viewport frame (black borders)
+	if ig.viewportRenderer != nil {
+		ig.viewportRenderer.DrawFrame(screen)
+	}
+
+	// Layer 7: HUD (no camera offset)
+	ig.drawHUD(screen)
+}
+
+// drawHUD renders the HUD elements
+func (ig *InGameState) drawHUD(screen *ebiten.Image) {
+	// Show debug info
 	roomInfo := "No Room"
 	if ig.currentRoom != nil {
 		roomInfo = ig.currentRoom.GetZoneID()
@@ -325,7 +360,7 @@ func (ig *InGameState) OnEnter() {
 		
 		// Calculate spawn position based on room size
 		playerSpawnX := (roomWidth / 2) * physicsUnit
-		playerSpawnY := (roomHeight - 3) * physicsUnit
+		playerSpawnY := (roomHeight - 2) * physicsUnit
 		
 		// For larger rooms, use floor detection
 		if roomWidth > 10 || roomHeight > 10 {
@@ -568,6 +603,13 @@ func (ig *InGameState) updateCameraViewport() {
 		// Create new camera with updated viewport
 		ig.camera = engine.NewCamera(currentWidth, currentHeight)
 		
+		// Update viewport renderer
+		if ig.viewportRenderer == nil {
+			ig.viewportRenderer = engine.NewViewportRenderer(currentWidth, currentHeight)
+		} else {
+			ig.viewportRenderer = engine.NewViewportRenderer(currentWidth, currentHeight)
+		}
+		
 		// Restore world bounds if we have a room
 		if ig.currentRoom != nil {
 			tileMap := ig.currentRoom.GetTileMap()
@@ -576,11 +618,12 @@ func (ig *InGameState) updateCameraViewport() {
 				worldWidth := tileMap.Width * physicsUnit
 				worldHeight := tileMap.Height * physicsUnit
 				ig.camera.SetWorldBounds(worldWidth, worldHeight)
+				ig.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
 				
 				// Restore camera position to follow player
 				if ig.player != nil {
 					px, py := ig.player.GetPosition()
-					ig.camera.Update(px/physicsUnit, py/physicsUnit)
+					ig.camera.Update(px, py)
 				}
 			}
 		}
