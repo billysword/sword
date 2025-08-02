@@ -163,8 +163,17 @@ func (l *Logger) LogCameraDebug(cameraX, cameraY, targetX, targetY float64, view
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
-		l.logger.Printf("[CAMERA_DEBUG] Pos:(%.2f,%.2f) Target:(%.2f,%.2f) Viewport:(%dx%d) World:(%dx%d)", 
-			cameraX, cameraY, targetX, targetY, viewportW, viewportH, worldW, worldH)
+		// Fix Bug #2: Add validation warnings
+		warning := ""
+		if viewportW <= 0 || viewportH <= 0 {
+			warning += " [WARNING: Invalid viewport size]"
+		}
+		if worldW <= 0 || worldH <= 0 {
+			warning += " [WARNING: Invalid world bounds]"
+		}
+		
+		l.logger.Printf("[CAMERA_DEBUG] Pos:(%.2f,%.2f) Target:(%.2f,%.2f) Viewport:(%dx%d) World:(%dx%d)%s", 
+			cameraX, cameraY, targetX, targetY, viewportW, viewportH, worldW, worldH, warning)
 	}
 }
 
@@ -173,8 +182,20 @@ func (l *Logger) LogViewportDebug(windowW, windowH int, tileScale, charScale flo
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
-		l.logger.Printf("[VIEWPORT_DEBUG] Window:(%dx%d) TileScale:%.2f CharScale:%.2f PhysicsUnit:%d", 
-			windowW, windowH, tileScale, charScale, physicsUnit)
+		// Fix Bug #2: Add validation warnings
+		warning := ""
+		if windowW <= 0 || windowH <= 0 {
+			warning += " [WARNING: Invalid window size]"
+		}
+		if tileScale <= 0 || charScale <= 0 {
+			warning += " [WARNING: Invalid scale factors]"
+		}
+		if physicsUnit <= 0 {
+			warning += " [WARNING: Invalid physics unit]"
+		}
+		
+		l.logger.Printf("[VIEWPORT_DEBUG] Window:(%dx%d) TileScale:%.2f CharScale:%.2f PhysicsUnit:%d%s", 
+			windowW, windowH, tileScale, charScale, physicsUnit, warning)
 	}
 }
 
@@ -183,8 +204,22 @@ func (l *Logger) LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, w
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
-		l.logger.Printf("[TILEMAP_DEBUG] Room:%s TileMap:(%dx%d) PhysicsUnit:%d WorldPixels:(%dx%d)", 
-			roomName, mapW, mapH, physicsUnit, worldPixelW, worldPixelH)
+		// Fix Bug #1: Handle empty room names
+		if roomName == "" {
+			roomName = "<EMPTY_ROOM>"
+		}
+		
+		// Fix Bug #2: Add validation warnings
+		warning := ""
+		if mapW <= 0 || mapH <= 0 {
+			warning += " [WARNING: Invalid tilemap size]"
+		}
+		if physicsUnit <= 0 {
+			warning += " [WARNING: Invalid physics unit]"
+		}
+		
+		l.logger.Printf("[TILEMAP_DEBUG] Room:%s TileMap:(%dx%d) PhysicsUnit:%d WorldPixels:(%dx%d)%s", 
+			roomName, mapW, mapH, physicsUnit, worldPixelW, worldPixelH, warning)
 	}
 }
 
@@ -193,8 +228,19 @@ func (l *Logger) LogRenderingDebug(objectType string, worldX, worldY, renderX, r
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
-		l.logger.Printf("[RENDER_DEBUG] %s World:(%.2f,%.2f) Render:(%.2f,%.2f) Scale:%.2f", 
-			objectType, worldX, worldY, renderX, renderY, scale)
+		// Fix Bug #1: Handle empty object type
+		if objectType == "" {
+			objectType = "<UNKNOWN_OBJECT>"
+		}
+		
+		// Fix Bug #2: Add validation warnings
+		warning := ""
+		if scale <= 0 {
+			warning += " [WARNING: Invalid scale]"
+		}
+		
+		l.logger.Printf("[RENDER_DEBUG] %s World:(%.2f,%.2f) Render:(%.2f,%.2f) Scale:%.2f%s", 
+			objectType, worldX, worldY, renderX, renderY, scale, warning)
 	}
 }
 
@@ -203,6 +249,11 @@ func (l *Logger) LogCoordinateConversion(conversionType string, inputX, inputY, 
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
+		// Fix Bug #1: Handle empty conversion type
+		if conversionType == "" {
+			conversionType = "<UNKNOWN_CONVERSION>"
+		}
+		
 		l.logger.Printf("[COORD_DEBUG] %s In:(%d,%d) Out:(%d,%d)", 
 			conversionType, inputX, inputY, outputX, outputY)
 	}
