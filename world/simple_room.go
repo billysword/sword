@@ -170,6 +170,10 @@ func (sr *SimpleRoom) buildRoom() {
 	sr.tileMap.SetTile(roomWidth*29/100, roomHeight*55/100, TILE_FLOATING)
 	sr.tileMap.SetTile(roomWidth*63/100, roomHeight*52/100, TILE_FLOATING)
 	sr.tileMap.SetTile(roomWidth*79/100, roomHeight*48/100, TILE_FLOATING)
+	
+	// Debug: Log ASCII representation of room on first render
+	debugger := GetRoomDebugger()
+	debugger.LogRoomFirstRender(sr.GetZoneID(), sr.tileMap)
 }
 
 // createPlatform creates a floating platform at the specified position
