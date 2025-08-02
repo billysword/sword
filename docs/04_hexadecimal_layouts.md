@@ -21,6 +21,18 @@ The room debugging system has been enhanced to support hexadecimal format output
 - **Visual Clarity**: Hex values clearly distinguish different tile types
 - **Industry Standard**: Uses standard game development hex notation
 
+## Implementation Details
+
+### File Structure
+- **Debug Logs**: `log/room_debug_YYYY-MM-DD.log`
+- **Layout Files**: `log/room_layout_<room_name>.go`
+- **Examples**: `examples/hex_layout_example.go`
+
+### Core Methods
+- `LogRoomDebug()` - Enhanced logging with both formats
+- `GenerateHexLayoutFile()` - Creates standalone .go files
+- `GetHexLayoutArray()` - Returns formatted array string
+
 ## Usage Examples
 
 ### Basic Room Debug
@@ -115,12 +127,6 @@ var Example_roomLayout = [][]int{
 | **Code Integration** | Manual conversion | Direct copy-paste |
 | **Visual Alignment** | Good | Excellent |
 
-## File Locations
-
-- **Debug Logs**: `log/room_debug_YYYY-MM-DD.log`
-- **Layout Files**: `log/room_layout_<room_name>.go`
-- **Examples**: `examples/hex_layout_example.go`
-
 ## Editing Workflows
 
 ### Method 1: Direct Array Editing
@@ -147,17 +153,17 @@ The new system is fully backward compatible:
 - Existing room code continues to work
 - New hex features are opt-in via new methods
 
-### New BaseRoom Methods
-- `LogRoomDebug()` - Enhanced logging with both formats
-- `GenerateHexLayoutFile()` - Creates standalone .go files
-- `GetHexLayoutArray()` - Returns formatted array string
+## Testing
 
-## Example Integration
-
-See `examples/hex_layout_example.go` for a complete working example demonstrating:
+A complete working example is available at `examples/hex_layout_example.go` demonstrating:
 - Creating layouts with hex notation
 - Generating debug output
 - Copy-paste workflow
 - File generation
 
 Run with: `go run examples/hex_layout_example.go`
+
+## Related Documentation
+
+- **[ROOM_DEBUG.md](../ROOM_DEBUG.md)** - Original room debugging system
+- **[examples/hex_layout_example.go](../examples/hex_layout_example.go)** - Working example

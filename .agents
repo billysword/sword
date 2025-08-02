@@ -1,0 +1,139 @@
+# Sword Game - AI Agent Instructions
+
+## Project Overview
+This is a 2D metroidvania-style game written in Go using the Ebiten game engine. The game features platformer mechanics, an enemy system, configurable room layouts, and advanced debugging tools.
+
+## Documentation Index
+
+### Core Documentation (docs/)
+- **docs/00_readme.md** - Main README with project overview and setup instructions
+- **docs/01_config_usage.md** - Configuration system usage and examples
+- **docs/02_metroidvania_changes.md** - Metroidvania-style changes and features  
+- **docs/03_claude_notes.md** - Development notes and Claude AI assistance information
+- **docs/04_hexadecimal_layouts.md** - Hexadecimal room layout system and debugging
+- **docs/enemies_01.md** - Original enemies implementation (historical)
+- **docs/enemies_interface_02.md** - Interface-based enemy system (current implementation)
+- **docs/index.md** - Complete documentation index
+- **docs/README_DOCS_ORGANIZATION.md** - Documentation organization and migration summary
+
+### Root Documentation Files
+- **README.md** - Project overview (consolidated with docs/00_readme.md)
+- **CLAUDE.md** - Claude AI development notes
+- **CONFIG_USAGE.md** - Configuration usage guide
+- **ENEMIES_IMPLEMENTATION.md** - Enemy implementation details
+- **ENEMIES_INTERFACE_SYSTEM.md** - Enemy interface system
+- **METROIDVANIA_CHANGES.md** - Metroidvania changes log
+- **ROOM_DEBUG.md** - Room debugging system
+
+### Examples and Tools
+- **examples/hex_layout_example.go** - Working hexadecimal layout example demonstrating room creation
+
+## Key Technical Systems
+
+### Room Layout System
+- **Hexadecimal Format**: 0x00-0xFF range for tile indices instead of limited decimal
+- **Debug Output**: Dual format (decimal + hex) with copy-paste ready Go arrays
+- **Auto-generation**: Standalone .go files with room layouts for easy editing
+- **Key Methods**: `LogRoomDebug()`, `GenerateHexLayoutFile()`, `GetHexLayoutArray()`
+
+### Enemy System
+- **Interface-based Architecture**: Modular enemy behavior system
+- **Base Enemy Interface**: Standard behavior contract for all enemies
+- **Configurable AI**: Behavior patterns defined through interfaces
+- **Current Implementation**: See docs/enemies_interface_02.md for details
+
+### Configuration System
+- **Centralized Config**: All game settings in engine/game_config.go
+- **Runtime Adjustable**: Physics, room dimensions, gameplay parameters
+- **Documentation**: Comprehensive examples in docs/01_config_usage.md
+
+### World System
+- **Tile-based Rooms**: Grid-based room layout with collision detection
+- **Metroidvania Features**: Large interconnected rooms with platforming
+- **Debug Tools**: ASCII representation and hex layout generation
+
+## Development Guidelines
+
+### Code Architecture
+- **Module Structure**: Organized into packages (world/, entities/, engine/, states/)
+- **Interface Pattern**: Use interfaces for extensible systems (enemies, rooms)
+- **Configuration Driven**: Prefer configuration over hardcoded values
+- **Debug Support**: Include debug output for complex systems
+
+### Documentation Standards
+- **Numbered Files**: Use 00_, 01_, 02_ prefix for core docs in docs/
+- **Cross-references**: Link related documentation files
+- **Examples**: Include working code examples
+- **Migration Notes**: Document system changes and improvements
+
+### Room Layout Workflows
+1. **Generate**: Use `room.LogRoomDebug()` to create initial layouts
+2. **Edit**: Modify hex values in generated .go files or arrays
+3. **Copy-paste**: Use "Go Array Format" sections for direct code integration
+4. **Test**: Run examples/hex_layout_example.go for validation
+
+### Enemy Development
+1. **Interface First**: Implement BaseEnemy interface
+2. **Behavior Definition**: Define specific behavior patterns
+3. **Configuration**: Use configurable parameters where possible
+4. **Testing**: Validate with existing enemy patterns
+
+## File Structure Priority
+
+When looking for information, check in this order:
+1. **docs/** folder - Most current and organized documentation
+2. **Root documentation** - May contain additional details
+3. **Code comments** - In-file documentation for specific implementations
+4. **Examples** - Working code demonstrations
+
+## Recent Major Changes
+
+### Hexadecimal Layout System (Latest)
+- Enhanced debug output with hex format support
+- Extended tile range from 0-99 to 0x00-0xFF (0-255)
+- Auto-generation of copy-paste ready Go arrays
+- Standalone .go file generation for easy editing
+- **Key Files**: docs/04_hexadecimal_layouts.md, examples/hex_layout_example.go
+
+### Interface-based Enemy System
+- Replaced direct enemy implementations with interface pattern
+- Modular behavior system for extensible enemy AI
+- **Key Files**: docs/enemies_interface_02.md
+
+### Metroidvania Conversion
+- Large room support with configurable dimensions
+- Platform-style physics and collision detection
+- **Key Files**: docs/02_metroidvania_changes.md
+
+## Agent Task Guidelines
+
+### When Adding Features
+1. Check existing documentation for similar systems
+2. Follow established patterns (interfaces, configuration)
+3. Include debug output for complex systems
+4. Update relevant documentation files
+5. Add examples if introducing new workflows
+
+### When Debugging
+1. Use room debug system: `room.LogRoomDebug()`
+2. Check configuration values in engine/game_config.go
+3. Verify interface implementations for enemies
+4. Review generated debug logs in log/ directory
+
+### When Documenting
+1. Add to docs/ folder with appropriate numbering
+2. Update docs/index.md with new entries
+3. Include cross-references to related files
+4. Provide working examples where applicable
+5. Follow established documentation format
+
+## Testing Commands
+- `go run main.go` - Run main game (requires graphics libraries)
+- `go run examples/hex_layout_example.go` - Test hex layout system
+- Check log/ directory for generated debug files
+
+## Important Notes
+- **Graphics Dependencies**: Main game requires X11/OpenGL libraries for Linux
+- **Headless Testing**: Use examples for testing without graphics
+- **Documentation Migration**: Some docs exist in both root and docs/ - docs/ version is preferred
+- **Backward Compatibility**: New systems maintain compatibility with existing code
