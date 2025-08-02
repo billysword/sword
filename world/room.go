@@ -376,31 +376,10 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 }
 
 /*
-LogRoomDebug logs the ASCII representation of this room on first render.
-This method can be called by any room implementation to enable debugging.
-It will only log each room once per session.
+PrintRoomDebug prints the ASCII representation of this room to console.
+This is a simple debugging helper that outputs copy-paste ready layouts.
 */
-func (br *BaseRoom) LogRoomDebug() {
-	debugger := GetRoomDebugger()
-	debugger.LogRoomFirstRender(br.zoneID, br.tileMap)
+func (br *BaseRoom) PrintRoomDebug() {
+	PrintRoomLayout(br.zoneID, br.tileMap)
 }
 
-/*
-GenerateHexLayoutFile creates a standalone Go file with the room layout in hexadecimal format.
-This is useful for exporting room layouts to copy-paste into code as input arrays.
-The generated file will be saved in the log directory.
-*/
-func (br *BaseRoom) GenerateHexLayoutFile() {
-	debugger := GetRoomDebugger()
-	debugger.GenerateHexLayoutFile(br.zoneID, br.tileMap)
-}
-
-/*
-GetHexLayoutArray returns the room layout as a formatted Go array string with hexadecimal values.
-This can be used to copy-paste room layouts directly into code.
-Values are capped at 0xFF (255) to fit in the hex format.
-*/
-func (br *BaseRoom) GetHexLayoutArray() string {
-	debugger := GetRoomDebugger()
-	return debugger.generateLayoutArray(br.tileMap)
-}

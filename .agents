@@ -31,10 +31,11 @@ This is a 2D metroidvania-style game written in Go using the Ebiten game engine.
 ## Key Technical Systems
 
 ### Room Layout System
-- **Hexadecimal Format**: 0x00-0xFF range for tile indices instead of limited decimal
-- **Debug Output**: Dual format (decimal + hex) with copy-paste ready Go arrays
-- **Auto-generation**: Standalone .go files with room layouts for easy editing
-- **Key Methods**: `LogRoomDebug()`, `GenerateHexLayoutFile()`, `GetHexLayoutArray()`
+- **Simple Import System**: Predefined layouts in `room_layouts/` package
+- **Hexadecimal Format**: 0x00-0xFF range for tile indices 
+- **Console Debugging**: `PrintRoomLayout()` outputs copy-paste ready arrays
+- **Easy Creation**: Just add .go files to `room_layouts/` folder
+- **Key Methods**: `world.ApplyLayout()`, `world.PrintRoomLayout()`
 
 ### Enemy System
 - **Interface-based Architecture**: Modular enemy behavior system
@@ -67,10 +68,10 @@ This is a 2D metroidvania-style game written in Go using the Ebiten game engine.
 - **Migration Notes**: Document system changes and improvements
 
 ### Room Layout Workflows
-1. **Generate**: Use `room.LogRoomDebug()` to create initial layouts
-2. **Edit**: Modify hex values in generated .go files or arrays
-3. **Copy-paste**: Use "Go Array Format" sections for direct code integration
-4. **Test**: Run examples/hex_layout_example.go for validation
+1. **Import**: Add `import "sword/room_layouts"` to your room code
+2. **Apply**: Use `world.ApplyLayout(room, room_layouts.LayoutName)`
+3. **Debug**: Use `world.PrintRoomLayout()` for console output
+4. **Create**: Add new .go files to `room_layouts/` folder for custom layouts
 
 ### Enemy Development
 1. **Interface First**: Implement BaseEnemy interface
@@ -88,12 +89,12 @@ When looking for information, check in this order:
 
 ## Recent Major Changes
 
-### Hexadecimal Layout System (Latest)
-- Enhanced debug output with hex format support
-- Extended tile range from 0-99 to 0x00-0xFF (0-255)
-- Auto-generation of copy-paste ready Go arrays
-- Standalone .go file generation for easy editing
-- **Key Files**: docs/04_hexadecimal_layouts.md, examples/hex_layout_example.go
+### Simple Room Layout System (Latest)
+- Simplified import-based system with `room_layouts/` package
+- Console debugging with copy-paste ready output
+- Easy creation by adding .go files to room_layouts folder
+- No complex file generation or git management needed
+- **Key Files**: docs/05_simple_room_layouts.md, room_layouts/, examples/simple_room_usage.go
 
 ### Interface-based Enemy System
 - Replaced direct enemy implementations with interface pattern
@@ -115,10 +116,10 @@ When looking for information, check in this order:
 5. Add examples if introducing new workflows
 
 ### When Debugging
-1. Use room debug system: `room.LogRoomDebug()`
+1. Use simple debug: `world.PrintRoomLayout(name, tilemap)` for console output
 2. Check configuration values in engine/game_config.go
 3. Verify interface implementations for enemies
-4. Review generated debug logs in log/ directory
+4. Use `room_layouts/` package for predefined layouts
 
 ### When Documenting
 1. Add to docs/ folder with appropriate numbering
@@ -129,8 +130,8 @@ When looking for information, check in this order:
 
 ## Testing Commands
 - `go run main.go` - Run main game (requires graphics libraries)
-- `go run examples/hex_layout_example.go` - Test hex layout system
-- Check log/ directory for generated debug files
+- `go run examples/simple_room_usage.go` - Test simple room layout system
+- Console output shows copy-paste ready layouts
 
 ## Important Notes
 - **Graphics Dependencies**: Main game requires X11/OpenGL libraries for Linux

@@ -1,9 +1,0 @@
-# This file ensures the log/ directory is preserved in git
-# while auto-generated debug files are ignored.
-#
-# Generated files:
-# - room_debug_YYYY-MM-DD.log (daily debug logs)
-# - room_layout_<name>.go (auto-generated layout files)
-#
-# Example files with "*example*" in the name are preserved
-# to demonstrate the system functionality.

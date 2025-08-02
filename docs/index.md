@@ -9,7 +9,8 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - **[01_config_usage.md](01_config_usage.md)** - Configuration system usage and examples
 - **[02_metroidvania_changes.md](02_metroidvania_changes.md)** - Metroidvania-style changes and features
 - **[03_claude_notes.md](03_claude_notes.md)** - Development notes and Claude AI assistance information
-- **[04_hexadecimal_layouts.md](04_hexadecimal_layouts.md)** - Hexadecimal room layout system and debugging
+- **[04_hexadecimal_layouts.md](04_hexadecimal_layouts.md)** - Hexadecimal room layout system and debugging (DEPRECATED)
+- **[05_simple_room_layouts.md](05_simple_room_layouts.md)** - Simple room layout system (CURRENT)
 
 ### Enemy System Documentation
 - **[enemies_01.md](enemies_01.md)** - Original enemies implementation (historical)
