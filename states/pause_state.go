@@ -22,10 +22,10 @@ Features:
   - Keyboard controls for navigation
 */
 type PauseState struct {
-	stateManager    *engine.StateManager  // Reference to state manager for transitions
-	backgroundState engine.State          // Store the previous state to draw behind pause menu
-	overlay         *ebiten.Image         // Cached overlay image to prevent memory leaks
-	overlayWidth    int                   // Track overlay dimensions for invalidation
+	stateManager    *engine.StateManager // Reference to state manager for transitions
+	backgroundState engine.State         // Store the previous state to draw behind pause menu
+	overlay         *ebiten.Image        // Cached overlay image to prevent memory leaks
+	overlayWidth    int                  // Track overlay dimensions for invalidation
 	overlayHeight   int
 }
 
@@ -49,12 +49,13 @@ func NewPauseState(sm *engine.StateManager, background engine.State) *PauseState
 
 /*
 Update handles input for the pause menu.
-Processes pause menu controls for resuming gameplay or returning
-to the main menu. Does not update the background state, keeping
+Processes pause menu controls for resuming gameplay, accessing settings,
+or returning to the main menu. Does not update the background state, keeping
 the game world frozen.
 
 Input handling:
   - P/ESC: Resume game (return to background state)
+  - S: Open settings with current room data
   - Q: Quit to main menu
 
 Returns any error from state transitions.
@@ -63,6 +64,12 @@ func (p *PauseState) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) || inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		// Resume game
 		p.stateManager.ChangeState(p.backgroundState)
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
+		// Open settings with current room data
+		if ingameState, ok := p.backgroundState.(*InGameState); ok && ingameState.GetCurrentRoom() != nil {
+			p.stateManager.ChangeState(NewSettingsStateFromPause(p.stateManager, ingameState.GetCurrentRoom(), p))
+		}
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		// Return to main menu
@@ -94,12 +101,12 @@ func (p *PauseState) Draw(screen *ebiten.Image) {
 		p.overlayWidth = screenWidth
 		p.overlayHeight = screenHeight
 	}
-	
+
 	// Draw cached overlay
 	screen.DrawImage(p.overlay, nil)
 
 	// Draw pause menu
-	msg := "PAUSED\n\nP/ESC - Resume\nQ - Main Menu"
+	msg := "PAUSED\n\nP/ESC - Resume\nS - Settings\nQ - Main Menu"
 	ebitenutil.DebugPrintAt(screen, msg, 400, 250)
 }
 

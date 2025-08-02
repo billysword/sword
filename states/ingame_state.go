@@ -25,11 +25,11 @@ Key responsibilities:
   - Pause state transitions
 */
 type InGameState struct {
-	stateManager *engine.StateManager  // Reference to state manager for transitions
-	player       *entities.Player        // The player character instance
-	enemies      []entities.Enemy        // All enemies in the current room (interface slice)
+	stateManager *engine.StateManager // Reference to state manager for transitions
+	player       *entities.Player     // The player character instance
+	enemies      []entities.Enemy     // All enemies in the current room (interface slice)
 	currentRoom  world.Room           // Current room/level being played
-	camera       *engine.Camera        // Camera for world scrolling
+	camera       *engine.Camera       // Camera for world scrolling
 }
 
 /*
@@ -45,10 +45,10 @@ Returns a pointer to the new InGameState instance.
 func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get the actual window size for camera viewport
 	windowWidth, windowHeight := ebiten.WindowSize()
-	
+
 	physicsUnit := engine.GetPhysicsUnit()
 	groundY := engine.GameConfig.GroundLevel * physicsUnit
-	
+
 	return &InGameState{
 		stateManager: sm,
 		player:       entities.NewPlayer(50*physicsUnit, groundY),
@@ -120,10 +120,10 @@ background, room tiles, player character, and debug information.
 Uses camera offset to create scrolling world effect.
 
 Rendering order:
-  1. Room background and tiles (with camera offset)
-  2. Player character (with camera offset)
-  3. Debug grid overlay (if enabled)
-  4. UI and debug information (no camera offset)
+ 1. Room background and tiles (with camera offset)
+ 2. Player character (with camera offset)
+ 3. Debug grid overlay (if enabled)
+ 4. UI and debug information (no camera offset)
 
 Parameters:
   - screen: The target screen/image to render to
@@ -134,7 +134,7 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	if ig.camera != nil {
 		cameraOffsetX, cameraOffsetY = ig.camera.GetOffset()
 	}
-	
+
 	// Let the current room draw itself with camera offset
 	if ig.currentRoom != nil {
 		ig.currentRoom.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
@@ -163,24 +163,24 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	if ig.currentRoom != nil {
 		roomInfo = ig.currentRoom.GetZoneID()
 	}
-	
+
 	backgroundStatus := "ON"
 	if !engine.GetBackgroundVisible() {
 		backgroundStatus = "OFF"
 	}
-	
+
 	gridStatus := "OFF"
 	if engine.GetGridVisible() {
-		gridStatus = "ON" 
+		gridStatus = "ON"
 	}
-	
+
 	// Add camera position to debug info
 	camX, camY := float64(0), float64(0)
 	if ig.camera != nil {
 		camX, camY = ig.camera.GetPosition()
 	}
-	
-	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s", 
+
+	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s",
 		ebiten.ActualTPS(), roomInfo, camX, camY, len(ig.enemies), backgroundStatus, gridStatus)
 	ebitenutil.DebugPrint(screen, msg)
 }
@@ -208,7 +208,7 @@ func (ig *InGameState) OnEnter() {
 	if len(ig.enemies) == 0 {
 		physicsUnit := engine.GetPhysicsUnit()
 		groundY := engine.GameConfig.GroundLevel * physicsUnit
-		
+
 		// Spawn different types of enemies to demonstrate the interface system
 		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(300*physicsUnit, groundY))     // Patrol behavior
 		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(600*physicsUnit, groundY))  // Random behavior
@@ -225,12 +225,22 @@ func (ig *InGameState) OnEnter() {
 			worldWidth := tileMap.Width * physicsUnit
 			worldHeight := tileMap.Height * physicsUnit
 			ig.camera.SetWorldBounds(worldWidth, worldHeight)
-			
+
 			// Center camera on player initially
 			px, py := ig.player.GetPosition()
 			ig.camera.CenterOn(px/physicsUnit, py/physicsUnit)
 		}
 	}
+}
+
+/*
+GetCurrentRoom returns the current room being played.
+Provides access to the current room for other states that need tile data.
+
+Returns the current room instance.
+*/
+func (ig *InGameState) GetCurrentRoom() world.Room {
+	return ig.currentRoom
 }
 
 /*
@@ -331,4 +341,3 @@ func (ig *InGameState) GetEnemies() []entities.Enemy {
 	copy(enemies, ig.enemies)
 	return enemies
 }
-
