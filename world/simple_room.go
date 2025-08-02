@@ -173,121 +173,15 @@ func (sr *SimpleRoom) buildRoom() {
 	width := sr.tileMap.Width
 	height := sr.tileMap.Height
 	
-	// For small rooms, create a simple box with platform
-	if width <= 10 && height <= 10 {
-		// Create boundary walls
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				// Create walls on edges
-				if x == 0 || x == width-1 || y == 0 || y == height-1 {
-					sr.tileMap.SetTile(x, y, TILE_DIRT)
-				}
-			}
-		}
-		
-		// Add a floor
-		floorY := height - 2
-		for x := 1; x < width-1; x++ {
-			sr.tileMap.SetTile(x, floorY, TILE_DIRT)
-		}
-		
-		// Add a platform if there's room
-		if width >= 7 && height >= 7 {
-			platformY := height / 2
-			platformStartX := width / 3
-			platformEndX := 2 * width / 3
-			for x := platformStartX; x <= platformEndX; x++ {
-				sr.tileMap.SetTile(x, platformY, TILE_DIRT)
-			}
-		}
-		
-		PrintRoomLayout(sr.GetZoneID(), sr.tileMap)
-		return
-	}
-
-	// Create a room based on tilemap dimensions
-	// Fill the bottom portion with ground tiles (proportional to room height)
-	groundRows := height / 4  // Use 1/4 of room height for ground
-	if groundRows < 3 {
-		groundRows = 3
-	}
-	groundStartY := height - groundRows
-	for y := groundStartY; y < height; y++ {
+	// Simple room: just walls around the edges
+	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			sr.tileMap.SetTile(x, y, TILE_DIRT)
+			// Create walls on all edges
+			if x == 0 || x == width-1 || y == 0 || y == height-1 {
+				sr.tileMap.SetTile(x, y, TILE_DIRT)
+			}
 		}
 	}
-	
-	// Create the main ground level with proper edges
-	groundY := height * 3 / 4  // Ground at 75% of room height
-	if groundY >= height - 2 {
-		groundY = height - 3
-	}
-	// Left edge
-	sr.tileMap.SetTile(0, groundY, TILE_TOP_LEFT_CORNER)
-	// Top surface
-	for x := 1; x < width-1; x++ {
-		sr.tileMap.SetTile(x, groundY, TILE_CEILING_1)
-	}
-	// Right edge
-	sr.tileMap.SetTile(width-1, groundY, TILE_TOP_RIGHT_CORNER)
-	
-	// Add platforms dynamically based on room size
-	// Calculate platform positions as percentages of room dimensions
-	roomWidth := width
-	roomHeight := height
-	
-	// Lower platforms (80-90% height)
-	sr.createPlatform(roomWidth*8/100, roomHeight*80/100, 10)
-	sr.createPlatform(roomWidth*25/100, roomHeight*85/100, 8)
-	sr.createPlatform(roomWidth*42/100, roomHeight*82/100, 12)
-	sr.createPlatform(roomWidth*62/100, roomHeight*87/100, 10)
-	sr.createPlatform(roomWidth*80/100, roomHeight*83/100, 15)
-	
-	// Mid-level platforms (60-70% height)
-	sr.createPlatform(roomWidth*12/100, roomHeight*65/100, 8)
-	sr.createPlatform(roomWidth*33/100, roomHeight*60/100, 10)
-	sr.createPlatform(roomWidth*54/100, roomHeight*63/100, 12)
-	sr.createPlatform(roomWidth*71/100, roomHeight*62/100, 10)
-	sr.createPlatform(roomWidth*88/100, roomHeight*68/100, 10)
-	
-	// High platforms (40-50% height)
-	sr.createPlatform(roomWidth*17/100, roomHeight*45/100, 10)
-	sr.createPlatform(roomWidth*38/100, roomHeight*40/100, 12)
-	sr.createPlatform(roomWidth*58/100, roomHeight*43/100, 8)
-	sr.createPlatform(roomWidth*75/100, roomHeight*42/100, 14)
-	
-	// Very high platforms (20-30% height)
-	sr.createPlatform(roomWidth*29/100, roomHeight*25/100, 8)
-	sr.createPlatform(roomWidth*50/100, roomHeight*20/100, 10)
-	sr.createPlatform(roomWidth*67/100, roomHeight*28/100, 8)
-	
-	// Add walls proportionally
-	// Left area structures
-	sr.createWall(roomWidth*21/100, roomHeight*80/100, groundY)
-	sr.createWall(roomWidth*21/100+1, roomHeight*80/100, groundY)
-	
-	// Center-left structures
-	sr.createWall(roomWidth*38/100, roomHeight*70/100, groundY)
-	sr.createWall(roomWidth*38/100+1, roomHeight*70/100, groundY)
-	
-	// Center structures
-	sr.createWall(roomWidth*50/100, roomHeight*60/100, groundY)
-	sr.createWall(roomWidth*50/100+1, roomHeight*60/100, groundY)
-	
-	// Center-right structures
-	sr.createWall(roomWidth*67/100, roomHeight*75/100, groundY)
-	sr.createWall(roomWidth*67/100+1, roomHeight*75/100, groundY)
-	
-	// Right area structures
-	sr.createWall(roomWidth*83/100, roomHeight*65/100, groundY)
-	sr.createWall(roomWidth*83/100+1, roomHeight*65/100, groundY)
-	
-	// Add some floating single tiles for decoration
-	sr.tileMap.SetTile(roomWidth*46/100, roomHeight*50/100, TILE_FLOATING)
-	sr.tileMap.SetTile(roomWidth*29/100, roomHeight*55/100, TILE_FLOATING)
-	sr.tileMap.SetTile(roomWidth*63/100, roomHeight*52/100, TILE_FLOATING)
-	sr.tileMap.SetTile(roomWidth*79/100, roomHeight*48/100, TILE_FLOATING)
 	
 	// Simple debug: Print layout to console for easy copying
 	PrintRoomLayout(sr.GetZoneID(), sr.tileMap)
