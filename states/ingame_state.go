@@ -30,6 +30,7 @@ type InGameState struct {
 	enemies      []entities.Enemy     // All enemies in the current room (interface slice)
 	currentRoom  world.Room           // Current room/level being played
 	camera       *engine.Camera       // Camera for world scrolling
+	parallaxConfigIndex int           // Index for cycling through parallax configurations
 }
 
 /*
@@ -72,6 +73,9 @@ Input handling:
 Returns any error from game systems, or ebiten.Termination to quit.
 */
 func (ig *InGameState) Update() error {
+	// Update camera viewport if window was resized
+	ig.updateCameraViewport()
+
 	// Get room name for logging
 	roomName := ""
 	if ig.currentRoom != nil {
@@ -102,6 +106,16 @@ func (ig *InGameState) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
 		engine.LogPlayerInput("G (Toggle Grid)", playerX, playerY, roomName)
 		engine.ToggleGrid()
+	}
+	
+	// Enhanced parallax controls
+	if inpututil.IsKeyJustPressed(ebiten.KeyD) {
+		engine.LogPlayerInput("D (Toggle Depth of Field)", playerX, playerY, roomName)
+		ig.toggleDepthOfField()
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyL) {
+		engine.LogPlayerInput("L (Cycle Parallax Layers)", playerX, playerY, roomName)
+		ig.cycleParallaxLayers()
 	}
 
 	ig.player.HandleInputWithLogging(roomName)
@@ -156,14 +170,6 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	// Let the current room draw itself with camera offset
 	if ig.currentRoom != nil {
 		ig.currentRoom.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
-	} else {
-		// Fallback: draw background if no room
-		if engine.GetBackgroundImage() != nil {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(0.5, 0.5)
-			op.GeoM.Translate(cameraOffsetX, cameraOffsetY)
-			screen.DrawImage(engine.GetBackgroundImage(), op)
-		}
 	}
 
 	// Draw all enemies with camera offset
@@ -198,8 +204,14 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		camX, camY = ig.camera.GetPosition()
 	}
 
-	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s",
-		ebiten.ActualTPS(), roomInfo, camX, camY, len(ig.enemies), backgroundStatus, gridStatus)
+	// Check depth of field status
+	depthStatus := "OFF"
+	if engine.GameConfig.EnableDepthOfField {
+		depthStatus = "ON"
+	}
+	
+	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s\nD - Depth of Field: %s\nL - Cycle Parallax Layers",
+		ebiten.ActualTPS(), roomInfo, camX, camY, len(ig.enemies), backgroundStatus, gridStatus, depthStatus)
 	ebitenutil.DebugPrint(screen, msg)
 
 	// Add placeholder text for dead zone and HUD areas
@@ -312,6 +324,66 @@ func (ig *InGameState) OnEnter() {
 }
 
 /*
+toggleDepthOfField toggles the depth-of-field effects in the current room.
+Provides a way to see the difference with and without depth effects.
+*/
+func (ig *InGameState) toggleDepthOfField() {
+	if simpleRoom, ok := ig.currentRoom.(*world.SimpleRoom); ok {
+		if simpleRoom.GetParallaxRenderer() != nil {
+			// Toggle depth of field
+			currentEnabled := engine.GameConfig.EnableDepthOfField
+			newEnabled := !currentEnabled
+			engine.GameConfig.EnableDepthOfField = newEnabled
+			
+			simpleRoom.GetParallaxRenderer().SetDepthOfField(newEnabled, engine.GameConfig.DepthBlurStrength)
+			engine.LogInfo(fmt.Sprintf("Depth of Field: %t", newEnabled))
+		}
+	}
+}
+
+/*
+cycleParallaxLayers cycles through different parallax layer configurations.
+Demonstrates different depth effects and layer combinations.
+*/
+func (ig *InGameState) cycleParallaxLayers() {
+	if simpleRoom, ok := ig.currentRoom.(*world.SimpleRoom); ok {
+		if simpleRoom.GetParallaxRenderer() != nil {
+			// Cycle through different layer configurations
+			configs := [][]engine.ParallaxLayer{
+				// Minimal background only
+				{
+					{Speed: 0.3, Depth: 0.2, Alpha: 0.5, Scale: 0.4},
+				},
+				// Background and foreground layers
+				{
+					{Speed: 0.2, Depth: 0.1, Alpha: 0.4, Scale: 0.3, OffsetY: 50},
+					{Speed: 0.5, Depth: 0.5, Alpha: 0.7, Scale: 0.6},
+					{Speed: 1.2, Depth: 0.9, Alpha: 0.5, Scale: 1.3, OffsetY: -30},
+				},
+				// Many layers with background and foreground
+				{
+					{Speed: 0.05, Depth: 0.02, Alpha: 0.2, Scale: 0.2, OffsetY: 100},
+					{Speed: 0.2, Depth: 0.1, Alpha: 0.4, Scale: 0.3, OffsetY: 60},
+					{Speed: 0.4, Depth: 0.3, Alpha: 0.6, Scale: 0.5, OffsetY: 20},
+					{Speed: 0.6, Depth: 0.5, Alpha: 0.8, Scale: 0.7},
+					{Speed: 1.1, Depth: 0.8, Alpha: 0.6, Scale: 1.1, OffsetY: -20},
+					{Speed: 1.4, Depth: 0.95, Alpha: 0.4, Scale: 1.5, OffsetY: -60},
+				},
+			}
+			
+			// Cycle through configurations using instance variable
+			ig.parallaxConfigIndex++
+			if ig.parallaxConfigIndex >= len(configs) {
+				ig.parallaxConfigIndex = 0
+			}
+			
+			simpleRoom.GetParallaxRenderer().SetLayers(configs[ig.parallaxConfigIndex])
+			engine.LogInfo(fmt.Sprintf("Switched to parallax config %d (%d layers)", ig.parallaxConfigIndex+1, len(configs[ig.parallaxConfigIndex])))
+		}
+	}
+}
+
+/*
 GetCurrentRoom returns the current room being played.
 Provides access to the current room for other states that need tile data.
 
@@ -418,4 +490,40 @@ func (ig *InGameState) GetEnemies() []entities.Enemy {
 	enemies := make([]entities.Enemy, len(ig.enemies))
 	copy(enemies, ig.enemies)
 	return enemies
+}
+
+/*
+updateCameraViewport checks if the window has been resized and updates the camera viewport accordingly.
+This fixes the bug where camera bounds, dead zones, and HUD positioning become incorrect after window resize.
+*/
+func (ig *InGameState) updateCameraViewport() {
+	if ig.camera == nil {
+		return
+	}
+	
+	currentWidth, currentHeight := ebiten.WindowSize()
+	cameraWidth, cameraHeight := ig.camera.GetViewportSize()
+	
+	// Check if window size has changed
+	if currentWidth != cameraWidth || currentHeight != cameraHeight {
+		// Create new camera with updated viewport
+		ig.camera = engine.NewCamera(currentWidth, currentHeight)
+		
+		// Restore world bounds if we have a room
+		if ig.currentRoom != nil {
+			tileMap := ig.currentRoom.GetTileMap()
+			if tileMap != nil {
+				physicsUnit := engine.GetPhysicsUnit()
+				worldWidth := tileMap.Width * physicsUnit
+				worldHeight := tileMap.Height * physicsUnit
+				ig.camera.SetWorldBounds(worldWidth, worldHeight)
+				
+				// Restore camera position to follow player
+				if ig.player != nil {
+					px, py := ig.player.GetPosition()
+					ig.camera.Update(px/physicsUnit, py/physicsUnit)
+				}
+			}
+		}
+	}
 }
