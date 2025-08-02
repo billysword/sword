@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-> **📁 Documentation Moved**: This file has been moved to [docs/03_claude_notes.md](docs/03_claude_notes.md). Please use the organized documentation in the [docs/](docs/) folder.
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

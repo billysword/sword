@@ -1,10 +1,8 @@
-# Enemies System Implementation
+# Enemies System Implementation (Original)
 
-> **📁 Documentation Moved**: This file has been moved to [docs/enemies_01.md](docs/enemies_01.md). Please use the organized documentation in the [docs/](docs/) folder.
-> 
-> **⚠️ Note**: This describes the original enemy implementation. The current system uses an interface-based architecture documented in [docs/enemies_interface_02.md](docs/enemies_interface_02.md).
+> **⚠️ Historical Document**: This describes the original enemy implementation that has been superseded. The current system uses an interface-based architecture documented in [enemies_interface_02.md](enemies_interface_02.md).
 
-This document describes the implementation of the enemies system added to the game.
+This document describes the implementation of the original enemies system added to the game.
 
 ## Overview
 

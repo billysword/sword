@@ -1,6 +1,6 @@
-# Enemy Interface System Implementation
+# Enemy Interface System Implementation (Current)
 
-> **📁 Documentation Moved**: This file has been moved to [docs/enemies_interface_02.md](docs/enemies_interface_02.md). Please use the organized documentation in the [docs/](docs/) folder.
+> **✅ Current Implementation**: This describes the active enemy system architecture using Go interfaces.
 
 This document describes the refactored enemy system using Go interfaces, allowing for flexible enemy types with individual AI implementations.
 

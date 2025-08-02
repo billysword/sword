@@ -1,7 +1,5 @@
 # Game Configuration Usage Guide
 
-> **📁 Documentation Moved**: This file has been moved to [docs/01_config_usage.md](docs/01_config_usage.md). Please use the organized documentation in the [docs/](docs/) folder.
-
 ## Overview
 All game settings are now centralized in `gamestate/config.go`. This makes it easy to adjust the game's appearance and behavior without hunting through multiple files.
 
