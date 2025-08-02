@@ -21,6 +21,8 @@ Welcome to the Sword game documentation! This index provides links to all availa
 
 ### Documentation Organization
 - **[README_DOCS_ORGANIZATION.md](README_DOCS_ORGANIZATION.md)** - How documentation is organized and migration summary
+- **[AGENTS_UPDATE_SUMMARY.md](AGENTS_UPDATE_SUMMARY.md)** - Summary of agents file and documentation updates
+- **[GITIGNORE_UPDATE_SUMMARY.md](GITIGNORE_UPDATE_SUMMARY.md)** - Git ignore patterns for generated files
 
 ## Quick Navigation
 

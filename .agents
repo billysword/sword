@@ -137,3 +137,7 @@ When looking for information, check in this order:
 - **Headless Testing**: Use examples for testing without graphics
 - **Documentation Migration**: Some docs exist in both root and docs/ - docs/ version is preferred
 - **Backward Compatibility**: New systems maintain compatibility with existing code
+- **Generated Files**: Log files and room layouts are auto-generated and gitignored
+  - `log/` directory contains debug logs and layout files
+  - `room_debug_*.log` - Daily rotating debug logs
+  - `room_layout_*.go` - Auto-generated layout files

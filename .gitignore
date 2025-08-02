@@ -37,3 +37,28 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Game-specific log files and generated content
+logs/
+*.log
+
+# Room debugging files (exclude examples)
+log/room_debug_*.log
+log/room_layout_*.go
+
+# Keep log directory but ignore auto-generated files  
+!log/
+!log/.gitkeep
+
+# Auto-generated layout files in any directory
+room_layout_*.go
+room_debug_*.log
+
+# But preserve examples
+!**/examples/
+!examples/**/*.go
+!log/room_layout_*example*.go
+
+# Debug output directories
+debug/
+output/

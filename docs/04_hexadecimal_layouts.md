@@ -33,6 +33,48 @@ The room debugging system has been enhanced to support hexadecimal format output
 - `GenerateHexLayoutFile()` - Creates standalone .go files
 - `GetHexLayoutArray()` - Returns formatted array string
 
+## File Management
+
+### Generated Files
+The system generates several types of files automatically:
+
+#### Debug Logs (`log/room_debug_*.log`)
+- Daily rotating log files with timestamp in filename
+- Contains both decimal and hexadecimal representations
+- Includes copy-paste ready Go arrays
+- **Git Status**: Ignored (auto-generated content)
+
+#### Layout Files (`log/room_layout_*.go`)
+- Standalone Go files with room layouts
+- Named after room/zone IDs
+- Ready for compilation and editing
+- **Git Status**: Ignored (auto-generated content)
+
+#### Example Files
+- Files with "example" in the name are preserved in git
+- Used for documentation and testing purposes
+- Example: `log/room_layout_hex_example.go`
+
+### Git Ignore Strategy
+```gitignore
+# Room debugging files (exclude examples)
+log/room_debug_*.log
+log/room_layout_*.go
+
+# Keep log directory but ignore auto-generated files
+!log/
+!log/.gitkeep
+
+# But preserve examples
+!log/room_layout_*example*.go
+```
+
+This approach:
+- ✅ Preserves the log directory structure
+- ✅ Ignores auto-generated debug content
+- ✅ Keeps example files for documentation
+- ✅ Prevents repository bloat from frequent debug runs
+
 ## Usage Examples
 
 ### Basic Room Debug
