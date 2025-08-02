@@ -113,30 +113,46 @@ func (c *Camera) Update(targetX, targetY int) {
 
 // constrainToWorld ensures the camera doesn't show beyond world boundaries
 func (c *Camera) constrainToWorld() {
-	// Left boundary with margin
-	if c.x < float64(-c.marginLeft) {
-		c.x = float64(-c.marginLeft)
+	// If world is smaller than viewport, center it
+	if c.worldWidth < c.width {
+		// Center horizontally
+		c.x = float64(-(c.width - c.worldWidth) / 2)
 		c.targetX = c.x
+	} else {
+		// Normal horizontal constraints
+		// Left boundary with margin
+		if c.x < float64(-c.marginLeft) {
+			c.x = float64(-c.marginLeft)
+			c.targetX = c.x
+		}
+		
+		// Right boundary with margin
+		maxX := float64(c.worldWidth - c.width + c.marginRight)
+		if c.x > maxX {
+			c.x = maxX
+			c.targetX = c.x
+		}
 	}
 	
-	// Right boundary with margin
-	maxX := float64(c.worldWidth - c.width + c.marginRight)
-	if c.x > maxX {
-		c.x = maxX
-		c.targetX = c.x
-	}
-	
-	// Top boundary with margin
-	if c.y < float64(-c.marginTop) {
-		c.y = float64(-c.marginTop)
+	// If world is smaller than viewport, center it
+	if c.worldHeight < c.height {
+		// Center vertically
+		c.y = float64(-(c.height - c.worldHeight) / 2)
 		c.targetY = c.y
-	}
-	
-	// Bottom boundary with margin
-	maxY := float64(c.worldHeight - c.height + c.marginBottom)
-	if c.y > maxY {
-		c.y = maxY
-		c.targetY = c.y
+	} else {
+		// Normal vertical constraints
+		// Top boundary with margin
+		if c.y < float64(-c.marginTop) {
+			c.y = float64(-c.marginTop)
+			c.targetY = c.y
+		}
+		
+		// Bottom boundary with margin
+		maxY := float64(c.worldHeight - c.height + c.marginBottom)
+		if c.y > maxY {
+			c.y = maxY
+			c.targetY = c.y
+		}
 	}
 }
 
@@ -280,49 +296,4 @@ func (c *Camera) GetDeadZone() (int, int) {
 // GetMargins returns the camera margin settings
 func (c *Camera) GetMargins() (int, int, int, int) {
 	return c.marginLeft, c.marginRight, c.marginTop, c.marginBottom
-}
-
-/*
-GetCenteredViewport calculates the centered viewport position for small rooms.
-When the room is smaller than the camera viewport, this calculates the offset
-needed to center the room in the screen with black dead areas around it.
-
-Returns:
-  - offsetX: Horizontal offset to center the room
-  - offsetY: Vertical offset to center the room
-  - isSmaller: Whether the room is smaller than the viewport
-*/
-func (c *Camera) GetCenteredViewport() (int, int, bool) {
-	// Check if room is smaller than viewport
-	roomTooSmallX := c.worldWidth < c.width
-	roomTooSmallY := c.worldHeight < c.height
-	
-	offsetX := 0
-	offsetY := 0
-	
-	if roomTooSmallX {
-		// Center horizontally
-		offsetX = (c.width - c.worldWidth) / 2
-	}
-	
-	if roomTooSmallY {
-		// Center vertically
-		offsetY = (c.height - c.worldHeight) / 2
-	}
-	
-	return offsetX, offsetY, roomTooSmallX || roomTooSmallY
-}
-
-/*
-UpdateForSmallRoom updates camera for rooms smaller than the viewport.
-When the room is smaller than the viewport, the camera position is fixed
-to show the entire room centered in the viewport.
-*/
-func (c *Camera) UpdateForSmallRoom() {
-	// For small rooms, camera should be fixed at 0,0
-	// The centering is handled during rendering
-	c.x = 0
-	c.y = 0
-	c.targetX = 0
-	c.targetY = 0
 }

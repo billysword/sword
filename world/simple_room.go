@@ -163,62 +163,79 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	return engine.GetTileSprite()
 }
 
-// buildRoom sets up the forest tile layout for this larger metroidvania-style room
+// buildRoom sets up the forest tile layout based on the room's tilemap dimensions
 func (sr *SimpleRoom) buildRoom() {
 	if engine.GetTileSprite() == nil {
 		return
 	}
 
-	// For small 10x10 rooms, create a simple enclosed space
-	if engine.GameConfig.RoomWidthTiles == 10 && engine.GameConfig.RoomHeightTiles == 10 {
+	// Get room dimensions from tilemap
+	width := sr.tileMap.Width
+	height := sr.tileMap.Height
+	
+	// For very small rooms (<=10x10), create a simple enclosed space
+	if width <= 10 && height <= 10 {
 		// Create walls on all sides
-		for y := 0; y < 10; y++ {
-			for x := 0; x < 10; x++ {
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
 				// Top and bottom walls
-				if y == 0 || y == 9 {
+				if y == 0 || y == height-1 {
 					sr.tileMap.SetTile(x, y, TILE_DIRT)
-				} else if x == 0 || x == 9 {
+				} else if x == 0 || x == width-1 {
 					// Left and right walls
 					sr.tileMap.SetTile(x, y, TILE_DIRT)
-				} else if y == 8 {
-					// Floor
+				} else if y == height-2 {
+					// Floor (one tile above bottom)
 					sr.tileMap.SetTile(x, y, TILE_DIRT)
 				}
 			}
 		}
 		
-		// Add a small platform in the middle
-		sr.tileMap.SetTile(4, 5, TILE_DIRT)
-		sr.tileMap.SetTile(5, 5, TILE_DIRT)
-		sr.tileMap.SetTile(6, 5, TILE_DIRT)
+		// Add a small platform in the middle if there's room
+		if width >= 7 && height >= 7 {
+			platformY := height / 2
+			platformStartX := width / 3
+			platformEndX := 2 * width / 3
+			for x := platformStartX; x <= platformEndX; x++ {
+				sr.tileMap.SetTile(x, platformY, TILE_DIRT)
+			}
+		}
 		
+		PrintRoomLayout(sr.GetZoneID(), sr.tileMap)
 		return
 	}
 
-	// Create a room based on config dimensions
-	// Fill the bottom 15 rows with ground tiles
-	groundStartY := engine.GameConfig.RoomHeightTiles - 15
-	for y := groundStartY; y < engine.GameConfig.RoomHeightTiles; y++ {
-		for x := 0; x < engine.GameConfig.RoomWidthTiles; x++ {
+	// Create a room based on tilemap dimensions
+	// Fill the bottom portion with ground tiles (proportional to room height)
+	groundRows := height / 4  // Use 1/4 of room height for ground
+	if groundRows < 3 {
+		groundRows = 3
+	}
+	groundStartY := height - groundRows
+	for y := groundStartY; y < height; y++ {
+		for x := 0; x < width; x++ {
 			sr.tileMap.SetTile(x, y, TILE_DIRT)
 		}
 	}
 	
 	// Create the main ground level with proper edges
-	groundY := engine.GameConfig.GroundLevel
+	groundY := height * 3 / 4  // Ground at 75% of room height
+	if groundY >= height - 2 {
+		groundY = height - 3
+	}
 	// Left edge
 	sr.tileMap.SetTile(0, groundY, TILE_TOP_LEFT_CORNER)
 	// Top surface
-	for x := 1; x < engine.GameConfig.RoomWidthTiles-1; x++ {
+	for x := 1; x < width-1; x++ {
 		sr.tileMap.SetTile(x, groundY, TILE_CEILING_1)
 	}
 	// Right edge
-	sr.tileMap.SetTile(engine.GameConfig.RoomWidthTiles-1, groundY, TILE_TOP_RIGHT_CORNER)
+	sr.tileMap.SetTile(width-1, groundY, TILE_TOP_RIGHT_CORNER)
 	
 	// Add platforms dynamically based on room size
 	// Calculate platform positions as percentages of room dimensions
-	roomWidth := engine.GameConfig.RoomWidthTiles
-	roomHeight := engine.GameConfig.RoomHeightTiles
+	roomWidth := width
+	roomHeight := height
 	
 	// Lower platforms (80-90% height)
 	sr.createPlatform(roomWidth*8/100, roomHeight*80/100, 10)

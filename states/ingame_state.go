@@ -53,20 +53,26 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Create the room first
 	room := world.NewSimpleRoom("main")
 	
-	// Find the actual floor position for spawning
-	playerSpawnX := 50 * physicsUnit
-	groundY := room.FindFloorAtX(playerSpawnX)
+	// Get room dimensions
+	tileMap := room.GetTileMap()
+	roomWidth := tileMap.Width
+	roomHeight := tileMap.Height
 	
-	// For small rooms, spawn player in center
-	if engine.GameConfig.RoomWidthTiles == 10 {
-		playerSpawnX = 5 * physicsUnit  // Center of 10-tile wide room
-		groundY = 7 * physicsUnit        // Just above the floor at y=8
+	// Calculate spawn position based on room size
+	playerSpawnX := (roomWidth / 2) * physicsUnit  // Center horizontally
+	playerSpawnY := (roomHeight - 3) * physicsUnit  // Above the floor
+	
+	// For larger rooms, use floor detection
+	if roomWidth > 10 || roomHeight > 10 {
+		groundY := room.FindFloorAtX(playerSpawnX)
+		if groundY > 0 {
+			playerSpawnY = groundY
+		}
 	}
 
 	camera := engine.NewCamera(windowWidth, windowHeight)
 	
 	// Set camera world bounds based on room size
-	tileMap := room.GetTileMap()
 	if tileMap != nil {
 		worldWidth := tileMap.Width * physicsUnit
 		worldHeight := tileMap.Height * physicsUnit
@@ -75,7 +81,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 
 	return &InGameState{
 		stateManager: sm,
-		player:       entities.NewPlayer(playerSpawnX, groundY),
+		player:       entities.NewPlayer(playerSpawnX, playerSpawnY),
 		enemies:      make([]entities.Enemy, 0), // Initialize empty enemies slice
 		currentRoom:  room,
 		camera:       camera,
@@ -153,16 +159,7 @@ func (ig *InGameState) Update() error {
 	// Update camera to follow player
 	if ig.camera != nil && ig.player != nil {
 		px, py := ig.player.GetPosition()
-		
-		// Check if room is smaller than viewport
-		_, _, isSmallRoom := ig.camera.GetCenteredViewport()
-		if isSmallRoom {
-			// For small rooms, keep camera fixed
-			ig.camera.UpdateForSmallRoom()
-		} else {
-			// Normal camera following for larger rooms
-			ig.camera.Update(px, py)
-		}
+		ig.camera.Update(px, py)
 	}
 
 	// Let the current room handle its own logic
@@ -200,14 +197,6 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	cameraOffsetX, cameraOffsetY := float64(0), float64(0)
 	if ig.camera != nil {
 		cameraOffsetX, cameraOffsetY = ig.camera.GetOffset()
-		
-		// Check if we need to center a small room
-		centerOffsetX, centerOffsetY, isSmallRoom := ig.camera.GetCenteredViewport()
-		if isSmallRoom {
-			// Adjust camera offset for centered small room
-			cameraOffsetX += float64(centerOffsetX)
-			cameraOffsetY += float64(centerOffsetY)
-		}
 	}
 
 	// Let the current room draw itself with camera offset
@@ -328,9 +317,25 @@ func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
 	if ig.player == nil {
 		physicsUnit := engine.GetPhysicsUnit()
-		playerSpawnX := 50 * physicsUnit
-		groundY := ig.currentRoom.FindFloorAtX(playerSpawnX)
-		ig.player = entities.NewPlayer(playerSpawnX, groundY)
+		
+		// Get room dimensions
+		tileMap := ig.currentRoom.GetTileMap()
+		roomWidth := tileMap.Width
+		roomHeight := tileMap.Height
+		
+		// Calculate spawn position based on room size
+		playerSpawnX := (roomWidth / 2) * physicsUnit
+		playerSpawnY := (roomHeight - 3) * physicsUnit
+		
+		// For larger rooms, use floor detection
+		if roomWidth > 10 || roomHeight > 10 {
+			groundY := ig.currentRoom.FindFloorAtX(playerSpawnX)
+			if groundY > 0 {
+				playerSpawnY = groundY
+			}
+		}
+		
+		ig.player = entities.NewPlayer(playerSpawnX, playerSpawnY)
 	}
 
 	// Initialize room if needed
