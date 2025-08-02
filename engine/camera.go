@@ -256,3 +256,28 @@ func (c *Camera) WorldToScreen(worldX, worldY int) (int, int) {
 	screenY := worldY - int(c.y)
 	return screenX, screenY
 }
+
+// GetViewportSize returns the camera viewport dimensions
+func (c *Camera) GetViewportSize() (int, int) {
+	return c.width, c.height
+}
+
+// GetWorldBounds returns the world boundary dimensions
+func (c *Camera) GetWorldBounds() (int, int) {
+	return c.worldWidth, c.worldHeight
+}
+
+// GetTargetPosition returns the current target position for smooth following
+func (c *Camera) GetTargetPosition() (float64, float64) {
+	return c.targetX, c.targetY
+}
+
+// GetDeadZone returns the camera dead zone dimensions
+func (c *Camera) GetDeadZone() (int, int) {
+	return c.deadZoneX, c.deadZoneY
+}
+
+// GetMargins returns the camera margin settings
+func (c *Camera) GetMargins() (int, int, int, int) {
+	return c.marginLeft, c.marginRight, c.marginTop, c.marginBottom
+}

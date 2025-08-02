@@ -158,6 +158,56 @@ func (l *Logger) LogRoomLayout(roomName string, width, height int, layout string
 	}
 }
 
+// LogCameraDebug logs camera position, viewport, and world bounds - routes to player logger
+func (l *Logger) LogCameraDebug(cameraX, cameraY, targetX, targetY float64, viewportW, viewportH, worldW, worldH int) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[CAMERA_DEBUG] Pos:(%.2f,%.2f) Target:(%.2f,%.2f) Viewport:(%dx%d) World:(%dx%d)", 
+			cameraX, cameraY, targetX, targetY, viewportW, viewportH, worldW, worldH)
+	}
+}
+
+// LogViewportDebug logs viewport and scale debugging information - routes to game logger
+func (l *Logger) LogViewportDebug(windowW, windowH int, tileScale, charScale float64, physicsUnit int) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[VIEWPORT_DEBUG] Window:(%dx%d) TileScale:%.2f CharScale:%.2f PhysicsUnit:%d", 
+			windowW, windowH, tileScale, charScale, physicsUnit)
+	}
+}
+
+// LogTileMapDebug logs tile map dimensions and rendering info - routes to room logger
+func (l *Logger) LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, worldPixelW, worldPixelH int) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[TILEMAP_DEBUG] Room:%s TileMap:(%dx%d) PhysicsUnit:%d WorldPixels:(%dx%d)", 
+			roomName, mapW, mapH, physicsUnit, worldPixelW, worldPixelH)
+	}
+}
+
+// LogRenderingDebug logs rendering coordinates and transformations - routes to game logger
+func (l *Logger) LogRenderingDebug(objectType string, worldX, worldY, renderX, renderY float64, scale float64) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[RENDER_DEBUG] %s World:(%.2f,%.2f) Render:(%.2f,%.2f) Scale:%.2f", 
+			objectType, worldX, worldY, renderX, renderY, scale)
+	}
+}
+
+// LogCoordinateConversion logs coordinate system conversions - routes to player logger
+func (l *Logger) LogCoordinateConversion(conversionType string, inputX, inputY, outputX, outputY int) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[COORD_DEBUG] %s In:(%d,%d) Out:(%d,%d)", 
+			conversionType, inputX, inputY, outputX, outputY)
+	}
+}
+
 // Close closes the log file
 func (l *Logger) Close() error {
 	l.mutex.Lock()
@@ -234,6 +284,31 @@ func LogSprite(message string) {
 // LogRoomLayout logs the complete room layout using the room logger
 func LogRoomLayout(roomName string, width, height int, layout string) {
 	GetLoggerManager().roomLogger.LogRoomLayout(roomName, width, height, layout)
+}
+
+// LogCameraDebug logs camera debugging information using the player logger
+func LogCameraDebug(cameraX, cameraY, targetX, targetY float64, viewportW, viewportH, worldW, worldH int) {
+	GetLoggerManager().playerLogger.LogCameraDebug(cameraX, cameraY, targetX, targetY, viewportW, viewportH, worldW, worldH)
+}
+
+// LogViewportDebug logs viewport and scale debugging information using the game logger
+func LogViewportDebug(windowW, windowH int, tileScale, charScale float64, physicsUnit int) {
+	GetLoggerManager().gameLogger.LogViewportDebug(windowW, windowH, tileScale, charScale, physicsUnit)
+}
+
+// LogTileMapDebug logs tile map debugging information using the room logger
+func LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, worldPixelW, worldPixelH int) {
+	GetLoggerManager().roomLogger.LogTileMapDebug(roomName, mapW, mapH, physicsUnit, worldPixelW, worldPixelH)
+}
+
+// LogRenderingDebug logs rendering debugging information using the game logger
+func LogRenderingDebug(objectType string, worldX, worldY, renderX, renderY float64, scale float64) {
+	GetLoggerManager().gameLogger.LogRenderingDebug(objectType, worldX, worldY, renderX, renderY, scale)
+}
+
+// LogCoordinateConversion logs coordinate conversion debugging using the player logger
+func LogCoordinateConversion(conversionType string, inputX, inputY, outputX, outputY int) {
+	GetLoggerManager().playerLogger.LogCoordinateConversion(conversionType, inputX, inputY, outputX, outputY)
 }
 
 // CloseLogger closes all loggers
