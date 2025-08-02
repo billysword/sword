@@ -113,10 +113,37 @@ func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer,
 	if scale == 0 {
 		scale = 0.5 + (layer.Depth * 0.5) // Scale from 0.5 to 1.0 based on depth
 	}
+	
+	// Ensure minimum scale to cover viewport plus parallax movement
+	// Calculate how much the image needs to be scaled to cover the screen plus parallax range
+	imageW := float64(layerImage.Bounds().Dx())
+	imageH := float64(layerImage.Bounds().Dy())
+	screenW := float64(pr.screenWidth)
+	screenH := float64(pr.screenHeight)
+	
+	// Calculate the maximum parallax movement range (assume camera can move full screen distances)
+	maxParallaxOffsetX := screenW * layer.Speed
+	maxParallaxOffsetY := screenH * layer.Speed
+	
+	// Calculate minimum scale needed to cover screen plus parallax movement with buffer
+	buffer := 1.5 // 50% extra buffer to ensure no edges show
+	minScaleX := (screenW + 2*maxParallaxOffsetX) / imageW * buffer
+	minScaleY := (screenH + 2*maxParallaxOffsetY) / imageH * buffer
+	minScale := math.Max(minScaleX, minScaleY)
+	
+	// Use the larger of the calculated scale or minimum required scale
+	scale = math.Max(scale, minScale)
+	
 	op.GeoM.Scale(scale, scale)
 	
-	// Apply parallax translation
-	op.GeoM.Translate(parallaxOffsetX, parallaxOffsetY)
+	// Center the scaled image and apply parallax translation
+	// Account for the increased size when centering
+	scaledW := imageW * scale
+	scaledH := imageH * scale
+	centerOffsetX := (scaledW - screenW) / -2
+	centerOffsetY := (scaledH - screenH) / -2
+	
+	op.GeoM.Translate(centerOffsetX + parallaxOffsetX, centerOffsetY + parallaxOffsetY)
 	
 	// Apply depth-of-field effects if enabled
 	if pr.depthOfField {
@@ -133,7 +160,11 @@ func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer,
 		// Use ColorM to apply transparency
 		var cm colorm.ColorM
 		cm.Scale(1, 1, 1, alpha)
-		colorm.DrawImage(screen, layerImage, cm, op)
+		// Convert to colorm.DrawImageOptions
+		colorOp := &colorm.DrawImageOptions{}
+		colorOp.GeoM = op.GeoM
+		colorOp.Filter = op.Filter
+		colorm.DrawImage(screen, layerImage, cm, colorOp)
 	} else {
 		screen.DrawImage(layerImage, op)
 	}

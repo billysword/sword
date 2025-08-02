@@ -778,6 +778,33 @@ func (sr *SimpleRoom) GetParallaxRenderer() *engine.ParallaxRenderer {
 	return sr.parallaxRenderer
 }
 
+// FindFloorAtX finds the Y position of the floor at the given X coordinate
+// Returns the Y position in physics units where the character should stand
+func (sr *SimpleRoom) FindFloorAtX(x int) int {
+	physicsUnit := engine.GetPhysicsUnit()
+	tileX := x / physicsUnit
+	
+	// Clamp to valid tile coordinates
+	if tileX < 0 {
+		tileX = 0
+	}
+	if tileX >= sr.tileMap.Width {
+		tileX = sr.tileMap.Width - 1
+	}
+	
+	// Scan down from the top to find the first solid tile
+	for tileY := 0; tileY < sr.tileMap.Height; tileY++ {
+		tileIndex := sr.tileMap.GetTileIndex(tileX, tileY)
+		if IsSolidTile(tileIndex) {
+			// Return the Y position on top of this tile
+			return tileY * physicsUnit
+		}
+	}
+	
+	// If no solid tile found, use the bottom of the map
+	return (sr.tileMap.Height - 1) * physicsUnit
+}
+
 // Draw renders the room and its tiles
 func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 	// Draw parallax layers without camera offset (for static views)
