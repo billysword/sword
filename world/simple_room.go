@@ -42,6 +42,7 @@ type SimpleRoom struct {
 	tileSize int
 	tilesPerRow int
 	forestTiles map[int]*ebiten.Image
+	parallaxRenderer *engine.ParallaxRenderer
 }
 
 // NewSimpleRoom creates a new simple room with forest tiles
@@ -54,9 +55,55 @@ func NewSimpleRoom(zoneID string) *SimpleRoom {
 		forestTiles: make(map[int]*ebiten.Image),
 	}
 
+	// Initialize enhanced parallax system
+	room.initializeParallaxLayers()
 	room.initializeForestTiles()
 	room.buildRoom()
 	return room
+}
+
+// initializeParallaxLayers sets up the enhanced multi-layer parallax system
+func (sr *SimpleRoom) initializeParallaxLayers() {
+	// Create default parallax layers if none configured
+	layers := engine.GameConfig.ParallaxLayers
+	if len(layers) == 0 {
+		// Create demo layers with different speeds and depths
+		layers = []engine.ParallaxLayer{
+			{
+				Speed:      0.2,
+				Depth:      0.1,
+				Alpha:      0.4,
+				Scale:      0.3,
+				OffsetX:    0,
+				OffsetY:    50,
+				Repeatable: true,
+			},
+			{
+				Speed:      0.5,
+				Depth:      0.5,
+				Alpha:      0.7,
+				Scale:      0.5,
+				OffsetX:    0,
+				OffsetY:    0,
+				Repeatable: true,
+			},
+			{
+				Speed:      0.8,
+				Depth:      0.8,
+				Alpha:      0.9,
+				Scale:      0.7,
+				OffsetX:    0,
+				OffsetY:    -30,
+				Repeatable: true,
+			},
+		}
+	}
+	
+	sr.parallaxRenderer = engine.NewParallaxRenderer(
+		layers,
+		engine.GameConfig.EnableDepthOfField,
+		engine.GameConfig.DepthBlurStrength,
+	)
 }
 
 // initializeForestTiles extracts individual tiles from the forest tilemap
@@ -706,6 +753,11 @@ func (sr *SimpleRoom) HandleCollisions(player *entities.Player) {
 	sr.BaseRoom.HandleCollisions(player)
 }
 
+// GetParallaxRenderer returns the parallax renderer for this room
+func (sr *SimpleRoom) GetParallaxRenderer() *engine.ParallaxRenderer {
+	return sr.parallaxRenderer
+}
+
 // Draw renders the room and its tiles
 func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 	// Draw background first (if enabled)
@@ -724,15 +776,20 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 
 // DrawWithCamera renders the room with camera offset
 func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Draw background with parallax effect (slower movement)
-	if engine.GetBackgroundVisible() && engine.GetBackgroundImage() != nil {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(0.5, 0.5)
-		// Apply parallax scrolling to background (moves slower than foreground)
-		bgOffsetX := cameraOffsetX * engine.GameConfig.ParallaxFactor
-		bgOffsetY := cameraOffsetY * engine.GameConfig.ParallaxFactor
-		op.GeoM.Translate(bgOffsetX, bgOffsetY)
-		screen.DrawImage(engine.GetBackgroundImage(), op)
+	// Draw enhanced multi-layer parallax background
+	if sr.parallaxRenderer != nil {
+		sr.parallaxRenderer.DrawParallaxLayers(screen, cameraOffsetX, cameraOffsetY)
+	} else {
+		// Fallback to original single-layer parallax
+		if engine.GetBackgroundVisible() && engine.GetBackgroundImage() != nil {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(0.5, 0.5)
+			// Apply parallax scrolling to background (moves slower than foreground)
+			bgOffsetX := cameraOffsetX * engine.GameConfig.ParallaxFactor
+			bgOffsetY := cameraOffsetY * engine.GameConfig.ParallaxFactor
+			op.GeoM.Translate(bgOffsetX, bgOffsetY)
+			screen.DrawImage(engine.GetBackgroundImage(), op)
+		}
 	}
 
 	// Draw tiles with camera offset
