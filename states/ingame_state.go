@@ -185,28 +185,18 @@ func (ig *InGameState) Update() error {
 Draw renders the game world.
 Renders all game layers in the correct order:
 1. Primary background
-2. Parallax background
-3. Room tiles
-4. Entities (enemies, player)
-5. Foreground
-6. Viewport frame (black borders)
-7. HUD
+2. World layers (with camera transform):
+   - Parallax background
+   - Room tiles
+   - Entities (enemies, player)
+   - Foreground
+3. Viewport frame (black borders)
+4. HUD
 
 Parameters:
   - screen: The target screen/image to render to
 */
 func (ig *InGameState) Draw(screen *ebiten.Image) {
-	// Get camera offset
-	cameraOffsetX, cameraOffsetY := float64(0), float64(0)
-	if ig.camera != nil {
-		cameraOffsetX, cameraOffsetY = ig.camera.GetOffset()
-	}
-	
-	// Update viewport renderer
-	if ig.viewportRenderer != nil {
-		ig.viewportRenderer.SetOffset(cameraOffsetX, cameraOffsetY)
-	}
-
 	// Layer 1: Primary background (fills entire screen)
 	backgroundImage := engine.GetBackgroundImage()
 	if backgroundImage != nil {
@@ -221,21 +211,50 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		screen.DrawImage(backgroundImage, opts)
 	}
 
-	// Layers 2-5: Let the room handle its own rendering layers
+	// Get camera offset for world rendering
+	cameraOffsetX, cameraOffsetY := float64(0), float64(0)
+	if ig.camera != nil {
+		cameraOffsetX, cameraOffsetY = ig.camera.GetOffset()
+	}
+	
+	// Update viewport renderer
+	if ig.viewportRenderer != nil {
+		ig.viewportRenderer.SetOffset(cameraOffsetX, cameraOffsetY)
+	}
+
+	// Create a sub-image for world rendering with camera offset
+	// We'll draw everything at world coordinates, then draw this with offset
+	worldWidth, worldHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 	if ig.currentRoom != nil {
-		ig.currentRoom.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
+		if tileMap := ig.currentRoom.GetTileMap(); tileMap != nil {
+			physicsUnit := engine.GetPhysicsUnit()
+			worldWidth = tileMap.Width * physicsUnit
+			worldHeight = tileMap.Height * physicsUnit
+		}
+	}
+	
+	// Create world surface
+	worldSurface := ebiten.NewImage(worldWidth, worldHeight)
+	
+	// Layer 2-5: Draw world content to world surface
+	if ig.currentRoom != nil {
+		// Room draws at world coordinates (0,0 offset)
+		ig.currentRoom.DrawWithCamera(worldSurface, 0, 0)
 	}
 
-	// Layer 4: Entities (part of room rendering, but we handle enemies and player here)
-	// Draw all enemies with camera offset
+	// Draw entities to world surface at their world positions
 	for _, enemy := range ig.enemies {
-		enemy.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
+		enemy.Draw(worldSurface)
 	}
 
-	// Draw player on top of enemies with camera offset
 	if ig.player != nil {
-		ig.player.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
+		ig.player.Draw(worldSurface)
 	}
+	
+	// Draw the world surface to screen with camera offset
+	worldOpts := &ebiten.DrawImageOptions{}
+	worldOpts.GeoM.Translate(cameraOffsetX, cameraOffsetY)
+	screen.DrawImage(worldSurface, worldOpts)
 
 	// Layer 6: Viewport frame (black borders)
 	if ig.viewportRenderer != nil {
