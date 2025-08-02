@@ -78,9 +78,17 @@ func (sr *SimpleRoom) initializeForestTiles() {
 
 // getTileSprite returns the appropriate sprite for a tile type
 func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
+	// First try local cache for backwards compatibility
 	if sprite, exists := sr.forestTiles[tileIndex]; exists {
 		return sprite
 	}
+	
+	// Try sprite manager
+	sprite := engine.LoadSpriteByHex(tileIndex)
+	if sprite != nil {
+		return sprite
+	}
+	
 	// Fallback to dirt if not found
 	if sprite, exists := sr.forestTiles[TILE_DIRT]; exists {
 		return sprite

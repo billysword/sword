@@ -84,6 +84,17 @@ func (g *Game) Update() error {
 	if g.stateManager == nil {
 		g.stateManager = engine.NewStateManager()
 		startState := states.NewStartState(g.stateManager)
+		
+		// Initialize sprite manager and load tile sheets
+		engine.InitSpriteManager()
+		sm := engine.GetSpriteManager()
+		
+		// Load the forest tile sheet with proper configuration
+		err := sm.LoadSpriteSheet("forest", tileSprite, 16, 16)
+		if err != nil {
+			panic(err)
+		}
+		
 		// Pass sprites to the state manager for use by game states
 		engine.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
 		engine.SetGlobalTileSprites(tileSprite, tilesSprite)

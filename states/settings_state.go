@@ -54,24 +54,35 @@ func NewSettingsState(sm *engine.StateManager, room world.Room) *SettingsState {
 
 /*
 NewSettingsStateFromPause creates a new settings state accessible from pause menu.
-Initializes the settings state with a reference to the pause state for proper navigation.
+Initializes the settings state with the current room from the ingame state.
 
 Parameters:
   - sm: StateManager instance for handling state transitions
-  - room: Current room to display tile data from
+  - ingameState: The ingame state to get current room data from
   - pauseState: The pause state to return to when exiting settings
 
 Returns a pointer to the new SettingsState instance.
 */
-func NewSettingsStateFromPause(sm *engine.StateManager, room world.Room, pauseState *PauseState) *SettingsState {
+func NewSettingsStateFromPause(sm *engine.StateManager, ingameState *InGameState, pauseState *PauseState) *SettingsState {
 	return &SettingsState{
 		stateManager:  sm,
 		scrollY:       0,
 		tileSize:      40,
-		currentRoom:   room,
+		currentRoom:   ingameState.GetCurrentRoom(),
 		returnToPause: true,
 		pauseState:    pauseState,
 	}
+}
+
+/*
+getCurrentRoom returns the current room to display.
+Prioritizes the dynamic room from ingame state if available, 
+otherwise falls back to the static room reference.
+
+Returns the current room instance, or nil if no room is available.
+*/
+func (s *SettingsState) getCurrentRoom() world.Room {
+	return s.currentRoom
 }
 
 /*
@@ -147,33 +158,43 @@ func (s *SettingsState) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(screen, instructions, 10, 30)
 
 	// Get tile map data
-	if s.currentRoom == nil {
+	currentRoom := s.getCurrentRoom()
+	if currentRoom == nil {
 		noRoomMsg := "No room loaded"
 		ebitenutil.DebugPrintAt(screen, noRoomMsg, 10, 70)
 		return
 	}
 
-	tileMap := s.currentRoom.GetTileMap()
+	tileMap := currentRoom.GetTileMap()
 	if tileMap == nil {
 		noMapMsg := "No tile map available"
 		ebitenutil.DebugPrintAt(screen, noMapMsg, 10, 70)
 		return
 	}
 
-	// Room info
-	roomInfo := fmt.Sprintf("Room: %s | Size: %dx%d tiles",
-		s.currentRoom.GetZoneID(), tileMap.Width, tileMap.Height)
+	// Room info - show if this is live data or static
+	roomSource := "Live"
+	roomInfo := fmt.Sprintf("Room: %s (%s) | Size: %dx%d tiles",
+		currentRoom.GetZoneID(), roomSource, tileMap.Width, tileMap.Height)
 	ebitenutil.DebugPrintAt(screen, roomInfo, 10, 50)
+	
+	// Sprite sheet info
+	sm := engine.GetSpriteManager()
+	sheetsInfo := fmt.Sprintf("Loaded Sheets: %v", sm.ListSheets())
+	ebitenutil.DebugPrintAt(screen, sheetsInfo, 10, 70)
 
 	// Calculate display area
-	startY := 80 - s.scrollY
+	startY := 100 - s.scrollY
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 	tilesPerRow := (screenWidth - 20) / s.tileSize
 	if tilesPerRow < 1 {
 		tilesPerRow = 1
 	}
 
-	// Draw tile grid with hex values
+	// Get sprite manager for tile rendering
+	sm = engine.GetSpriteManager()
+	
+	// Draw tile grid with hex values and actual sprites
 	for y := 0; y < tileMap.Height; y++ {
 		for x := 0; x < tileMap.Width; x++ {
 			tileIndex := tileMap.Tiles[y][x]
@@ -195,24 +216,45 @@ func (s *SettingsState) Draw(screen *ebiten.Image) {
 			opts := &ebiten.DrawImageOptions{}
 			opts.GeoM.Translate(float64(displayX), float64(displayY))
 			screen.DrawImage(tileRect, opts)
+			
+			// Try to draw actual sprite from sprite manager
+			if tileIndex >= 0 {
+				sprite := engine.LoadSpriteByHex(tileIndex)
+				if sprite != nil {
+					spriteOpts := &ebiten.DrawImageOptions{}
+					// Scale sprite to fit within the tile display area
+					scale := float64(s.tileSize-4) / float64(engine.GameConfig.TileSize)
+					spriteOpts.GeoM.Scale(scale, scale)
+					spriteOpts.GeoM.Translate(float64(displayX+2), float64(displayY+2))
+					screen.DrawImage(sprite, spriteOpts)
+				}
+			}
 
-			// Draw hex value
+			// Draw hex value (larger, more prominent)
 			hexText := s.formatTileValue(tileIndex)
-			ebitenutil.DebugPrintAt(screen, hexText, displayX+2, displayY+2)
+			ebitenutil.DebugPrintAt(screen, hexText, displayX+3, displayY+5)
 
-			// Draw coordinates (smaller text)
-			coordText := fmt.Sprintf("%d,%d", x, y)
-			ebitenutil.DebugPrintAt(screen, coordText, displayX+2, displayY+s.tileSize-15)
+			// Draw coordinates (smaller text at bottom)
+			coordText := fmt.Sprintf("(%d,%d)", x, y)
+			ebitenutil.DebugPrintAt(screen, coordText, displayX+2, displayY+s.tileSize-12)
+			
+			// Draw tile index in decimal as well for easy reference
+			if s.tileSize > 30 {
+				decText := fmt.Sprintf("#%d", tileIndex)
+				ebitenutil.DebugPrintAt(screen, decText, displayX+2, displayY+s.tileSize-25)
+			}
 		}
 	}
 
 	// Legend
-	legendY := screenHeight - 100
+	legendY := screenHeight - 140
 	ebitenutil.DebugPrintAt(screen, "LEGEND:", 10, legendY)
 	ebitenutil.DebugPrintAt(screen, "Empty (-1) - Black", 10, legendY+15)
 	ebitenutil.DebugPrintAt(screen, "Ground (0x01+) - Brown", 10, legendY+30)
 	ebitenutil.DebugPrintAt(screen, "Platform - Green", 10, legendY+45)
 	ebitenutil.DebugPrintAt(screen, "Other - Blue", 10, legendY+60)
+	ebitenutil.DebugPrintAt(screen, "Display: Hex, Decimal #, (x,y)", 10, legendY+75)
+	ebitenutil.DebugPrintAt(screen, "Sprites loaded from sprite manager", 10, legendY+90)
 }
 
 /*
