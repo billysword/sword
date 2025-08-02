@@ -163,7 +163,9 @@ func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer,
 		// Convert to colorm.DrawImageOptions
 		colorOp := &colorm.DrawImageOptions{}
 		colorOp.GeoM = op.GeoM
+		colorOp.Blend = op.Blend
 		colorOp.Filter = op.Filter
+		
 		colorm.DrawImage(screen, layerImage, cm, colorOp)
 	} else {
 		screen.DrawImage(layerImage, op)
