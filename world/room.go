@@ -143,6 +143,9 @@ type Room interface {
 	OnEnter(player *entities.Player)
 	OnExit(player *entities.Player)
 
+	// Floor detection for proper spawning
+	FindFloorAtX(x int) int
+
 	// Rendering
 	Draw(screen *ebiten.Image)
 	DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64)
@@ -293,6 +296,22 @@ Parameters:
 */
 func (br *BaseRoom) OnExit(player *entities.Player) {
 	// Default: no special exit logic
+}
+
+/*
+FindFloorAtX finds the Y position of the floor at the given X coordinate.
+Base implementation uses the configured ground level. Rooms with tile-based
+collision should override this to provide accurate floor detection.
+
+Parameters:
+  - x: The X coordinate in physics units
+
+Returns the Y position in physics units where entities should spawn.
+*/
+func (br *BaseRoom) FindFloorAtX(x int) int {
+	// Default: use config ground level
+	physicsUnit := engine.GetPhysicsUnit()
+	return engine.GameConfig.GroundLevel * physicsUnit
 }
 
 /*

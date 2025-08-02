@@ -48,13 +48,19 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	windowWidth, windowHeight := ebiten.WindowSize()
 
 	physicsUnit := engine.GetPhysicsUnit()
-	groundY := engine.GameConfig.GroundLevel * physicsUnit
+	
+	// Create the room first
+	room := world.NewSimpleRoom("main")
+	
+	// Find the actual floor position for spawning
+	playerSpawnX := 50 * physicsUnit
+	groundY := room.FindFloorAtX(playerSpawnX)
 
 	return &InGameState{
 		stateManager: sm,
-		player:       entities.NewPlayer(50*physicsUnit, groundY),
+		player:       entities.NewPlayer(playerSpawnX, groundY),
 		enemies:      make([]entities.Enemy, 0), // Initialize empty enemies slice
-		currentRoom:  world.NewSimpleRoom("main"),
+		currentRoom:  room,
 		camera:       engine.NewCamera(windowWidth, windowHeight),
 	}
 }
@@ -285,8 +291,9 @@ func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
 	if ig.player == nil {
 		physicsUnit := engine.GetPhysicsUnit()
-		groundY := engine.GameConfig.GroundLevel * physicsUnit
-		ig.player = entities.NewPlayer(50*physicsUnit, groundY)
+		playerSpawnX := 50 * physicsUnit
+		groundY := ig.currentRoom.FindFloorAtX(playerSpawnX)
+		ig.player = entities.NewPlayer(playerSpawnX, groundY)
 	}
 
 	// Initialize room if needed
@@ -297,13 +304,23 @@ func (ig *InGameState) OnEnter() {
 	// Spawn some test enemies if the enemies slice is empty
 	if len(ig.enemies) == 0 {
 		physicsUnit := engine.GetPhysicsUnit()
-		groundY := engine.GameConfig.GroundLevel * physicsUnit
+
+		// Use tile-based floor detection for enemy spawning
+		enemy1X := 300 * physicsUnit
+		enemy2X := 600 * physicsUnit
+		enemy3X := 900 * physicsUnit
+		enemy4X := 1200 * physicsUnit
+		
+		enemy1Y := ig.currentRoom.FindFloorAtX(enemy1X)
+		enemy2Y := ig.currentRoom.FindFloorAtX(enemy2X)
+		enemy3Y := ig.currentRoom.FindFloorAtX(enemy3X)
+		enemy4Y := ig.currentRoom.FindFloorAtX(enemy4X)
 
 		// Spawn different types of enemies to demonstrate the interface system
-		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(300*physicsUnit, groundY))     // Patrol behavior
-		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(600*physicsUnit, groundY))  // Random behavior
-		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(900*physicsUnit, groundY))     // Patrol behavior
-		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(1200*physicsUnit, groundY)) // Random behavior
+		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(enemy1X, enemy1Y))     // Patrol behavior
+		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(enemy2X, enemy2Y))  // Random behavior
+		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(enemy3X, enemy3Y))     // Patrol behavior
+		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(enemy4X, enemy4Y)) // Random behavior
 	}
 
 	// Set up camera bounds based on room size
