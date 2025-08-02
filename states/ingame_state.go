@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -55,13 +56,29 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Find the actual floor position for spawning
 	playerSpawnX := 50 * physicsUnit
 	groundY := room.FindFloorAtX(playerSpawnX)
+	
+	// For small rooms, spawn player in center
+	if engine.GameConfig.RoomWidthTiles == 10 {
+		playerSpawnX = 5 * physicsUnit  // Center of 10-tile wide room
+		groundY = 7 * physicsUnit        // Just above the floor at y=8
+	}
+
+	camera := engine.NewCamera(windowWidth, windowHeight)
+	
+	// Set camera world bounds based on room size
+	tileMap := room.GetTileMap()
+	if tileMap != nil {
+		worldWidth := tileMap.Width * physicsUnit
+		worldHeight := tileMap.Height * physicsUnit
+		camera.SetWorldBounds(worldWidth, worldHeight)
+	}
 
 	return &InGameState{
 		stateManager: sm,
 		player:       entities.NewPlayer(playerSpawnX, groundY),
 		enemies:      make([]entities.Enemy, 0), // Initialize empty enemies slice
 		currentRoom:  room,
-		camera:       engine.NewCamera(windowWidth, windowHeight),
+		camera:       camera,
 	}
 }
 
@@ -124,19 +141,28 @@ func (ig *InGameState) Update() error {
 		ig.cycleParallaxLayers()
 	}
 
+	// Handle player input and update
 	ig.player.HandleInputWithLogging(roomName)
 	ig.player.Update()
-
+	
 	// Update all enemies
 	for _, enemy := range ig.enemies {
 		enemy.Update()
 	}
-
+	
 	// Update camera to follow player
 	if ig.camera != nil && ig.player != nil {
 		px, py := ig.player.GetPosition()
-		// Convert physics units to pixels for camera
-		ig.camera.Update(px/engine.GetPhysicsUnit(), py/engine.GetPhysicsUnit())
+		
+		// Check if room is smaller than viewport
+		_, _, isSmallRoom := ig.camera.GetCenteredViewport()
+		if isSmallRoom {
+			// For small rooms, keep camera fixed
+			ig.camera.UpdateForSmallRoom()
+		} else {
+			// Normal camera following for larger rooms
+			ig.camera.Update(px, py)
+		}
 	}
 
 	// Let the current room handle its own logic
@@ -167,10 +193,21 @@ Parameters:
   - screen: The target screen/image to render to
 */
 func (ig *InGameState) Draw(screen *ebiten.Image) {
+	// First, fill the entire screen with black for dead areas
+	screen.Fill(color.Black)
+	
 	// Apply camera transformation
 	cameraOffsetX, cameraOffsetY := float64(0), float64(0)
 	if ig.camera != nil {
 		cameraOffsetX, cameraOffsetY = ig.camera.GetOffset()
+		
+		// Check if we need to center a small room
+		centerOffsetX, centerOffsetY, isSmallRoom := ig.camera.GetCenteredViewport()
+		if isSmallRoom {
+			// Adjust camera offset for centered small room
+			cameraOffsetX += float64(centerOffsetX)
+			cameraOffsetY += float64(centerOffsetY)
+		}
 	}
 
 	// Let the current room draw itself with camera offset
@@ -302,7 +339,7 @@ func (ig *InGameState) OnEnter() {
 	}
 
 	// Spawn some test enemies if the enemies slice is empty
-	if len(ig.enemies) == 0 {
+	if len(ig.enemies) == 0 && engine.GameConfig.RoomWidthTiles > 10 {
 		physicsUnit := engine.GetPhysicsUnit()
 
 		// Use tile-based floor detection for enemy spawning

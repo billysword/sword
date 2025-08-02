@@ -156,6 +156,31 @@ func ZoomedInConfig() Config {
 	return config
 }
 
+/*
+SmallRoomConfig returns a configuration for a 10x10 room with centered viewport.
+This configuration is designed for testing small room layouts with black dead areas
+when the room doesn't fill the entire window.
+*/
+func SmallRoomConfig() Config {
+	config := DefaultConfig()
+	
+	// Small room settings
+	config.RoomWidthTiles = 10     // 10x10 room
+	config.RoomHeightTiles = 10
+	config.GroundLevel = 8         // Ground near bottom
+	
+	// Keep tile scaling the same
+	config.TileScaleFactor = 2.0   // Make tiles larger for visibility
+	config.CharScaleFactor = 1.0   // Larger character for 2x1 tile size
+	
+	// Disable camera smoothing for precise control
+	config.CameraSmoothing = 0.0
+	config.CameraDeadZoneX = 0.0
+	config.CameraDeadZoneY = 0.0
+	
+	return config
+}
+
 // GameConfig is the global configuration instance
 // Initialize with default config, can be changed at runtime
 var GameConfig = DefaultConfig()

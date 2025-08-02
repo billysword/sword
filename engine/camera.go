@@ -281,3 +281,48 @@ func (c *Camera) GetDeadZone() (int, int) {
 func (c *Camera) GetMargins() (int, int, int, int) {
 	return c.marginLeft, c.marginRight, c.marginTop, c.marginBottom
 }
+
+/*
+GetCenteredViewport calculates the centered viewport position for small rooms.
+When the room is smaller than the camera viewport, this calculates the offset
+needed to center the room in the screen with black dead areas around it.
+
+Returns:
+  - offsetX: Horizontal offset to center the room
+  - offsetY: Vertical offset to center the room
+  - isSmaller: Whether the room is smaller than the viewport
+*/
+func (c *Camera) GetCenteredViewport() (int, int, bool) {
+	// Check if room is smaller than viewport
+	roomTooSmallX := c.worldWidth < c.width
+	roomTooSmallY := c.worldHeight < c.height
+	
+	offsetX := 0
+	offsetY := 0
+	
+	if roomTooSmallX {
+		// Center horizontally
+		offsetX = (c.width - c.worldWidth) / 2
+	}
+	
+	if roomTooSmallY {
+		// Center vertically
+		offsetY = (c.height - c.worldHeight) / 2
+	}
+	
+	return offsetX, offsetY, roomTooSmallX || roomTooSmallY
+}
+
+/*
+UpdateForSmallRoom updates camera for rooms smaller than the viewport.
+When the room is smaller than the viewport, the camera position is fixed
+to show the entire room centered in the viewport.
+*/
+func (c *Camera) UpdateForSmallRoom() {
+	// For small rooms, camera should be fixed at 0,0
+	// The centering is handled during rendering
+	c.x = 0
+	c.y = 0
+	c.targetX = 0
+	c.targetY = 0
+}

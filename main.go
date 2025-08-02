@@ -218,7 +218,8 @@ func main() {
 	engine.LogInfo("Game starting up...")
 
 	// Get config for window settings
-	config := engine.GameConfig
+	config := engine.SmallRoomConfig()
+	engine.SetConfig(config)
 
 	ebiten.SetWindowSize(config.WindowWidth, config.WindowHeight)
 	ebiten.SetWindowTitle(config.WindowTitle)

@@ -169,6 +169,32 @@ func (sr *SimpleRoom) buildRoom() {
 		return
 	}
 
+	// For small 10x10 rooms, create a simple enclosed space
+	if engine.GameConfig.RoomWidthTiles == 10 && engine.GameConfig.RoomHeightTiles == 10 {
+		// Create walls on all sides
+		for y := 0; y < 10; y++ {
+			for x := 0; x < 10; x++ {
+				// Top and bottom walls
+				if y == 0 || y == 9 {
+					sr.tileMap.SetTile(x, y, TILE_DIRT)
+				} else if x == 0 || x == 9 {
+					// Left and right walls
+					sr.tileMap.SetTile(x, y, TILE_DIRT)
+				} else if y == 8 {
+					// Floor
+					sr.tileMap.SetTile(x, y, TILE_DIRT)
+				}
+			}
+		}
+		
+		// Add a small platform in the middle
+		sr.tileMap.SetTile(4, 5, TILE_DIRT)
+		sr.tileMap.SetTile(5, 5, TILE_DIRT)
+		sr.tileMap.SetTile(6, 5, TILE_DIRT)
+		
+		return
+	}
+
 	// Create a room based on config dimensions
 	// Fill the bottom 15 rows with ground tiles
 	groundStartY := engine.GameConfig.RoomHeightTiles - 15
