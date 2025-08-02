@@ -29,10 +29,12 @@ The original system had only a single background layer with fixed parallax speed
 ### New Multi-Layer Parallax System
 
 #### Key Features
-1. **Multiple Background Layers**: Support for unlimited parallax layers with different properties
-2. **Depth-Based Effects**: Automatic transparency, scaling, and color adjustments based on depth
-3. **Depth of Field Simulation**: Blur effects, desaturation, and contrast reduction for distant layers
-4. **Interactive Controls**: Runtime toggling and configuration cycling for testing
+1. **Multiple Background/Foreground Layers**: Support for unlimited parallax layers with different properties
+2. **Bi-directional Parallax**: Background layers (speed < 1.0) and foreground layers (speed > 1.0)
+3. **Depth-Based Effects**: Automatic transparency, scaling, and color adjustments based on depth
+4. **Depth of Field Simulation**: Blur effects, desaturation, and contrast reduction for distant layers
+5. **Interactive Controls**: Runtime toggling and configuration cycling for testing
+6. **Unified Rendering**: No fallback mechanisms - all rendering through parallax system
 
 #### Implementation Details
 
@@ -73,8 +75,10 @@ The system simulates depth of field through:
 ### Demo Configurations
 
 1. **Minimal (1 layer)**: Single background layer for performance testing
-2. **Standard (3 layers)**: Balanced depth with background, midground, and foreground
-3. **Dramatic (5 layers)**: Maximum depth effect with multiple layers
+2. **Balanced (3 layers)**: Background, midground, and foreground with speed > 1.0 for foreground
+3. **Dramatic (6 layers)**: Maximum depth effect with multiple background and foreground layers
+
+**Note**: Layers with speed > 1.0 move faster than the camera, creating foreground parallax effects.
 
 ## 🎯 Visual Improvements Achieved
 
@@ -84,18 +88,20 @@ The system simulates depth of field through:
 - Static visual experience
 
 ### After
-- Multiple moving layers creating depth illusion
+- Multiple moving layers creating depth illusion in both directions
+- Background parallax (slower than camera) and foreground parallax (faster than camera)
 - Automatic depth-based visual effects (transparency, scale, color)
 - Interactive depth of field simulation
 - Dynamic layer configuration for different visual styles
 - Proper window resizing support
+- Unified rendering system with no fallback mechanisms
 
 ## 🔧 Technical Benefits
 
 1. **Modular Design**: ParallaxRenderer can be reused across different room types
 2. **Performance Conscious**: Efficient rendering with proper culling and effect application
 3. **Configurable**: Easy to adjust depth effects and layer properties
-4. **Backwards Compatible**: Falls back to original single-layer system if new system fails
+4. **Unified Rendering**: All background/foreground rendering goes through the parallax system
 5. **Debug Friendly**: Runtime controls for testing different configurations
 
 ## 🚀 Future Enhancement Opportunities

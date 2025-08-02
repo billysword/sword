@@ -68,19 +68,21 @@ DrawParallaxLayers renders all parallax layers with proper depth effects.
 Layers are drawn from background to foreground with appropriate transformations.
 */
 func (pr *ParallaxRenderer) DrawParallaxLayers(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	if !GetBackgroundVisible() {
-		return
-	}
+	// Always render parallax layers regardless of background visibility setting
+	// Individual layers can be controlled through their Alpha property
 	
 	pr.updateScreenSize()
 	
+	// Ensure we have images loaded
+	if len(pr.layerImages) != len(pr.layers) {
+		pr.loadLayerImages()
+	}
+	
 	// Draw layers from background to foreground (lowest depth first)
 	for i, layer := range pr.layers {
-		if pr.layerImages[i] == nil {
-			continue
+		if pr.layerImages[i] != nil {
+			pr.drawLayer(screen, layer, pr.layerImages[i], cameraOffsetX, cameraOffsetY, i)
 		}
-		
-		pr.drawLayer(screen, layer, pr.layerImages[i], cameraOffsetX, cameraOffsetY, i)
 	}
 }
 
@@ -89,6 +91,12 @@ drawLayer renders a single parallax layer with depth effects.
 Applies parallax scrolling, depth-based transparency, and scaling.
 */
 func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer, layerImage *ebiten.Image, cameraOffsetX, cameraOffsetY float64, layerIndex int) {
+	// Respect the global background visibility setting for background layers
+	// Foreground layers (depth > 0.5) are always drawn
+	if !GetBackgroundVisible() && layer.Depth <= 0.5 {
+		return
+	}
+	
 	// Calculate parallax offset
 	parallaxOffsetX := cameraOffsetX * layer.Speed
 	parallaxOffsetY := cameraOffsetY * layer.Speed

@@ -170,14 +170,6 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	// Let the current room draw itself with camera offset
 	if ig.currentRoom != nil {
 		ig.currentRoom.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
-	} else {
-		// Fallback: draw background if no room
-		if engine.GetBackgroundImage() != nil {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(0.5, 0.5)
-			op.GeoM.Translate(cameraOffsetX, cameraOffsetY)
-			screen.DrawImage(engine.GetBackgroundImage(), op)
-		}
 	}
 
 	// Draw all enemies with camera offset
@@ -358,23 +350,24 @@ func (ig *InGameState) cycleParallaxLayers() {
 		if simpleRoom.GetParallaxRenderer() != nil {
 			// Cycle through different layer configurations
 			configs := [][]engine.ParallaxLayer{
-				// Minimal layers
+				// Minimal background only
 				{
 					{Speed: 0.3, Depth: 0.2, Alpha: 0.5, Scale: 0.4},
 				},
-				// Standard layers  
+				// Background and foreground layers
 				{
 					{Speed: 0.2, Depth: 0.1, Alpha: 0.4, Scale: 0.3, OffsetY: 50},
-					{Speed: 0.5, Depth: 0.5, Alpha: 0.7, Scale: 0.5},
-					{Speed: 0.8, Depth: 0.8, Alpha: 0.9, Scale: 0.7, OffsetY: -30},
+					{Speed: 0.5, Depth: 0.5, Alpha: 0.7, Scale: 0.6},
+					{Speed: 1.2, Depth: 0.9, Alpha: 0.5, Scale: 1.3, OffsetY: -30},
 				},
-				// Many layers for dramatic effect
+				// Many layers with background and foreground
 				{
-					{Speed: 0.1, Depth: 0.05, Alpha: 0.3, Scale: 0.2, OffsetY: 80},
-					{Speed: 0.3, Depth: 0.2, Alpha: 0.5, Scale: 0.4, OffsetY: 40},
-					{Speed: 0.5, Depth: 0.4, Alpha: 0.7, Scale: 0.6},
-					{Speed: 0.7, Depth: 0.6, Alpha: 0.8, Scale: 0.8, OffsetY: -20},
-					{Speed: 0.9, Depth: 0.9, Alpha: 0.95, Scale: 0.9, OffsetY: -40},
+					{Speed: 0.05, Depth: 0.02, Alpha: 0.2, Scale: 0.2, OffsetY: 100},
+					{Speed: 0.2, Depth: 0.1, Alpha: 0.4, Scale: 0.3, OffsetY: 60},
+					{Speed: 0.4, Depth: 0.3, Alpha: 0.6, Scale: 0.5, OffsetY: 20},
+					{Speed: 0.6, Depth: 0.5, Alpha: 0.8, Scale: 0.7},
+					{Speed: 1.1, Depth: 0.8, Alpha: 0.6, Scale: 1.1, OffsetY: -20},
+					{Speed: 1.4, Depth: 0.95, Alpha: 0.4, Scale: 1.5, OffsetY: -60},
 				},
 			}
 			

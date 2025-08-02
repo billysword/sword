@@ -64,41 +64,61 @@ func NewSimpleRoom(zoneID string) *SimpleRoom {
 
 // initializeParallaxLayers sets up the enhanced multi-layer parallax system
 func (sr *SimpleRoom) initializeParallaxLayers() {
-	// Create default parallax layers if none configured
+	// Always create parallax layers - use config if available, otherwise use defaults
 	layers := engine.GameConfig.ParallaxLayers
 	if len(layers) == 0 {
-		// Create demo layers with different speeds and depths
+		// Create default demo layers with different speeds and depths
+		// Background layers (depth <= 0.5) and foreground layers (depth > 0.5)
 		layers = []engine.ParallaxLayer{
 			{
-				Speed:      0.2,
-				Depth:      0.1,
-				Alpha:      0.4,
-				Scale:      0.3,
+				Speed:      0.1,
+				Depth:      0.05,
+				Alpha:      0.3,
+				Scale:      0.25,
 				OffsetX:    0,
-				OffsetY:    50,
+				OffsetY:    80,
+				Repeatable: true,
+			},
+			{
+				Speed:      0.3,
+				Depth:      0.3,
+				Alpha:      0.5,
+				Scale:      0.4,
+				OffsetX:    0,
+				OffsetY:    40,
 				Repeatable: true,
 			},
 			{
 				Speed:      0.5,
 				Depth:      0.5,
 				Alpha:      0.7,
-				Scale:      0.5,
+				Scale:      0.6,
 				OffsetX:    0,
 				OffsetY:    0,
 				Repeatable: true,
 			},
 			{
-				Speed:      0.8,
-				Depth:      0.8,
-				Alpha:      0.9,
-				Scale:      0.7,
+				Speed:      1.1,
+				Depth:      0.9,
+				Alpha:      0.6,
+				Scale:      1.2,
 				OffsetX:    0,
-				OffsetY:    -30,
+				OffsetY:    -20,
+				Repeatable: true,
+			},
+			{
+				Speed:      1.3,
+				Depth:      0.95,
+				Alpha:      0.4,
+				Scale:      1.5,
+				OffsetX:    0,
+				OffsetY:    -50,
 				Repeatable: true,
 			},
 		}
 	}
 	
+	// Always create the parallax renderer - no fallback mechanism
 	sr.parallaxRenderer = engine.NewParallaxRenderer(
 		layers,
 		engine.GameConfig.EnableDepthOfField,
@@ -760,11 +780,9 @@ func (sr *SimpleRoom) GetParallaxRenderer() *engine.ParallaxRenderer {
 
 // Draw renders the room and its tiles
 func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
-	// Draw background first (if enabled)
-	if engine.GetBackgroundVisible() && engine.GetBackgroundImage() != nil {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(0.5, 0.5)
-		screen.DrawImage(engine.GetBackgroundImage(), op)
+	// Draw parallax layers without camera offset (for static views)
+	if sr.parallaxRenderer != nil {
+		sr.parallaxRenderer.DrawParallaxLayers(screen, 0, 0)
 	}
 
 	// Draw tiles using sprite provider function
@@ -776,20 +794,9 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 
 // DrawWithCamera renders the room with camera offset
 func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Draw enhanced multi-layer parallax background
+	// Draw enhanced multi-layer parallax background/foreground
 	if sr.parallaxRenderer != nil {
 		sr.parallaxRenderer.DrawParallaxLayers(screen, cameraOffsetX, cameraOffsetY)
-	} else {
-		// Fallback to original single-layer parallax
-		if engine.GetBackgroundVisible() && engine.GetBackgroundImage() != nil {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(0.5, 0.5)
-			// Apply parallax scrolling to background (moves slower than foreground)
-			bgOffsetX := cameraOffsetX * engine.GameConfig.ParallaxFactor
-			bgOffsetY := cameraOffsetY * engine.GameConfig.ParallaxFactor
-			op.GeoM.Translate(bgOffsetX, bgOffsetY)
-			screen.DrawImage(engine.GetBackgroundImage(), op)
-		}
 	}
 
 	// Draw tiles with camera offset
