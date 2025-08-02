@@ -67,8 +67,8 @@ func (p *PauseState) Update() error {
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
 		// Open settings with current room data
-		if ingameState, ok := p.backgroundState.(*InGameState); ok && ingameState.GetCurrentRoom() != nil {
-			p.stateManager.ChangeState(NewSettingsStateFromPause(p.stateManager, ingameState.GetCurrentRoom(), p))
+		if ingameState, ok := p.backgroundState.(*InGameState); ok {
+			p.stateManager.ChangeState(NewSettingsStateFromPause(p.stateManager, ingameState, p))
 		}
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
