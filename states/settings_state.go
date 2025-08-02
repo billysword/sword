@@ -26,8 +26,7 @@ type SettingsState struct {
 	stateManager  *engine.StateManager // Reference to state manager for transitions
 	scrollY       int                  // Vertical scroll position
 	tileSize      int                  // Size of each tile display in pixels
-	ingameState   *InGameState         // Reference to ingame state to get current room dynamically
-	staticRoom    world.Room           // Fallback room for when not accessed from ingame state
+	currentRoom   world.Room           // Reference to current room for tile data
 	returnToPause bool                 // Whether to return to pause state or main menu
 	pauseState    *PauseState          // Reference to pause state for return navigation
 }
@@ -35,11 +34,10 @@ type SettingsState struct {
 /*
 NewSettingsState creates a new settings state.
 Initializes the settings state with default scroll position and tile display size.
-Used when accessing settings from main menu with a static room.
 
 Parameters:
   - sm: StateManager instance for handling state transitions
-  - room: Static room to display tile data from
+  - room: Current room to display tile data from
 
 Returns a pointer to the new SettingsState instance.
 */
@@ -48,8 +46,7 @@ func NewSettingsState(sm *engine.StateManager, room world.Room) *SettingsState {
 		stateManager:  sm,
 		scrollY:       0,
 		tileSize:      40,
-		ingameState:   nil,
-		staticRoom:    room,
+		currentRoom:   room,
 		returnToPause: false,
 		pauseState:    nil,
 	}
@@ -57,12 +54,11 @@ func NewSettingsState(sm *engine.StateManager, room world.Room) *SettingsState {
 
 /*
 NewSettingsStateFromPause creates a new settings state accessible from pause menu.
-Initializes the settings state with a reference to the ingame state for dynamic room access.
-This ensures the settings always show the actual current room being played.
+Initializes the settings state with the current room from the ingame state.
 
 Parameters:
   - sm: StateManager instance for handling state transitions
-  - ingameState: The ingame state to get current room data from dynamically
+  - ingameState: The ingame state to get current room data from
   - pauseState: The pause state to return to when exiting settings
 
 Returns a pointer to the new SettingsState instance.
@@ -72,8 +68,7 @@ func NewSettingsStateFromPause(sm *engine.StateManager, ingameState *InGameState
 		stateManager:  sm,
 		scrollY:       0,
 		tileSize:      40,
-		ingameState:   ingameState,
-		staticRoom:    nil,
+		currentRoom:   ingameState.GetCurrentRoom(),
 		returnToPause: true,
 		pauseState:    pauseState,
 	}
@@ -87,10 +82,7 @@ otherwise falls back to the static room reference.
 Returns the current room instance, or nil if no room is available.
 */
 func (s *SettingsState) getCurrentRoom() world.Room {
-	if s.ingameState != nil {
-		return s.ingameState.GetCurrentRoom()
-	}
-	return s.staticRoom
+	return s.currentRoom
 }
 
 /*
@@ -181,23 +173,28 @@ func (s *SettingsState) Draw(screen *ebiten.Image) {
 	}
 
 	// Room info - show if this is live data or static
-	roomSource := "Static"
-	if s.ingameState != nil {
-		roomSource = "Live"
-	}
+	roomSource := "Live"
 	roomInfo := fmt.Sprintf("Room: %s (%s) | Size: %dx%d tiles",
 		currentRoom.GetZoneID(), roomSource, tileMap.Width, tileMap.Height)
 	ebitenutil.DebugPrintAt(screen, roomInfo, 10, 50)
+	
+	// Sprite sheet info
+	sm := engine.GetSpriteManager()
+	sheetsInfo := fmt.Sprintf("Loaded Sheets: %v", sm.ListSheets())
+	ebitenutil.DebugPrintAt(screen, sheetsInfo, 10, 70)
 
 	// Calculate display area
-	startY := 80 - s.scrollY
+	startY := 100 - s.scrollY
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 	tilesPerRow := (screenWidth - 20) / s.tileSize
 	if tilesPerRow < 1 {
 		tilesPerRow = 1
 	}
 
-	// Draw tile grid with hex values
+	// Get sprite manager for tile rendering
+	sm = engine.GetSpriteManager()
+	
+	// Draw tile grid with hex values and actual sprites
 	for y := 0; y < tileMap.Height; y++ {
 		for x := 0; x < tileMap.Width; x++ {
 			tileIndex := tileMap.Tiles[y][x]
@@ -219,6 +216,19 @@ func (s *SettingsState) Draw(screen *ebiten.Image) {
 			opts := &ebiten.DrawImageOptions{}
 			opts.GeoM.Translate(float64(displayX), float64(displayY))
 			screen.DrawImage(tileRect, opts)
+			
+			// Try to draw actual sprite from sprite manager
+			if tileIndex >= 0 {
+				sprite := engine.LoadSpriteByHex(tileIndex)
+				if sprite != nil {
+					spriteOpts := &ebiten.DrawImageOptions{}
+					// Scale sprite to fit within the tile display area
+					scale := float64(s.tileSize-4) / float64(engine.GameConfig.TileSize)
+					spriteOpts.GeoM.Scale(scale, scale)
+					spriteOpts.GeoM.Translate(float64(displayX+2), float64(displayY+2))
+					screen.DrawImage(sprite, spriteOpts)
+				}
+			}
 
 			// Draw hex value (larger, more prominent)
 			hexText := s.formatTileValue(tileIndex)
@@ -237,13 +247,14 @@ func (s *SettingsState) Draw(screen *ebiten.Image) {
 	}
 
 	// Legend
-	legendY := screenHeight - 120
+	legendY := screenHeight - 140
 	ebitenutil.DebugPrintAt(screen, "LEGEND:", 10, legendY)
 	ebitenutil.DebugPrintAt(screen, "Empty (-1) - Black", 10, legendY+15)
 	ebitenutil.DebugPrintAt(screen, "Ground (0x01+) - Brown", 10, legendY+30)
 	ebitenutil.DebugPrintAt(screen, "Platform - Green", 10, legendY+45)
 	ebitenutil.DebugPrintAt(screen, "Other - Blue", 10, legendY+60)
 	ebitenutil.DebugPrintAt(screen, "Display: Hex, Decimal #, (x,y)", 10, legendY+75)
+	ebitenutil.DebugPrintAt(screen, "Sprites loaded from sprite manager", 10, legendY+90)
 }
 
 /*
