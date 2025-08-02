@@ -15,10 +15,10 @@ calculations to ensure consistent behavior across different scale factors.
 Position and velocity are stored in physics units (see engine.GetPhysicsUnit()).
 */
 type Player struct {
-	x  int
-	y  int
-	vx int
-	vy int
+	x        int
+	y        int
+	vx       int
+	vy       int
 	onGround bool
 }
 
@@ -35,10 +35,10 @@ Returns a pointer to the new Player instance.
 */
 func NewPlayer(x, y int) *Player {
 	return &Player{
-		x: x,
-		y: y,
-		vx: 0,
-		vy: 0,
+		x:        x,
+		y:        y,
+		vx:       0,
+		vy:       0,
 		onGround: false,
 	}
 }
@@ -50,21 +50,42 @@ Uses engine.GameConfig values for movement speeds and physics calculations.
 
 Input mapping:
   - A/Left Arrow: Move left
-  - D/Right Arrow: Move right  
+  - D/Right Arrow: Move right
   - Space: Jump
 */
 func (p *Player) HandleInput() {
+	p.HandleInputWithLogging("")
+}
+
+/*
+HandleInputWithLogging processes player input and logs keystrokes with position.
+This version includes logging for debugging and analytics.
+
+Parameters:
+  - roomName: Name of the current room for logging context
+*/
+func (p *Player) HandleInputWithLogging(roomName string) {
 	physicsUnit := engine.GetPhysicsUnit()
-	
+	playerX, playerY := p.GetPosition()
+
 	// Horizontal movement - using config values
 	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
+		if roomName != "" {
+			engine.LogPlayerInput("A/Left", playerX, playerY, roomName)
+		}
 		p.vx = -engine.GameConfig.PlayerMoveSpeed * physicsUnit
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
+		if roomName != "" {
+			engine.LogPlayerInput("D/Right", playerX, playerY, roomName)
+		}
 		p.vx = engine.GameConfig.PlayerMoveSpeed * physicsUnit
 	}
 
 	// Jumping
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		if roomName != "" {
+			engine.LogPlayerInput("Space/Jump", playerX, playerY, roomName)
+		}
 		p.tryJump()
 	}
 }
@@ -86,7 +107,7 @@ gravity, and ground level.
 */
 func (p *Player) Update() {
 	physicsUnit := engine.GetPhysicsUnit()
-	
+
 	// Apply movement
 	p.x += p.vx
 	p.y += p.vy
@@ -142,7 +163,7 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
 	op.GeoM.Translate(float64(p.x)/float64(engine.GetPhysicsUnit()), float64(p.y)/float64(engine.GetPhysicsUnit()))
-	
+
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
 }
@@ -174,7 +195,7 @@ func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffse
 	renderX := float64(p.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
 	renderY := float64(p.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
 	op.GeoM.Translate(renderX, renderY)
-	
+
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
 }

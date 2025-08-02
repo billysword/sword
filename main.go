@@ -69,7 +69,7 @@ The Game struct serves as the entry point for Ebitengine and handles:
   - Window lifecycle management
 */
 type Game struct {
-	stateManager *engine.StateManager  // Manages all game states and transitions
+	stateManager *engine.StateManager // Manages all game states and transitions
 }
 
 /*
@@ -84,17 +84,17 @@ func (g *Game) Update() error {
 	if g.stateManager == nil {
 		g.stateManager = engine.NewStateManager()
 		startState := states.NewStartState(g.stateManager)
-		
+
 		// Initialize sprite manager and load tile sheets
 		engine.InitSpriteManager()
 		sm := engine.GetSpriteManager()
-		
+
 		// Load the forest tile sheet with proper configuration
 		err := sm.LoadSpriteSheet("forest", tileSprite, 16, 16)
 		if err != nil {
 			panic(err)
 		}
-		
+
 		// Pass sprites to the state manager for use by game states
 		engine.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
 		engine.SetGlobalTileSprites(tileSprite, tilesSprite)
@@ -141,20 +141,34 @@ Configures window properties from the game configuration and handles
 any startup errors.
 
 The function:
-  1. Retrieves window settings from gamestate.GameConfig
-  2. Configures Ebitengine window properties
-  3. Starts the game loop with a new Game instance
-  4. Panics on any startup errors
+ 1. Retrieves window settings from gamestate.GameConfig
+ 2. Configures Ebitengine window properties
+ 3. Starts the game loop with a new Game instance
+ 4. Panics on any startup errors
 */
 func main() {
+	// Initialize game logger
+	if err := engine.InitLogger("game.log"); err != nil {
+		panic(err)
+	}
+	defer engine.CloseLogger()
+
+	// Log game startup
+	engine.LogInfo("Game starting up...")
+
 	// Get config for window settings
 	config := engine.GameConfig
-	
+
 	ebiten.SetWindowSize(config.WindowWidth, config.WindowHeight)
 	ebiten.SetWindowTitle(config.WindowTitle)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	
+
+	engine.LogInfo("Window configured and starting game loop...")
+
 	if err := ebiten.RunGame(&Game{}); err != nil {
+		engine.LogInfo("Game ended with error: " + err.Error())
 		panic(err)
 	}
+
+	engine.LogInfo("Game ended normally")
 }
