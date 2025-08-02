@@ -75,6 +75,12 @@ func (p *PauseState) Update() error {
 		// Return to main menu
 		p.stateManager.ChangeState(NewStartState(p.stateManager))
 	}
+	
+	// Check for forced quit (Ctrl+Q or Alt+F4)
+	if (ebiten.IsKeyPressed(ebiten.KeyControl) && inpututil.IsKeyJustPressed(ebiten.KeyQ)) ||
+		(ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
+		return ebiten.Termination
+	}
 	return nil
 }
 

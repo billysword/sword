@@ -96,7 +96,11 @@ func (l *Logger) Close() error {
 	defer l.mutex.Unlock()
 	if l.file != nil {
 		l.LogInfo("=== Game Logger Closing ===")
-		return l.file.Close()
+		// Flush any pending writes
+		l.file.Sync()
+		err := l.file.Close()
+		l.file = nil // Prevent double-close
+		return err
 	}
 	return nil
 }
