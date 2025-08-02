@@ -36,6 +36,20 @@ const (
 	TILE_BOTTOM_RIGHT_CORNER = 23
 )
 
+// Predefined room layout for 10x10 (0 = TILE_DIRT, -1 = empty)
+var room10x10Layout = [][]int{
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+}
+
 // SimpleRoom is a basic room implementation with a forest theme
 type SimpleRoom struct {
 	*BaseRoom
@@ -169,16 +183,24 @@ func (sr *SimpleRoom) buildRoom() {
 		return
 	}
 
-	// Get room dimensions from tilemap
-	width := sr.tileMap.Width
-	height := sr.tileMap.Height
-	
-	// Simple room: just walls around the edges
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			// Create walls on all edges
-			if x == 0 || x == width-1 || y == 0 || y == height-1 {
-				sr.tileMap.SetTile(x, y, TILE_DIRT)
+	// For 10x10 rooms, use the predefined layout
+	if sr.tileMap.Width == 10 && sr.tileMap.Height == 10 {
+		// Copy the predefined layout directly
+		for y := 0; y < 10; y++ {
+			for x := 0; x < 10; x++ {
+				sr.tileMap.Tiles[y][x] = room10x10Layout[y][x]
+			}
+		}
+	} else {
+		// For other sizes, generate walls dynamically
+		for y := 0; y < sr.tileMap.Height; y++ {
+			for x := 0; x < sr.tileMap.Width; x++ {
+				// Walls on all edges, empty (-1) inside
+				if x == 0 || x == sr.tileMap.Width-1 || y == 0 || y == sr.tileMap.Height-1 {
+					sr.tileMap.Tiles[y][x] = TILE_DIRT
+				} else {
+					sr.tileMap.Tiles[y][x] = -1  // Empty
+				}
 			}
 		}
 	}
