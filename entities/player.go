@@ -141,10 +141,10 @@ func (p *Player) Update() {
 }
 
 /*
-Draw renders the player character.
-Chooses the appropriate sprite based on movement direction and renders
-it at the player's current position. Uses engine.GameConfig.CharScaleFactor
-for consistent scaling.
+Draw renders the player character at its world position.
+The player is drawn using its current sprite (idle, left, or right)
+at its world coordinates. Camera transformation should be applied
+at a higher level, not by the entity itself.
 
 Parameters:
   - screen: The target screen/image to render the player to
@@ -162,43 +162,16 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
-	op.GeoM.Translate(float64(p.x)/float64(engine.GetPhysicsUnit()), float64(p.y)/float64(engine.GetPhysicsUnit()))
-
-	// Draw the sprite
-	screen.DrawImage(sprite, op)
-}
-
-/*
-DrawWithCamera renders the player character with camera offset.
-Similar to Draw() but applies camera transformation for scrolling worlds.
-The camera offset is applied in addition to the player's world position.
-
-Parameters:
-  - screen: The target screen/image to render the player to
-  - cameraOffsetX: Horizontal camera offset in pixels
-  - cameraOffsetY: Vertical camera offset in pixels
-*/
-func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Choose sprite based on movement direction
-	sprite := engine.GetIdleSprite()
-	switch {
-	case p.vx > 0:
-		sprite = engine.GetRightSprite()
-	case p.vx < 0:
-		sprite = engine.GetLeftSprite()
-	}
-
-	// Set up drawing options with camera offset
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
-	// Convert player position from physics units to pixels and apply camera offset
-	renderX := float64(p.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
-	renderY := float64(p.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
+	// Convert player position from physics units to pixels
+	renderX := float64(p.x) / float64(engine.GetPhysicsUnit())
+	renderY := float64(p.y) / float64(engine.GetPhysicsUnit())
 	op.GeoM.Translate(renderX, renderY)
 
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
 }
+
+
 
 /*
 GetPosition returns the player's current position.

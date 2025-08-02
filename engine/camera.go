@@ -113,30 +113,46 @@ func (c *Camera) Update(targetX, targetY int) {
 
 // constrainToWorld ensures the camera doesn't show beyond world boundaries
 func (c *Camera) constrainToWorld() {
-	// Left boundary with margin
-	if c.x < float64(-c.marginLeft) {
-		c.x = float64(-c.marginLeft)
+	// If world is smaller than viewport, center it
+	if c.worldWidth < c.width {
+		// Center horizontally
+		c.x = float64(-(c.width - c.worldWidth) / 2)
 		c.targetX = c.x
+	} else {
+		// Normal horizontal constraints
+		// Left boundary with margin
+		if c.x < float64(-c.marginLeft) {
+			c.x = float64(-c.marginLeft)
+			c.targetX = c.x
+		}
+		
+		// Right boundary with margin
+		maxX := float64(c.worldWidth - c.width + c.marginRight)
+		if c.x > maxX {
+			c.x = maxX
+			c.targetX = c.x
+		}
 	}
 	
-	// Right boundary with margin
-	maxX := float64(c.worldWidth - c.width + c.marginRight)
-	if c.x > maxX {
-		c.x = maxX
-		c.targetX = c.x
-	}
-	
-	// Top boundary with margin
-	if c.y < float64(-c.marginTop) {
-		c.y = float64(-c.marginTop)
+	// If world is smaller than viewport, center it
+	if c.worldHeight < c.height {
+		// Center vertically
+		c.y = float64(-(c.height - c.worldHeight) / 2)
 		c.targetY = c.y
-	}
-	
-	// Bottom boundary with margin
-	maxY := float64(c.worldHeight - c.height + c.marginBottom)
-	if c.y > maxY {
-		c.y = maxY
-		c.targetY = c.y
+	} else {
+		// Normal vertical constraints
+		// Top boundary with margin
+		if c.y < float64(-c.marginTop) {
+			c.y = float64(-c.marginTop)
+			c.targetY = c.y
+		}
+		
+		// Bottom boundary with margin
+		maxY := float64(c.worldHeight - c.height + c.marginBottom)
+		if c.y > maxY {
+			c.y = maxY
+			c.targetY = c.y
+		}
 	}
 }
 

@@ -36,6 +36,20 @@ const (
 	TILE_BOTTOM_RIGHT_CORNER = 23
 )
 
+// Predefined room layout for 10x10 (0 = TILE_DIRT, -1 = empty)
+var room10x10Layout = [][]int{
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, -1, -1, -1, -1, -1, -1, -1, -1, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+}
+
 // SimpleRoom is a basic room implementation with a forest theme
 type SimpleRoom struct {
 	*BaseRoom
@@ -163,88 +177,33 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	return engine.GetTileSprite()
 }
 
-// buildRoom sets up the forest tile layout for this larger metroidvania-style room
+// buildRoom sets up the tile layout based on the room's tilemap dimensions
 func (sr *SimpleRoom) buildRoom() {
 	if engine.GetTileSprite() == nil {
 		return
 	}
 
-	// Create a room based on config dimensions
-	// Fill the bottom 15 rows with ground tiles
-	groundStartY := engine.GameConfig.RoomHeightTiles - 15
-	for y := groundStartY; y < engine.GameConfig.RoomHeightTiles; y++ {
-		for x := 0; x < engine.GameConfig.RoomWidthTiles; x++ {
-			sr.tileMap.SetTile(x, y, TILE_DIRT)
+	// For 10x10 rooms, use the predefined layout
+	if sr.tileMap.Width == 10 && sr.tileMap.Height == 10 {
+		// Copy the predefined layout directly
+		for y := 0; y < 10; y++ {
+			for x := 0; x < 10; x++ {
+				sr.tileMap.Tiles[y][x] = room10x10Layout[y][x]
+			}
+		}
+	} else {
+		// For other sizes, generate walls dynamically
+		for y := 0; y < sr.tileMap.Height; y++ {
+			for x := 0; x < sr.tileMap.Width; x++ {
+				// Walls on all edges, empty (-1) inside
+				if x == 0 || x == sr.tileMap.Width-1 || y == 0 || y == sr.tileMap.Height-1 {
+					sr.tileMap.Tiles[y][x] = TILE_DIRT
+				} else {
+					sr.tileMap.Tiles[y][x] = -1  // Empty
+				}
+			}
 		}
 	}
-	
-	// Create the main ground level with proper edges
-	groundY := engine.GameConfig.GroundLevel
-	// Left edge
-	sr.tileMap.SetTile(0, groundY, TILE_TOP_LEFT_CORNER)
-	// Top surface
-	for x := 1; x < engine.GameConfig.RoomWidthTiles-1; x++ {
-		sr.tileMap.SetTile(x, groundY, TILE_CEILING_1)
-	}
-	// Right edge
-	sr.tileMap.SetTile(engine.GameConfig.RoomWidthTiles-1, groundY, TILE_TOP_RIGHT_CORNER)
-	
-	// Add platforms dynamically based on room size
-	// Calculate platform positions as percentages of room dimensions
-	roomWidth := engine.GameConfig.RoomWidthTiles
-	roomHeight := engine.GameConfig.RoomHeightTiles
-	
-	// Lower platforms (80-90% height)
-	sr.createPlatform(roomWidth*8/100, roomHeight*80/100, 10)
-	sr.createPlatform(roomWidth*25/100, roomHeight*85/100, 8)
-	sr.createPlatform(roomWidth*42/100, roomHeight*82/100, 12)
-	sr.createPlatform(roomWidth*62/100, roomHeight*87/100, 10)
-	sr.createPlatform(roomWidth*80/100, roomHeight*83/100, 15)
-	
-	// Mid-level platforms (60-70% height)
-	sr.createPlatform(roomWidth*12/100, roomHeight*65/100, 8)
-	sr.createPlatform(roomWidth*33/100, roomHeight*60/100, 10)
-	sr.createPlatform(roomWidth*54/100, roomHeight*63/100, 12)
-	sr.createPlatform(roomWidth*71/100, roomHeight*62/100, 10)
-	sr.createPlatform(roomWidth*88/100, roomHeight*68/100, 10)
-	
-	// High platforms (40-50% height)
-	sr.createPlatform(roomWidth*17/100, roomHeight*45/100, 10)
-	sr.createPlatform(roomWidth*38/100, roomHeight*40/100, 12)
-	sr.createPlatform(roomWidth*58/100, roomHeight*43/100, 8)
-	sr.createPlatform(roomWidth*75/100, roomHeight*42/100, 14)
-	
-	// Very high platforms (20-30% height)
-	sr.createPlatform(roomWidth*29/100, roomHeight*25/100, 8)
-	sr.createPlatform(roomWidth*50/100, roomHeight*20/100, 10)
-	sr.createPlatform(roomWidth*67/100, roomHeight*28/100, 8)
-	
-	// Add walls proportionally
-	// Left area structures
-	sr.createWall(roomWidth*21/100, roomHeight*80/100, groundY)
-	sr.createWall(roomWidth*21/100+1, roomHeight*80/100, groundY)
-	
-	// Center-left structures
-	sr.createWall(roomWidth*38/100, roomHeight*70/100, groundY)
-	sr.createWall(roomWidth*38/100+1, roomHeight*70/100, groundY)
-	
-	// Center structures
-	sr.createWall(roomWidth*50/100, roomHeight*60/100, groundY)
-	sr.createWall(roomWidth*50/100+1, roomHeight*60/100, groundY)
-	
-	// Center-right structures
-	sr.createWall(roomWidth*67/100, roomHeight*75/100, groundY)
-	sr.createWall(roomWidth*67/100+1, roomHeight*75/100, groundY)
-	
-	// Right area structures
-	sr.createWall(roomWidth*83/100, roomHeight*65/100, groundY)
-	sr.createWall(roomWidth*83/100+1, roomHeight*65/100, groundY)
-	
-	// Add some floating single tiles for decoration
-	sr.tileMap.SetTile(roomWidth*46/100, roomHeight*50/100, TILE_FLOATING)
-	sr.tileMap.SetTile(roomWidth*29/100, roomHeight*55/100, TILE_FLOATING)
-	sr.tileMap.SetTile(roomWidth*63/100, roomHeight*52/100, TILE_FLOATING)
-	sr.tileMap.SetTile(roomWidth*79/100, roomHeight*48/100, TILE_FLOATING)
 	
 	// Simple debug: Print layout to console for easy copying
 	PrintRoomLayout(sr.GetZoneID(), sr.tileMap)
@@ -821,15 +780,17 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 
 // DrawWithCamera renders the room with camera offset
 func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Draw enhanced multi-layer parallax background/foreground
+	// Layer 2: Parallax background
 	if sr.parallaxRenderer != nil {
 		sr.parallaxRenderer.DrawParallaxLayers(screen, cameraOffsetX, cameraOffsetY)
 	}
 
-	// Draw tiles with camera offset
+	// Layer 3: Room tiles
 	sr.DrawTilesWithCamera(screen, sr.getTileSprite, cameraOffsetX, cameraOffsetY)
 	
-	// Draw debug grid overlay (if enabled) - grid moves with camera
+	// Layer 5: Foreground (could be implemented here if needed)
+	
+	// Debug grid overlay (if enabled) - grid moves with camera
 	if engine.GetGridVisible() {
 		engine.DrawGridWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}
