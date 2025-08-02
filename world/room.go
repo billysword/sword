@@ -384,3 +384,23 @@ func (br *BaseRoom) LogRoomDebug() {
 	debugger := GetRoomDebugger()
 	debugger.LogRoomFirstRender(br.zoneID, br.tileMap)
 }
+
+/*
+GenerateHexLayoutFile creates a standalone Go file with the room layout in hexadecimal format.
+This is useful for exporting room layouts to copy-paste into code as input arrays.
+The generated file will be saved in the log directory.
+*/
+func (br *BaseRoom) GenerateHexLayoutFile() {
+	debugger := GetRoomDebugger()
+	debugger.GenerateHexLayoutFile(br.zoneID, br.tileMap)
+}
+
+/*
+GetHexLayoutArray returns the room layout as a formatted Go array string with hexadecimal values.
+This can be used to copy-paste room layouts directly into code.
+Values are capped at 0xFF (255) to fit in the hex format.
+*/
+func (br *BaseRoom) GetHexLayoutArray() string {
+	debugger := GetRoomDebugger()
+	return debugger.generateLayoutArray(br.tileMap)
+}

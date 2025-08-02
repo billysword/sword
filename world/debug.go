@@ -45,16 +45,22 @@ func (rd *RoomDebugger) LogRoomFirstRender(roomName string, tileMap *TileMap) {
 	// Mark this room as logged
 	rd.renderedRooms[roomName] = true
 
-	// Generate ASCII representation
-	asciiRep := rd.generateASCIIRepresentation(tileMap)
+	// Generate both decimal and hex representations
+	asciiRepDecimal := rd.generateASCIIRepresentation(tileMap, false)
+	asciiRepHex := rd.generateASCIIRepresentation(tileMap, true)
+	layoutArray := rd.generateLayoutArray(tileMap)
 
-	// Create log entry
+	// Create log entry with both formats
 	logEntry := fmt.Sprintf("=== ROOM DEBUG: %s ===\n", roomName)
 	logEntry += fmt.Sprintf("Timestamp: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	logEntry += fmt.Sprintf("Room Dimensions: %dx%d tiles\n", tileMap.Width, tileMap.Height)
-	logEntry += "ASCII Representation (2-digit tile indices):\n"
-	logEntry += asciiRep
-	logEntry += "\n=== END ROOM DEBUG ===\n\n"
+	logEntry += "ASCII Representation (2-digit tile indices - decimal):\n"
+	logEntry += asciiRepDecimal + "\n\n"
+	logEntry += "ASCII Representation (2-digit tile indices - hexadecimal):\n"
+	logEntry += asciiRepHex + "\n\n"
+	logEntry += "Go Array Format (ready for copy-paste):\n"
+	logEntry += layoutArray + "\n"
+	logEntry += "=== END ROOM DEBUG ===\n\n"
 
 	// Write to rotating log file
 	rd.writeToRotatingLog(logEntry)
@@ -62,18 +68,30 @@ func (rd *RoomDebugger) LogRoomFirstRender(roomName string, tileMap *TileMap) {
 
 // generateASCIIRepresentation creates an ASCII representation of the room
 // using 2-digit tile indices with comma separation per row
-func (rd *RoomDebugger) generateASCIIRepresentation(tileMap *TileMap) string {
+func (rd *RoomDebugger) generateASCIIRepresentation(tileMap *TileMap, useHex bool) string {
 	var builder strings.Builder
 
 	for y := 0; y < tileMap.Height; y++ {
 		var rowValues []string
 		for x := 0; x < tileMap.Width; x++ {
 			tileIndex := tileMap.Tiles[y][x]
-			// Convert -1 (empty) to 99 for better visualization
+			// Convert -1 (empty) to appropriate empty value
 			if tileIndex == -1 {
-				rowValues = append(rowValues, "99")
+				if useHex {
+					rowValues = append(rowValues, "FF") // 255 in hex
+				} else {
+					rowValues = append(rowValues, "99") // Keep 99 for decimal compatibility
+				}
 			} else {
-				rowValues = append(rowValues, fmt.Sprintf("%02d", tileIndex))
+				if useHex {
+					// Cap at 0xFF (255) and format as hex
+					if tileIndex > 255 {
+						tileIndex = 255
+					}
+					rowValues = append(rowValues, fmt.Sprintf("%02X", tileIndex))
+				} else {
+					rowValues = append(rowValues, fmt.Sprintf("%02d", tileIndex))
+				}
 			}
 		}
 		builder.WriteString(strings.Join(rowValues, ","))
@@ -83,6 +101,126 @@ func (rd *RoomDebugger) generateASCIIRepresentation(tileMap *TileMap) string {
 	}
 
 	return builder.String()
+}
+
+// generateLayoutArray creates a Go array declaration ready for copy-paste into code
+func (rd *RoomDebugger) generateLayoutArray(tileMap *TileMap) string {
+	var builder strings.Builder
+	
+	builder.WriteString("levelLayout := [][]int{\n")
+	
+	for y := 0; y < tileMap.Height; y++ {
+		builder.WriteString("\t{")
+		for x := 0; x < tileMap.Width; x++ {
+			tileIndex := tileMap.Tiles[y][x]
+			
+			// Convert tile indices to hex format (0x notation)
+			if tileIndex == -1 {
+				builder.WriteString("-1")
+			} else {
+				// Cap at 0xFF (255) for hex format
+				if tileIndex > 255 {
+					tileIndex = 255
+				}
+				if tileIndex < 16 {
+					builder.WriteString(fmt.Sprintf("0x%01X", tileIndex))
+				} else {
+					builder.WriteString(fmt.Sprintf("0x%02X", tileIndex))
+				}
+			}
+			
+			if x < tileMap.Width-1 {
+				builder.WriteString(", ")
+			}
+		}
+		builder.WriteString("}")
+		if y < tileMap.Height-1 {
+			builder.WriteString(",")
+		}
+		builder.WriteString("\n")
+	}
+	
+	builder.WriteString("}")
+	return builder.String()
+}
+
+// generateArrayBody creates just the array body (without variable declaration)
+func (rd *RoomDebugger) generateArrayBody(tileMap *TileMap) string {
+	var builder strings.Builder
+	
+	builder.WriteString("{\n")
+	
+	for y := 0; y < tileMap.Height; y++ {
+		builder.WriteString("\t{")
+		for x := 0; x < tileMap.Width; x++ {
+			tileIndex := tileMap.Tiles[y][x]
+			
+			// Convert tile indices to hex format (0x notation)
+			if tileIndex == -1 {
+				builder.WriteString("-1")
+			} else {
+				// Cap at 0xFF (255) for hex format
+				if tileIndex > 255 {
+					tileIndex = 255
+				}
+				if tileIndex < 16 {
+					builder.WriteString(fmt.Sprintf("0x%01X", tileIndex))
+				} else {
+					builder.WriteString(fmt.Sprintf("0x%02X", tileIndex))
+				}
+			}
+			
+			if x < tileMap.Width-1 {
+				builder.WriteString(", ")
+			}
+		}
+		builder.WriteString("}")
+		if y < tileMap.Height-1 {
+			builder.WriteString(",")
+		}
+		builder.WriteString("\n")
+	}
+	
+	builder.WriteString("}")
+	return builder.String()
+}
+
+// GenerateHexLayoutFile creates a standalone .go file with the room layout in hex format
+func (rd *RoomDebugger) GenerateHexLayoutFile(roomName string, tileMap *TileMap) {
+	rd.mutex.Lock()
+	defer rd.mutex.Unlock()
+
+	// Create filename
+	filename := fmt.Sprintf("room_layout_%s.go", strings.ReplaceAll(roomName, " ", "_"))
+	filepath := filepath.Join(rd.logDir, filename)
+
+	// Generate the file content
+	content := fmt.Sprintf(`// Auto-generated room layout for: %s
+// Generated: %s
+// Dimensions: %dx%d tiles
+
+package main
+
+// %sLayout contains the tile layout in hexadecimal format
+// -1 = empty tile, 0x00-0xFF = tile indices
+var %sLayout = [][]int%s
+`, roomName, time.Now().Format("2006-01-02 15:04:05"), 
+   tileMap.Width, tileMap.Height,
+   strings.Title(strings.ReplaceAll(roomName, " ", "")),
+   strings.Title(strings.ReplaceAll(roomName, " ", "")),
+   rd.generateArrayBody(tileMap))
+
+	// Write to file
+	file, err := os.Create(filepath)
+	if err != nil {
+		fmt.Printf("Error creating layout file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(content); err != nil {
+		fmt.Printf("Error writing layout file: %v\n", err)
+	}
 }
 
 // writeToRotatingLog writes the log entry to a rotating log file

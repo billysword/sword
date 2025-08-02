@@ -171,9 +171,9 @@ func (sr *SimpleRoom) buildRoom() {
 	sr.tileMap.SetTile(roomWidth*63/100, roomHeight*52/100, TILE_FLOATING)
 	sr.tileMap.SetTile(roomWidth*79/100, roomHeight*48/100, TILE_FLOATING)
 	
-	// Debug: Log ASCII representation of room on first render
-	debugger := GetRoomDebugger()
-	debugger.LogRoomFirstRender(sr.GetZoneID(), sr.tileMap)
+	// Debug: Log ASCII representation and generate hex layout
+	sr.LogRoomDebug()
+	sr.GenerateHexLayoutFile()
 }
 
 // createPlatform creates a floating platform at the specified position
@@ -639,6 +639,10 @@ func (sr *SimpleRoom) initializeLayout() {
 
 	// Apply the layout to the tile map
 	sr.loadFromLayout(levelLayout)
+	
+	// Debug: Log ASCII representation and generate hex layout
+	sr.LogRoomDebug()
+	sr.GenerateHexLayoutFile()
 }
 
 // loadFromLayout applies a 2D tile index array directly to the tile map
