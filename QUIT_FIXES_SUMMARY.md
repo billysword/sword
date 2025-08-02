@@ -81,28 +81,25 @@ Added `Ctrl+Q` and `Alt+F4` quit shortcuts to all game states:
 
 **InGame State** (`states/ingame_state.go`):
 ```go
-// Check for quit (Ctrl+Q or Alt+F4 style quit)
-if (ebiten.IsKeyPressed(ebiten.KeyControl) && inpututil.IsKeyJustPressed(ebiten.KeyQ)) ||
-   (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
-    engine.LogPlayerInput("Ctrl+Q/Alt+F4 (Quit)", playerX, playerY, roomName)
+// Check for quit (Alt+F4 style quit)
+if (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
+    engine.LogPlayerInput("Alt+F4 (Quit)", playerX, playerY, roomName)
     return ebiten.Termination
 }
 ```
 
 **Pause State** (`states/pause_state.go`):
 ```go
-// Check for forced quit (Ctrl+Q or Alt+F4)
-if (ebiten.IsKeyPressed(ebiten.KeyControl) && inpututil.IsKeyJustPressed(ebiten.KeyQ)) ||
-   (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
+// Check for forced quit (Alt+F4)
+if (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
     return ebiten.Termination
 }
 ```
 
 **Settings State** (`states/settings_state.go`):
 ```go
-// Check for forced quit first (Ctrl+Q or Alt+F4)
-if (ebiten.IsKeyPressed(ebiten.KeyControl) && inpututil.IsKeyJustPressed(ebiten.KeyQ)) ||
-   (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
+// Check for forced quit first (Alt+F4)
+if (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
     return ebiten.Termination
 }
 ```
@@ -134,36 +131,61 @@ if err := ebiten.RunGame(game); err != nil {
 }
 ```
 
+## Logging System Improvements
+
+### **Enhanced Logger with Directory Structure** (`engine/logger.go`)
+```go
+// Creates logs directory automatically
+logsDir := "logs"
+if err = os.MkdirAll(logsDir, 0755); err != nil {
+    return
+}
+
+// Creates timestamped log files
+timestamp := time.Now().Format("2006-01-02_15-04-05")
+filename = fmt.Sprintf("%s_%s%s", baseName, timestamp, ext)
+logPath := filepath.Join(logsDir, filename)
+```
+
+### **Log File Features:**
+- **Timestamped Filenames**: `game_2025-08-02_15-30-45.log`
+- **Organized Directory**: All logs stored in `logs/` directory
+- **Multiple Log Types**: INFO, DEBUG, SPRITE, ROOM_TILE, PLAYER_INPUT, ROOM_LAYOUT
+- **Automatic Cleanup**: Proper file handle closing and flushing
+- **Thread Safe**: Mutex-protected logging operations
+
 ## Benefits of These Fixes
 
 1. **Graceful Shutdown**: Signal handlers ensure the game can respond to Ctrl+C properly
 2. **Resource Cleanup**: Logger and other resources are properly closed on exit
-3. **Multiple Quit Options**: Players can use Ctrl+Q, Alt+F4, or menu options to quit
+3. **Multiple Quit Options**: Players can use Alt+F4, Ctrl+C, or menu options to quit
 4. **No Hanging**: Context cancellation prevents the game loop from continuing during shutdown
-5. **Better Logging**: All quit events are logged for debugging purposes
+5. **Better Logging**: All quit events are logged for debugging purposes with timestamps
 6. **Prevent Double-Close**: Logger prevents multiple close attempts that could cause errors
+7. **Organized Logs**: Timestamped log files in dedicated directory for better debugging
 
 ## Testing Recommendations
 
 1. **Signal Handling**: Test Ctrl+C in terminal - should quit cleanly
-2. **Quit Keys**: Test Ctrl+Q and Alt+F4 from different game states
+2. **Quit Keys**: Test Alt+F4 from different game states
 3. **Menu Quit**: Use the "Quit" option in the start menu
-4. **Resource Cleanup**: Check that game.log file is properly closed after quit
+4. **Resource Cleanup**: Check that timestamped log files in `logs/` directory are properly closed after quit
 5. **No Hanging**: Verify terminal returns to prompt immediately after quit
 
 ## Usage Instructions
 
 ### For Players:
 - **Ctrl+C**: Quit from terminal (signal-based)
-- **Ctrl+Q**: Quick quit from any game state
 - **Alt+F4**: Alternative quit shortcut (Windows-style)
 - **Menu Quit**: Use "Quit" option in main menu
 - **ESC**: Pause game (then Q to quit to menu)
 
 ### For Developers:
-- All quit events are logged to `game.log`
+- All quit events are logged to timestamped files in `logs/` directory
+- Log files use format: `game_YYYY-MM-DD_HH-MM-SS.log`
 - Use `game.Shutdown()` to trigger graceful shutdown from code
 - Context cancellation can be used for programmatic shutdown
 - Signal handling works with debuggers and process managers
+- `logs/` directory is automatically created and is in `.gitignore`
 
 These fixes should resolve the hanging issues when quitting the game and provide multiple reliable ways to exit the application cleanly.
