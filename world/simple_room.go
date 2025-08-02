@@ -173,27 +173,25 @@ func (sr *SimpleRoom) buildRoom() {
 	width := sr.tileMap.Width
 	height := sr.tileMap.Height
 	
-	// Last row is always ground
-	groundY := height - 1
-	for x := 0; x < width; x++ {
-		sr.tileMap.SetTile(x, groundY, TILE_DIRT)
-	}
-	
-	// Add walls on sides
-	for y := 0; y < height-1; y++ {  // Don't overwrite ground corners
-		// Left wall
-		sr.tileMap.SetTile(0, y, TILE_DIRT)
-		// Right wall
-		sr.tileMap.SetTile(width-1, y, TILE_DIRT)
-	}
-	
-	// Add ceiling
-	for x := 1; x < width-1; x++ {  // Don't overwrite wall corners
-		sr.tileMap.SetTile(x, 0, TILE_DIRT)
-	}
-	
-	// For small rooms, add a simple platform
+	// For small rooms, create a simple box with platform
 	if width <= 10 && height <= 10 {
+		// Create boundary walls
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				// Create walls on edges
+				if x == 0 || x == width-1 || y == 0 || y == height-1 {
+					sr.tileMap.SetTile(x, y, TILE_DIRT)
+				}
+			}
+		}
+		
+		// Add a floor
+		floorY := height - 2
+		for x := 1; x < width-1; x++ {
+			sr.tileMap.SetTile(x, floorY, TILE_DIRT)
+		}
+		
+		// Add a platform if there's room
 		if width >= 7 && height >= 7 {
 			platformY := height / 2
 			platformStartX := width / 3
