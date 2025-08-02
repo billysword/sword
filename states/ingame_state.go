@@ -72,21 +72,33 @@ Input handling:
 Returns any error from game systems, or ebiten.Termination to quit.
 */
 func (ig *InGameState) Update() error {
+	// Get room name for logging
+	roomName := ""
+	if ig.currentRoom != nil {
+		roomName = ig.currentRoom.GetZoneID()
+	}
+
+	// Get player position for logging
+	playerX, playerY := ig.player.GetPosition()
+
 	// Check for pause
 	if inpututil.IsKeyJustPressed(ebiten.KeyP) || inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		engine.LogPlayerInput("P/ESC (Pause)", playerX, playerY, roomName)
 		ig.stateManager.ChangeState(NewPauseState(ig.stateManager, ig))
 		return nil
 	}
 
 	// Debug toggle keys
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
+		engine.LogPlayerInput("B (Toggle Background)", playerX, playerY, roomName)
 		engine.ToggleBackground()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
+		engine.LogPlayerInput("G (Toggle Grid)", playerX, playerY, roomName)
 		engine.ToggleGrid()
 	}
 
-	ig.player.HandleInput()
+	ig.player.HandleInputWithLogging(roomName)
 	ig.player.Update()
 
 	// Update all enemies

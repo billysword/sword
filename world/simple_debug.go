@@ -3,25 +3,27 @@ package world
 import (
 	"fmt"
 	"strings"
+	"sword/engine"
 )
 
-// PrintRoomLayout prints a simple ASCII representation of the room layout to console
+// PrintRoomLayout logs a simple ASCII representation of the room layout to file
 func PrintRoomLayout(roomName string, tileMap *TileMap) {
-	fmt.Printf("\n=== ROOM LAYOUT: %s ===\n", roomName)
-	fmt.Printf("Dimensions: %dx%d tiles\n\n", tileMap.Width, tileMap.Height)
-	
-	// Print hex format for easy copying
-	fmt.Println("Hex format (copy-paste ready):")
-	printHexLayout(tileMap)
-	
-	fmt.Printf("\n=== END ROOM LAYOUT ===\n\n")
+	// Log basic room info
+	engine.LogRoomTile(roomName, fmt.Sprintf("Dimensions: %dx%d tiles", tileMap.Width, tileMap.Height))
+
+	// Generate hex layout string
+	layoutStr := generateHexLayoutString(tileMap)
+
+	// Log the complete layout
+	engine.LogRoomLayout(roomName, tileMap.Width, tileMap.Height, layoutStr)
 }
 
-// printHexLayout prints the layout in hex format ready for copying
-func printHexLayout(tileMap *TileMap) {
-	fmt.Println("var layout = [][]int{")
+// generateHexLayoutString generates the layout in hex format ready for copying
+func generateHexLayoutString(tileMap *TileMap) string {
+	var result strings.Builder
+	result.WriteString("var layout = [][]int{\n")
 	for y := 0; y < tileMap.Height; y++ {
-		fmt.Print("\t{")
+		result.WriteString("\t{")
 		var values []string
 		for x := 0; x < tileMap.Width; x++ {
 			tileIndex := tileMap.Tiles[y][x]
@@ -38,12 +40,13 @@ func printHexLayout(tileMap *TileMap) {
 				}
 			}
 		}
-		fmt.Print(strings.Join(values, ", "))
+		result.WriteString(strings.Join(values, ", "))
 		if y < tileMap.Height-1 {
-			fmt.Println("},")
+			result.WriteString("},\n")
 		} else {
-			fmt.Println("}")
+			result.WriteString("}\n")
 		}
 	}
-	fmt.Println("}")
+	result.WriteString("}")
+	return result.String()
 }
