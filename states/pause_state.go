@@ -24,6 +24,9 @@ Features:
 type PauseState struct {
 	stateManager    *engine.StateManager  // Reference to state manager for transitions
 	backgroundState engine.State          // Store the previous state to draw behind pause menu
+	overlay         *ebiten.Image         // Cached overlay image to prevent memory leaks
+	overlayWidth    int                   // Track overlay dimensions for invalidation
+	overlayHeight   int
 }
 
 /*
@@ -83,10 +86,17 @@ func (p *PauseState) Draw(screen *ebiten.Image) {
 		p.backgroundState.Draw(screen)
 	}
 
-	// Draw semi-transparent overlay
-	overlay := ebiten.NewImage(screen.Bounds().Dx(), screen.Bounds().Dy())
-	overlay.Fill(color.RGBA{0x00, 0x00, 0x00, 0xaa}) // Semi-transparent black
-	screen.DrawImage(overlay, nil)
+	// Create or update overlay if needed
+	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
+	if p.overlay == nil || p.overlayWidth != screenWidth || p.overlayHeight != screenHeight {
+		p.overlay = ebiten.NewImage(screenWidth, screenHeight)
+		p.overlay.Fill(color.RGBA{0x00, 0x00, 0x00, 0xaa}) // Semi-transparent black
+		p.overlayWidth = screenWidth
+		p.overlayHeight = screenHeight
+	}
+	
+	// Draw cached overlay
+	screen.DrawImage(p.overlay, nil)
 
 	// Draw pause menu
 	msg := "PAUSED\n\nP/ESC - Resume\nQ - Main Menu"
