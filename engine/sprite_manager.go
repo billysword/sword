@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 	"image"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )

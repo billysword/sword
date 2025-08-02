@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
+	"time"
 )
 
 // Logger handles file-based logging for the game
@@ -18,14 +21,41 @@ var (
 	once       sync.Once
 )
 
-// InitLogger initializes the game logger with a file
+// InitLogger initializes the game logger with a file in the logs directory
 func InitLogger(filename string) error {
 	var err error
 	once.Do(func() {
 		gameLogger = &Logger{}
 
+		// Create logs directory if it doesn't exist
+		logsDir := "logs"
+		if err = os.MkdirAll(logsDir, 0755); err != nil {
+			return
+		}
+
+		// Create timestamped filename if a base name is provided
+		if filename != "" {
+			// Extract extension and base name
+			ext := filepath.Ext(filename)
+			baseName := filename[:len(filename)-len(ext)]
+			if ext == "" {
+				ext = ".log"
+			}
+			
+			// Create timestamped filename
+			timestamp := time.Now().Format("2006-01-02_15-04-05")
+			filename = fmt.Sprintf("%s_%s%s", baseName, timestamp, ext)
+		} else {
+			// Default filename with timestamp
+			timestamp := time.Now().Format("2006-01-02_15-04-05")
+			filename = fmt.Sprintf("game_%s.log", timestamp)
+		}
+
+		// Full path in logs directory
+		logPath := filepath.Join(logsDir, filename)
+
 		// Create or open log file with append mode
-		gameLogger.file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		gameLogger.file, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			return
 		}
@@ -33,8 +63,8 @@ func InitLogger(filename string) error {
 		// Create logger with custom format
 		gameLogger.logger = log.New(gameLogger.file, "", log.LstdFlags|log.Lmicroseconds)
 
-		// Log initialization
-		gameLogger.LogInfo("=== Game Logger Initialized ===")
+		// Log initialization with file path
+		gameLogger.LogInfo(fmt.Sprintf("=== Game Logger Initialized - Log file: %s ===", logPath))
 	})
 	return err
 }
@@ -52,42 +82,54 @@ func GetLogger() *Logger {
 func (l *Logger) LogInfo(message string) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	l.logger.Printf("[INFO] %s", message)
+	if l.logger != nil {
+		l.logger.Printf("[INFO] %s", message)
+	}
 }
 
 // LogDebug logs a debug message
 func (l *Logger) LogDebug(message string) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	l.logger.Printf("[DEBUG] %s", message)
+	if l.logger != nil {
+		l.logger.Printf("[DEBUG] %s", message)
+	}
 }
 
 // LogRoomTile logs room tile information
 func (l *Logger) LogRoomTile(roomName string, message string) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	l.logger.Printf("[ROOM_TILE] %s: %s", roomName, message)
+	if l.logger != nil {
+		l.logger.Printf("[ROOM_TILE] %s: %s", roomName, message)
+	}
 }
 
 // LogPlayerInput logs player input and position
 func (l *Logger) LogPlayerInput(key string, playerX, playerY int, roomName string) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	l.logger.Printf("[PLAYER_INPUT] Key=%s Position=(%d,%d) Room=%s", key, playerX, playerY, roomName)
+	if l.logger != nil {
+		l.logger.Printf("[PLAYER_INPUT] Key=%s Position=(%d,%d) Room=%s", key, playerX, playerY, roomName)
+	}
 }
 
 // LogSprite logs sprite-related information
 func (l *Logger) LogSprite(message string) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	l.logger.Printf("[SPRITE] %s", message)
+	if l.logger != nil {
+		l.logger.Printf("[SPRITE] %s", message)
+	}
 }
 
 // LogRoomLayout logs the complete room layout
 func (l *Logger) LogRoomLayout(roomName string, width, height int, layout string) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
-	l.logger.Printf("[ROOM_LAYOUT] %s (%dx%d):\n%s", roomName, width, height, layout)
+	if l.logger != nil {
+		l.logger.Printf("[ROOM_LAYOUT] %s (%dx%d):\n%s", roomName, width, height, layout)
+	}
 }
 
 // Close closes the log file
@@ -95,8 +137,15 @@ func (l *Logger) Close() error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.file != nil {
-		l.LogInfo("=== Game Logger Closing ===")
-		return l.file.Close()
+		if l.logger != nil {
+			l.logger.Printf("[INFO] === Game Logger Closing ===")
+		}
+		// Flush any pending writes
+		l.file.Sync()
+		err := l.file.Close()
+		l.file = nil // Prevent double-close
+		l.logger = nil
+		return err
 	}
 	return nil
 }

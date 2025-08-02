@@ -88,6 +88,12 @@ func (ig *InGameState) Update() error {
 		return nil
 	}
 
+	// Check for quit (Alt+F4 style quit)
+	if (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
+		engine.LogPlayerInput("Alt+F4 (Quit)", playerX, playerY, roomName)
+		return ebiten.Termination
+	}
+
 	// Debug toggle keys
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
 		engine.LogPlayerInput("B (Toggle Background)", playerX, playerY, roomName)

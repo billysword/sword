@@ -97,6 +97,11 @@ Input handling:
 Returns any error from state transitions.
 */
 func (s *SettingsState) Update() error {
+	// Check for forced quit first (Alt+F4)
+	if (ebiten.IsKeyPressed(ebiten.KeyAlt) && inpututil.IsKeyJustPressed(ebiten.KeyF4)) {
+		return ebiten.Termination
+	}
+
 	// Handle navigation back to previous state
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		if s.returnToPause && s.pauseState != nil {
