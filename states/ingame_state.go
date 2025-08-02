@@ -27,6 +27,7 @@ Key responsibilities:
 type InGameState struct {
 	stateManager *engine.StateManager  // Reference to state manager for transitions
 	player       *entities.Player        // The player character instance
+	enemies      []entities.Enemy        // All enemies in the current room (interface slice)
 	currentRoom  world.Room           // Current room/level being played
 	camera       *engine.Camera        // Camera for world scrolling
 }
@@ -51,6 +52,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	return &InGameState{
 		stateManager: sm,
 		player:       entities.NewPlayer(50*physicsUnit, groundY),
+		enemies:      make([]entities.Enemy, 0), // Initialize empty enemies slice
 		currentRoom:  world.NewSimpleRoom("main"),
 		camera:       engine.NewCamera(windowWidth, windowHeight),
 	}
@@ -86,6 +88,11 @@ func (ig *InGameState) Update() error {
 
 	ig.player.HandleInput()
 	ig.player.Update()
+
+	// Update all enemies
+	for _, enemy := range ig.enemies {
+		enemy.Update()
+	}
 
 	// Update camera to follow player
 	if ig.camera != nil && ig.player != nil {
@@ -141,7 +148,12 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Draw player on top of room with camera offset
+	// Draw all enemies with camera offset
+	for _, enemy := range ig.enemies {
+		enemy.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
+	}
+
+	// Draw player on top of room and enemies with camera offset
 	if ig.player != nil {
 		ig.player.DrawWithCamera(screen, cameraOffsetX, cameraOffsetY)
 	}
@@ -168,8 +180,8 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		camX, camY = ig.camera.GetPosition()
 	}
 	
-	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s", 
-		ebiten.ActualTPS(), roomInfo, camX, camY, backgroundStatus, gridStatus)
+	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s", 
+		ebiten.ActualTPS(), roomInfo, camX, camY, len(ig.enemies), backgroundStatus, gridStatus)
 	ebitenutil.DebugPrint(screen, msg)
 }
 
@@ -190,6 +202,18 @@ func (ig *InGameState) OnEnter() {
 	// Initialize room if needed
 	if ig.currentRoom == nil {
 		ig.currentRoom = world.NewSimpleRoom("main")
+	}
+
+	// Spawn some test enemies if the enemies slice is empty
+	if len(ig.enemies) == 0 {
+		physicsUnit := engine.GetPhysicsUnit()
+		groundY := engine.GameConfig.GroundLevel * physicsUnit
+		
+		// Spawn different types of enemies to demonstrate the interface system
+		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(300*physicsUnit, groundY))     // Patrol behavior
+		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(600*physicsUnit, groundY))  // Random behavior
+		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(900*physicsUnit, groundY))     // Patrol behavior
+		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(1200*physicsUnit, groundY)) // Random behavior
 	}
 
 	// Set up camera bounds based on room size
@@ -221,5 +245,90 @@ func (ig *InGameState) OnExit() {
 		ig.currentRoom.OnExit(ig.player)
 	}
 	// Save game state or cleanup resources
+}
+
+/*
+AddEnemy adds a new enemy to the current room.
+Creates an enemy at the specified position and adds it to the enemies slice.
+
+Parameters:
+  - enemy: The enemy instance to add (must implement Enemy interface)
+*/
+func (ig *InGameState) AddEnemy(enemy entities.Enemy) {
+	ig.enemies = append(ig.enemies, enemy)
+}
+
+/*
+AddSlimeEnemy adds a new slime enemy to the current room.
+Convenience method for creating and adding slime enemies.
+
+Parameters:
+  - x: Horizontal spawn position in physics units
+  - y: Vertical spawn position in physics units
+
+Returns a pointer to the newly created slime enemy.
+*/
+func (ig *InGameState) AddSlimeEnemy(x, y int) *entities.SlimeEnemy {
+	slime := entities.NewSlimeEnemy(x, y)
+	ig.enemies = append(ig.enemies, slime)
+	return slime
+}
+
+/*
+AddWandererEnemy adds a new wanderer enemy to the current room.
+Convenience method for creating and adding wanderer enemies.
+
+Parameters:
+  - x: Horizontal spawn position in physics units
+  - y: Vertical spawn position in physics units
+
+Returns a pointer to the newly created wanderer enemy.
+*/
+func (ig *InGameState) AddWandererEnemy(x, y int) *entities.WandererEnemy {
+	wanderer := entities.NewWandererEnemy(x, y)
+	ig.enemies = append(ig.enemies, wanderer)
+	return wanderer
+}
+
+/*
+RemoveEnemy removes an enemy from the current room.
+Finds and removes the specified enemy from the enemies slice.
+
+Parameters:
+  - enemy: The enemy to remove (Enemy interface)
+
+Returns true if the enemy was found and removed, false otherwise.
+*/
+func (ig *InGameState) RemoveEnemy(enemy entities.Enemy) bool {
+	for i, e := range ig.enemies {
+		if e == enemy {
+			// Remove enemy by swapping with last element and truncating
+			ig.enemies[i] = ig.enemies[len(ig.enemies)-1]
+			ig.enemies = ig.enemies[:len(ig.enemies)-1]
+			return true
+		}
+	}
+	return false
+}
+
+/*
+ClearEnemies removes all enemies from the current room.
+Useful for room transitions or level resets.
+*/
+func (ig *InGameState) ClearEnemies() {
+	ig.enemies = ig.enemies[:0] // Clear slice but keep capacity
+}
+
+/*
+GetEnemies returns a copy of the current enemies slice.
+Useful for external systems that need to iterate over enemies
+without modifying the internal slice.
+
+Returns a slice containing all current enemies (Enemy interface).
+*/
+func (ig *InGameState) GetEnemies() []entities.Enemy {
+	enemies := make([]entities.Enemy, len(ig.enemies))
+	copy(enemies, ig.enemies)
+	return enemies
 }
 

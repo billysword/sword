@@ -1,5 +1,7 @@
 # Metroidvania-Style Game Changes
 
+> **📁 Documentation Moved**: This file has been moved to [docs/02_metroidvania_changes.md](docs/02_metroidvania_changes.md). Please use the organized documentation in the [docs/](docs/) folder.
+
 ## Overview
 This document summarizes the changes made to transform the game into a proper metroidvania-style platformer with appropriate window size, camera system, and room design.
 
