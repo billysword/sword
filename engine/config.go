@@ -1,6 +1,22 @@
 package engine
 
 /*
+ParallaxLayer represents a single layer in the parallax background system.
+Each layer can have different scroll speeds, depths, and visual effects
+to create immersive layered depth in the game world.
+*/
+type ParallaxLayer struct {
+	Speed       float64 // Scroll speed relative to camera (0-1, where 1 = same as camera)
+	Depth       float64 // Depth for visual effects (0-1, where 0 = background, 1 = foreground)
+	Image       string  // Path to the image file for this layer
+	Alpha       float64 // Transparency (0-1, where 1 = opaque)
+	Scale       float64 // Scale factor for the layer
+	OffsetX     float64 // Static horizontal offset
+	OffsetY     float64 // Static vertical offset
+	Repeatable  bool    // Whether the layer should tile/repeat
+}
+
+/*
 Config holds all the adjustable game settings in one place.
 This struct centralizes all configuration values for easy tweaking
 and different game modes (zoomed in vs zoomed out, different difficulties, etc.).
@@ -26,6 +42,11 @@ type Config struct {
 	CameraMarginTop   int    // Pixels reserved on top for HUD
 	CameraMarginBottom int   // Pixels reserved on bottom for HUD
 	ParallaxFactor    float64 // Background scroll speed relative to camera (0-1)
+	
+	// Enhanced Parallax/Depth Settings
+	ParallaxLayers    []ParallaxLayer // Multiple background/foreground layers
+	EnableDepthOfField bool           // Enable blur/transparency effects
+	DepthBlurStrength  float64        // Strength of depth blur (0-1)
 	
 	// Physics settings
 	PlayerMoveSpeed   int // Horizontal movement speed in physics units
@@ -71,6 +92,11 @@ func DefaultConfig() Config {
 		CameraMarginBottom: 0,
 		ParallaxFactor:     0.5,   // Half-speed background scrolling
 		
+		// Enhanced Parallax/Depth Settings
+		ParallaxLayers:    []ParallaxLayer{},
+		EnableDepthOfField: false,
+		DepthBlurStrength:  0.0,
+		
 		// Physics settings (lower values for zoomed-out feel)
 		PlayerMoveSpeed:  2,     // Moderate movement speed
 		PlayerJumpPower:  8,     // Good jump height
@@ -105,6 +131,15 @@ func ZoomedInConfig() Config {
 	config.CameraSmoothing = 0.1   // Slightly smoother camera
 	config.CameraDeadZoneX = 0.05  // Smaller dead zone for tighter following
 	config.CameraDeadZoneY = 0.1
+	
+	// Enhanced Parallax/Depth Settings for closer view
+	config.ParallaxLayers = []ParallaxLayer{
+		{Speed: 0.3, Depth: 0.8, Image: "assets/parallax/background.png"},
+		{Speed: 0.6, Depth: 0.6, Image: "assets/parallax/midground.png"},
+		{Speed: 1.0, Depth: 0.4, Image: "assets/parallax/foreground.png"},
+	}
+	config.EnableDepthOfField = true
+	config.DepthBlurStrength = 0.5
 	
 	// Physics settings (higher values for zoomed-in responsiveness)
 	config.PlayerMoveSpeed = 4     // Faster movement
