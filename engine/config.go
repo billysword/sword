@@ -52,14 +52,14 @@ platformer gameplay with good visibility of the surrounding environment.
 func DefaultConfig() Config {
 	return Config{
 		// Window settings
-		WindowWidth:  1024,
-		WindowHeight: 768,
+		WindowWidth:  1920,
+		WindowHeight: 1080,
 		WindowTitle:  "Sword",
 		
 		// Rendering settings
 		TileSize:         16,    // Standard 16x16 tiles
 		TileScaleFactor:  1.0,   // No scaling for zoomed-out view
-		CharScaleFactor:  0.4,   // Small character for better visibility
+		CharScaleFactor:  0.7,   // Better proportional match to tiles
 		
 		// Camera settings
 		CameraSmoothing:    0.05,  // Fast camera for responsiveness
@@ -81,7 +81,7 @@ func DefaultConfig() Config {
 		// Room settings
 		RoomWidthTiles:   80,    // Wide rooms for exploration
 		RoomHeightTiles:  60,    // Tall rooms for vertical gameplay
-		GroundLevel:      50,    // Ground near bottom but room for pits
+		GroundLevel:      45,    // Better vertical layout for platforming
 		
 		// Debug settings
 		ShowDebugInfo:    false,

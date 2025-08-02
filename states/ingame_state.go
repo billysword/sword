@@ -201,6 +201,66 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s",
 		ebiten.ActualTPS(), roomInfo, camX, camY, len(ig.enemies), backgroundStatus, gridStatus)
 	ebitenutil.DebugPrint(screen, msg)
+
+	// Add placeholder text for dead zone and HUD areas
+	ig.drawPlaceholderText(screen)
+}
+
+/*
+drawPlaceholderText renders placeholder text for dead zone and HUD areas.
+This method visualizes the camera dead zone boundaries and placeholder HUD areas
+to help with UI design and debugging the new larger window layout.
+*/
+func (ig *InGameState) drawPlaceholderText(screen *ebiten.Image) {
+	if ig.camera == nil {
+		return
+	}
+
+	// Get screen dimensions
+	screenWidth, screenHeight := ebiten.WindowSize()
+	
+	// Get camera dead zone dimensions
+	deadZoneX, deadZoneY := ig.camera.GetDeadZone()
+	
+	// Calculate dead zone boundaries on screen
+	centerX := screenWidth / 2
+	centerY := screenHeight / 2
+	
+	// Dead zone bounds
+	deadZoneLeft := centerX - deadZoneX
+	deadZoneRight := centerX + deadZoneX
+	deadZoneTop := centerY - deadZoneY
+	deadZoneBottom := centerY + deadZoneY
+	
+	// Draw dead zone corner markers and labels
+	ebitenutil.DebugPrintAt(screen, "DEAD ZONE", deadZoneLeft+5, deadZoneTop+5)
+	ebitenutil.DebugPrintAt(screen, "↑", centerX, deadZoneTop-20)
+	ebitenutil.DebugPrintAt(screen, "↓", centerX, deadZoneBottom+10)
+	ebitenutil.DebugPrintAt(screen, "←", deadZoneLeft-20, centerY)
+	ebitenutil.DebugPrintAt(screen, "→", deadZoneRight+10, centerY)
+	
+	// HUD area placeholders
+	// Top HUD area
+	ebitenutil.DebugPrintAt(screen, "HUD: Health, Items, Minimap", 20, 20)
+	
+	// Left HUD area  
+	ebitenutil.DebugPrintAt(screen, "HUD:", 20, screenHeight/2-60)
+	ebitenutil.DebugPrintAt(screen, "Inventory", 20, screenHeight/2-40)
+	ebitenutil.DebugPrintAt(screen, "Skills", 20, screenHeight/2-20)
+	ebitenutil.DebugPrintAt(screen, "Hotkeys", 20, screenHeight/2)
+	
+	// Right HUD area
+	ebitenutil.DebugPrintAt(screen, "HUD:", screenWidth-120, screenHeight/2-60)
+	ebitenutil.DebugPrintAt(screen, "Map", screenWidth-120, screenHeight/2-40)
+	ebitenutil.DebugPrintAt(screen, "Objectives", screenWidth-120, screenHeight/2-20)
+	ebitenutil.DebugPrintAt(screen, "Status", screenWidth-120, screenHeight/2)
+	
+	// Bottom HUD area
+	ebitenutil.DebugPrintAt(screen, "HUD: Chat, Action Bar, System Messages", 20, screenHeight-40)
+	
+	// Show screen dimensions info
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Screen: %dx%d", screenWidth, screenHeight), screenWidth-150, 20)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Dead Zone: %dx%d", deadZoneX*2, deadZoneY*2), screenWidth-150, 40)
 }
 
 /*
