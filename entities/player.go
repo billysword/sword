@@ -15,11 +15,12 @@ calculations to ensure consistent behavior across different scale factors.
 Position and velocity are stored in physics units (see engine.GetPhysicsUnit()).
 */
 type Player struct {
-	x        int
-	y        int
-	vx       int
-	vy       int
-	onGround bool
+	x          int
+	y          int
+	vx         int
+	vy         int
+	onGround   bool
+	facingRight bool // Track which direction the player is facing
 }
 
 /*
@@ -35,11 +36,12 @@ Returns a pointer to the new Player instance.
 */
 func NewPlayer(x, y int) *Player {
 	return &Player{
-		x:        x,
-		y:        y,
-		vx:       0,
-		vy:       0,
-		onGround: false,
+		x:          x,
+		y:          y,
+		vx:         0,
+		vy:         0,
+		onGround:   false,
+		facingRight: true, // Default to facing right
 	}
 }
 
@@ -74,11 +76,13 @@ func (p *Player) HandleInputWithLogging(roomName string) {
 			engine.LogPlayerInput("A/Left", playerX, playerY, roomName)
 		}
 		p.vx = -engine.GameConfig.PlayerMoveSpeed * physicsUnit
+		p.facingRight = false // Facing left
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 		if roomName != "" {
 			engine.LogPlayerInput("D/Right", playerX, playerY, roomName)
 		}
 		p.vx = engine.GameConfig.PlayerMoveSpeed * physicsUnit
+		p.facingRight = true // Facing right
 	}
 
 	// Jumping
@@ -253,4 +257,15 @@ func (p *Player) Reset(x, y int) {
 	p.vx = 0
 	p.vy = 0
 	p.onGround = false
+	p.facingRight = true // Reset to default facing right
+}
+
+/*
+IsFacingRight returns whether the player is currently facing right.
+Used by rendering systems and mini-map to show player orientation.
+
+Returns true if facing right, false if facing left.
+*/
+func (p *Player) IsFacingRight() bool {
+	return p.facingRight
 }

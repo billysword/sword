@@ -32,6 +32,11 @@ type InGameState struct {
 	camera       *engine.Camera       // Camera for world scrolling
 	parallaxConfigIndex int           // Index for cycling through parallax configurations
 	viewportRenderer *engine.ViewportRenderer // Handles viewport frame rendering
+	
+	// World map system
+	worldMap        *world.WorldMap       // Manages discovered rooms and connections
+	miniMapRenderer *world.MiniMapRenderer // Renders mini-map overlay
+	lastRoomID      string                // Track room changes for discovery
 }
 
 /*
@@ -85,6 +90,18 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		viewportRenderer.SetWorldBounds(tileMap.Width * physicsUnit, tileMap.Height * physicsUnit)
 	}
 
+	// Initialize world map system
+	worldMap := world.NewWorldMap()
+	worldMap.DiscoverRoom(room) // Discover the starting room
+	worldMap.SetCurrentRoom(room.GetZoneID())
+	
+	// Create mini-map renderer (positioned in top-right corner)
+	windowWidth, windowHeight := ebiten.WindowSize()
+	miniMapSize := 150
+	miniMapX := windowWidth - miniMapSize - 20  // 20px margin from right edge
+	miniMapY := 20                              // 20px margin from top edge
+	miniMapRenderer := world.NewMiniMapRenderer(worldMap, miniMapSize, miniMapX, miniMapY)
+
 	return &InGameState{
 		stateManager: sm,
 		player:       entities.NewPlayer(playerSpawnX, playerSpawnY),
@@ -92,6 +109,11 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		currentRoom:  room,
 		camera:       camera,
 		viewportRenderer: viewportRenderer,
+		
+		// World map system
+		worldMap:        worldMap,
+		miniMapRenderer: miniMapRenderer,
+		lastRoomID:      room.GetZoneID(),
 	}
 }
 
@@ -105,6 +127,7 @@ Input handling:
   - P/ESC: Pause game
   - B: Toggle background rendering
   - G: Toggle debug grid overlay
+  - M: Toggle mini-map visibility
 
 Returns any error from game systems, or ebiten.Termination to quit.
 */
@@ -143,6 +166,10 @@ func (ig *InGameState) Update() error {
 		engine.LogPlayerInput("G (Toggle Grid)", playerX, playerY, roomName)
 		engine.ToggleGrid()
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
+		engine.LogPlayerInput("M (Toggle Mini-Map)", playerX, playerY, roomName)
+		ig.miniMapRenderer.ToggleVisible()
+	}
 	
 	// Enhanced parallax controls
 	if inpututil.IsKeyJustPressed(ebiten.KeyD) {
@@ -157,6 +184,18 @@ func (ig *InGameState) Update() error {
 	// Handle player input and update
 	ig.player.HandleInputWithLogging(roomName)
 	ig.player.Update()
+	
+	// Update world map with player position
+	playerX, playerY := ig.player.GetPosition()
+	ig.worldMap.AddPlayerPosition(playerX, playerY)
+	
+	// Check for room changes (for future multi-room support)
+	currentRoomID := ig.currentRoom.GetZoneID()
+	if currentRoomID != ig.lastRoomID {
+		ig.worldMap.DiscoverRoom(ig.currentRoom)
+		ig.worldMap.SetCurrentRoom(currentRoomID)
+		ig.lastRoomID = currentRoomID
+	}
 	
 	// Update all enemies
 	for _, enemy := range ig.enemies {
@@ -263,6 +302,11 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 
 	// Layer 7: HUD (no camera offset)
 	ig.drawHUD(screen)
+	
+	// Layer 8: Mini-map overlay (always on top)
+	if ig.miniMapRenderer != nil {
+		ig.miniMapRenderer.Draw(screen, ig.player)
+	}
 }
 
 // drawHUD renders the HUD elements
