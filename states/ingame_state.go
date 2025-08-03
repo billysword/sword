@@ -163,6 +163,96 @@ func (ig *InGameState) Update() error {
 		engine.LogPlayerInput("Alt+F4 (Quit)", playerX, playerY, roomName)
 		return ebiten.Termination
 	}
+	
+	// Toggle debug HUD with F3
+	if inpututil.IsKeyJustPressed(ebiten.KeyF3) {
+		if ig.hudManager != nil {
+			ig.hudManager.ToggleComponent("debug_hud")
+		}
+	}
+	
+	// Toggle debug overlay with F4
+	if inpututil.IsKeyJustPressed(ebiten.KeyF4) {
+		engine.GameConfig.ShowDebugOverlay = !engine.GameConfig.ShowDebugOverlay
+		engine.LogInfo(fmt.Sprintf("Debug overlay: %v", engine.GameConfig.ShowDebugOverlay))
+	}
+	
+	// Runtime configuration adjustments (with Shift modifier for fine-tuning)
+	shiftPressed := ebiten.IsKeyPressed(ebiten.KeyShift)
+	
+	// Character scale adjustments ([ and ])
+	if inpututil.IsKeyJustPressed(ebiten.KeyBracketLeft) {
+		if shiftPressed {
+			engine.GameConfig.CharScaleFactor -= 0.05
+		} else {
+			engine.GameConfig.CharScaleFactor -= 0.1
+		}
+		if engine.GameConfig.CharScaleFactor < 0.1 {
+			engine.GameConfig.CharScaleFactor = 0.1
+		}
+		engine.LogInfo(fmt.Sprintf("Character scale decreased to: %.2f", engine.GameConfig.CharScaleFactor))
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyBracketRight) {
+		if shiftPressed {
+			engine.GameConfig.CharScaleFactor += 0.05
+		} else {
+			engine.GameConfig.CharScaleFactor += 0.1
+		}
+		if engine.GameConfig.CharScaleFactor > 3.0 {
+			engine.GameConfig.CharScaleFactor = 3.0
+		}
+		engine.LogInfo(fmt.Sprintf("Character scale increased to: %.2f", engine.GameConfig.CharScaleFactor))
+	}
+	
+	// Tile scale adjustments (- and =)
+	if inpututil.IsKeyJustPressed(ebiten.KeyMinus) {
+		if shiftPressed {
+			engine.GameConfig.TileScaleFactor -= 0.1
+		} else {
+			engine.GameConfig.TileScaleFactor -= 0.5
+		}
+		if engine.GameConfig.TileScaleFactor < 0.5 {
+			engine.GameConfig.TileScaleFactor = 0.5
+		}
+		engine.LogInfo(fmt.Sprintf("Tile scale decreased to: %.1f", engine.GameConfig.TileScaleFactor))
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyEqual) {
+		if shiftPressed {
+			engine.GameConfig.TileScaleFactor += 0.1
+		} else {
+			engine.GameConfig.TileScaleFactor += 0.5
+		}
+		if engine.GameConfig.TileScaleFactor > 4.0 {
+			engine.GameConfig.TileScaleFactor = 4.0
+		}
+		engine.LogInfo(fmt.Sprintf("Tile scale increased to: %.1f", engine.GameConfig.TileScaleFactor))
+	}
+	
+	// Physics adjustments with number keys
+	if inpututil.IsKeyJustPressed(ebiten.Key1) {
+		if shiftPressed {
+			engine.GameConfig.PlayerMoveSpeed = max(1, engine.GameConfig.PlayerMoveSpeed-1)
+		} else {
+			engine.GameConfig.PlayerMoveSpeed++
+		}
+		engine.LogInfo(fmt.Sprintf("Player move speed: %d", engine.GameConfig.PlayerMoveSpeed))
+	}
+	if inpututil.IsKeyJustPressed(ebiten.Key2) {
+		if shiftPressed {
+			engine.GameConfig.PlayerJumpPower = max(1, engine.GameConfig.PlayerJumpPower-1)
+		} else {
+			engine.GameConfig.PlayerJumpPower++
+		}
+		engine.LogInfo(fmt.Sprintf("Player jump power: %d", engine.GameConfig.PlayerJumpPower))
+	}
+	if inpututil.IsKeyJustPressed(ebiten.Key3) {
+		if shiftPressed {
+			engine.GameConfig.Gravity = max(0, engine.GameConfig.Gravity-1)
+		} else {
+			engine.GameConfig.Gravity++
+		}
+		engine.LogInfo(fmt.Sprintf("Gravity: %d", engine.GameConfig.Gravity))
+	}
 
 	// Debug toggle keys
 	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
@@ -177,7 +267,7 @@ func (ig *InGameState) Update() error {
 		engine.LogPlayerInput("M (Toggle Mini-Map)", playerX, playerY, roomName)
 		ig.hudManager.ToggleComponent("minimap")
 	}
-	
+
 	// Enhanced parallax controls
 	if inpututil.IsKeyJustPressed(ebiten.KeyD) {
 		engine.LogPlayerInput("D (Toggle Depth of Field)", playerX, playerY, roomName)
@@ -211,11 +301,20 @@ func (ig *InGameState) Update() error {
 			roomInfo := "No Room"
 			if ig.currentRoom != nil {
 				roomInfo = ig.currentRoom.GetZoneID()
+				if tileMap := ig.currentRoom.GetTileMap(); tileMap != nil {
+					roomInfo = fmt.Sprintf("%s (%dx%d tiles)", roomInfo, tileMap.Width, tileMap.Height)
+				}
 			}
 			dh.UpdateRoomInfo(roomInfo)
 			
-			// Update player position
-			playerPos := fmt.Sprintf("Player: (%d, %d)", playerX, playerY)
+			// Update player position with detailed info
+			physicsUnit := engine.GetPhysicsUnit()
+			playerPixelX := float64(playerX) / float64(physicsUnit)
+			playerPixelY := float64(playerY) / float64(physicsUnit)
+			playerTileX := int(playerPixelX / float64(engine.GameConfig.TileSize) / engine.GameConfig.TileScaleFactor)
+			playerTileY := int(playerPixelY / float64(engine.GameConfig.TileSize) / engine.GameConfig.TileScaleFactor)
+			playerPos := fmt.Sprintf("Physics: (%d, %d) | Pixels: (%.1f, %.1f) | Tiles: (%d, %d)", 
+				playerX, playerY, playerPixelX, playerPixelY, playerTileX, playerTileY)
 			dh.UpdatePlayerPos(playerPos)
 			
 			// Update camera position if available
@@ -324,6 +423,21 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 
 	if ig.player != nil {
 		ig.player.Draw(worldSurface)
+	}
+	
+	// Draw debug overlays if enabled
+	if engine.GameConfig.ShowDebugOverlay {
+		// Draw player debug overlay
+		if ig.player != nil {
+			ig.player.DrawDebug(worldSurface, 0, 0)
+		}
+		
+		// Draw enemy debug overlays
+		for _, enemy := range ig.enemies {
+			if baseEnemy, ok := enemy.(*entities.BaseEnemy); ok {
+				baseEnemy.DrawDebug(worldSurface, 0, 0)
+			}
+		}
 	}
 	
 	// Draw the world surface to screen with camera offset
