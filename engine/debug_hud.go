@@ -216,13 +216,6 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	helpX := windowWidth - 200
 	y = 20
 	
-	// Physics tuner status (top center)
-	tuner := GetPhysicsTuner()
-	if tunerStatus := tuner.GetStatusText(); tunerStatus != "" {
-		statusX := (windowWidth - len(tunerStatus)*6) / 2
-		ebitenutil.DebugPrintAt(ebitenScreen, tunerStatus, statusX, 5)
-	}
-	
 	ebitenutil.DebugPrintAt(ebitenScreen, "=== HOTKEYS ===", helpX, y)
 	helpY := y + lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "F3: Toggle Debug HUD", helpX, helpY)
@@ -251,8 +244,6 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	ebitenutil.DebugPrintAt(ebitenScreen, "F7: Toggle Grid", helpX, helpY)
 	helpY += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "F8: Toggle Depth of Field", helpX, helpY)
-	helpY += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, "F9: Toggle Physics Tuner", helpX, helpY)
 	helpY += lineHeight
 	
 	return nil

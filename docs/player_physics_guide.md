@@ -2,7 +2,7 @@
 
 ## Overview
 
-The player physics system has been completely overhauled to make it easy to adjust and work with. All physics parameters are now centralized in the `PlayerPhysicsConfig` struct, with runtime adjustment capabilities and visual debugging tools.
+The player physics system has been completely overhauled to make it easy to adjust and work with. All physics parameters are now centralized in the `PlayerPhysicsConfig` struct, with visual debugging tools to help you find the perfect settings.
 
 ## Key Features
 
@@ -51,28 +51,7 @@ Press **F4** to toggle debug overlay, which shows:
 - Velocity vectors
 - Physics state information
 
-### 3. Runtime Physics Tuner
-
-Press **F9** to activate the Physics Tuner:
-- **Tab**: Switch between parameters
-- **Up/Down Arrows**: Adjust values
-- **Shift**: Fine adjustment (0.1 step)
-- **Ctrl**: Coarse adjustment (10.0 step)
-
-Adjustable parameters:
-- Move Speed
-- Jump Power
-- Gravity
-- Max Fall Speed
-- Friction
-- Air Control
-- Collision Box dimensions and offset
-- Coyote Time
-- Jump Buffer Time
-- Character Scale Factor
-- Tile Scale Factor
-
-### 4. Tile-Based Collision Detection
+### 3. Tile-Based Collision Detection
 
 The player now uses proper tile-based collision detection:
 - Collision box can be smaller than sprite for precise platforming
@@ -80,7 +59,7 @@ The player now uses proper tile-based collision detection:
 - Ground detection uses a small area below the collision box
 - Works with the tileset's solid tiles
 
-### 5. Advanced Jump Mechanics
+### 4. Advanced Jump Mechanics
 
 The new system includes modern platformer features:
 - **Coyote Time**: Can still jump for a few frames after leaving a platform
@@ -88,39 +67,53 @@ The new system includes modern platformer features:
 - **Variable Jump Height**: Release jump early for shorter jumps
 - **Fast Fall**: Hold down to fall faster
 
-## Usage Examples
+## Configuration Examples
 
 ### Adjusting Player Size Relative to Tiles
 
+Edit the configuration in `engine/config.go`:
+
 ```go
 // Make player smaller relative to tiles
-config := &engine.GameConfig.PlayerPhysics
-config.CollisionBoxWidth = 0.4   // 40% of sprite width
-config.CollisionBoxHeight = 0.6  // 60% of sprite height
-config.CollisionBoxOffsetX = 0.3 // Center the narrower collision box
-config.CollisionBoxOffsetY = 0.4 // Position collision box at feet
+PlayerPhysics: PlayerPhysicsConfig{
+    SpriteWidth:  32,
+    SpriteHeight: 32,
+    CollisionBoxWidth: 0.4,   // 40% of sprite width
+    CollisionBoxHeight: 0.6,  // 60% of sprite height
+    CollisionBoxOffsetX: 0.3, // Center the narrower collision box
+    CollisionBoxOffsetY: 0.4, // Position collision box at feet
+    // ... other settings
+}
 ```
 
 ### Creating a "Floaty" Jump Feel
 
 ```go
-config.Gravity = 0.5            // Reduced gravity
-config.MaxFallSpeed = 8         // Lower terminal velocity
-config.JumpPower = 10           // Higher initial jump
-config.AirControl = 0.9         // More air control
-config.VariableJumpHeight = true
-config.MinJumpHeight = 0.3      // Very short tap jumps possible
+PlayerPhysics: PlayerPhysicsConfig{
+    // ... sprite settings
+    Gravity: 0.5,               // Reduced gravity
+    MaxFallSpeed: 8,            // Lower terminal velocity
+    JumpPower: 10,              // Higher initial jump
+    AirControl: 0.9,            // More air control
+    VariableJumpHeight: true,
+    MinJumpHeight: 0.3,         // Very short tap jumps possible
+    // ... other settings
+}
 ```
 
 ### Creating a "Heavy" Character Feel
 
 ```go
-config.Gravity = 2              // Higher gravity
-config.MaxFallSpeed = 20        // Faster falling
-config.JumpPower = 12           // Need more power to jump
-config.Friction = 3             // Stops quickly
-config.AirControl = 0.3         // Limited air control
-config.FastFallMultiplier = 2.0 // Very fast when holding down
+PlayerPhysics: PlayerPhysicsConfig{
+    // ... sprite settings
+    Gravity: 2,                 // Higher gravity
+    MaxFallSpeed: 20,           // Faster falling
+    JumpPower: 12,              // Need more power to jump
+    Friction: 3,                // Stops quickly
+    AirControl: 0.3,            // Limited air control
+    FastFallMultiplier: 2.0,    // Very fast when holding down
+    // ... other settings
+}
 ```
 
 ## Debug HUD Information
@@ -135,10 +128,10 @@ The debug HUD (F3) now shows a dedicated "PLAYER PHYSICS" section with:
 ## Best Practices
 
 1. **Start with visual debugging**: Enable F4 to see collision boxes
-2. **Use the Physics Tuner**: F9 for real-time adjustments
-3. **Test with different room layouts**: Collision box size affects platforming feel
-4. **Consider tile size**: Adjust collision box to match your level design
-5. **Save good configurations**: Note down values that feel good
+2. **Test with different room layouts**: Collision box size affects platforming feel
+3. **Consider tile size**: Adjust collision box to match your level design
+4. **Use presets**: Start with DefaultConfig() or ZoomedInConfig() and adjust from there
+5. **Test edge cases**: Make sure your collision box works well with platforms and walls
 
 ## Integration with Existing Code
 
@@ -154,4 +147,39 @@ player.Update()
 
 // Use:
 player.UpdateWithTileCollision(currentRoom)
+```
+
+## Quick Reference
+
+Common adjustments in `engine/config.go`:
+
+```go
+// In DefaultConfig() or your custom config:
+PlayerPhysics: PlayerPhysicsConfig{
+    // Sprite size (match your actual sprite)
+    SpriteWidth:  32,
+    SpriteHeight: 32,
+    
+    // Collision box (fractions of sprite size)
+    CollisionBoxOffsetX: 0.25,  // 25% from left
+    CollisionBoxOffsetY: 0.5,   // 50% from top
+    CollisionBoxWidth:   0.5,   // 50% of sprite width
+    CollisionBoxHeight:  0.5,   // 50% of sprite height
+    
+    // Movement
+    MoveSpeed:   2,             // Tiles per second (roughly)
+    JumpPower:   8,             // Initial jump velocity
+    AirControl:  0.7,           // 70% control in air
+    
+    // Physics
+    Gravity:            1,      // Acceleration per frame
+    MaxFallSpeed:       12,     // Terminal velocity
+    Friction:           1,      // Ground friction
+    
+    // Advanced
+    CoyoteTime:         6,      // Frames of grace period
+    JumpBufferTime:     10,     // Frames to remember jump input
+    VariableJumpHeight: true,   // Can control jump height
+    MinJumpHeight:      0.4,    // Minimum jump is 40% of full
+}
 ```
