@@ -32,6 +32,13 @@ type InGameState struct {
 	camera       *engine.Camera       // Camera for world scrolling
 	parallaxConfigIndex int           // Index for cycling through parallax configurations
 	viewportRenderer *engine.ViewportRenderer // Handles viewport frame rendering
+	
+	// World map system
+	worldMap   *world.WorldMap // Manages discovered rooms and connections
+	lastRoomID string          // Track room changes for discovery
+	
+	// HUD system
+	hudManager *engine.HUDManager // Manages all HUD components
 }
 
 /*
@@ -85,6 +92,21 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		viewportRenderer.SetWorldBounds(tileMap.Width * physicsUnit, tileMap.Height * physicsUnit)
 	}
 
+	// Initialize world map system
+	worldMap := world.NewWorldMap()
+	worldMap.DiscoverRoom(room) // Discover the starting room
+	worldMap.SetCurrentRoom(room.GetZoneID())
+	
+	// Initialize HUD system
+	hudManager := engine.NewHUDManager()
+	
+	// Create and add HUD components
+	debugHUD := engine.NewDebugHUD()
+	hudManager.AddComponent(debugHUD)
+	
+	miniMapRenderer := world.NewMiniMapRenderer(worldMap, 150, 0, 0)
+	hudManager.AddComponent(miniMapRenderer)
+
 	return &InGameState{
 		stateManager: sm,
 		player:       entities.NewPlayer(playerSpawnX, playerSpawnY),
@@ -92,6 +114,13 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		currentRoom:  room,
 		camera:       camera,
 		viewportRenderer: viewportRenderer,
+		
+		// World map system
+		worldMap:   worldMap,
+		lastRoomID: room.GetZoneID(),
+		
+		// HUD system
+		hudManager: hudManager,
 	}
 }
 
@@ -105,6 +134,7 @@ Input handling:
   - P/ESC: Pause game
   - B: Toggle background rendering
   - G: Toggle debug grid overlay
+  - M: Toggle mini-map visibility (placeholder for future rendering)
 
 Returns any error from game systems, or ebiten.Termination to quit.
 */
@@ -143,6 +173,10 @@ func (ig *InGameState) Update() error {
 		engine.LogPlayerInput("G (Toggle Grid)", playerX, playerY, roomName)
 		engine.ToggleGrid()
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
+		engine.LogPlayerInput("M (Toggle Mini-Map)", playerX, playerY, roomName)
+		ig.hudManager.ToggleComponent("minimap")
+	}
 	
 	// Enhanced parallax controls
 	if inpututil.IsKeyJustPressed(ebiten.KeyD) {
@@ -157,6 +191,46 @@ func (ig *InGameState) Update() error {
 	// Handle player input and update
 	ig.player.HandleInputWithLogging(roomName)
 	ig.player.Update()
+	
+	// Update world map with player position
+	playerX, playerY := ig.player.GetPosition()
+	ig.worldMap.AddPlayerPosition(playerX, playerY)
+	
+	// Check for room changes (for future multi-room support)
+	currentRoomID := ig.currentRoom.GetZoneID()
+	if currentRoomID != ig.lastRoomID {
+		ig.worldMap.DiscoverRoom(ig.currentRoom)
+		ig.worldMap.SetCurrentRoom(currentRoomID)
+		ig.lastRoomID = currentRoomID
+	}
+	
+	// Update debug HUD with current game state
+	if debugHUD := ig.hudManager.GetComponent("debug_hud"); debugHUD != nil {
+		if dh, ok := debugHUD.(*engine.DebugHUD); ok {
+			// Update room info
+			roomInfo := "No Room"
+			if ig.currentRoom != nil {
+				roomInfo = ig.currentRoom.GetZoneID()
+			}
+			dh.UpdateRoomInfo(roomInfo)
+			
+			// Update player position
+			playerPos := fmt.Sprintf("Player: (%d, %d)", playerX, playerY)
+			dh.UpdatePlayerPos(playerPos)
+			
+			// Update camera position if available
+			if ig.camera != nil {
+				camX, camY := ig.camera.GetPosition()
+				cameraPos := fmt.Sprintf("Camera: (%.1f, %.1f)", camX, camY)
+				dh.UpdateCameraPos(cameraPos)
+			}
+		}
+	}
+	
+	// Update all HUD components
+	if err := ig.hudManager.Update(); err != nil {
+		return err
+	}
 	
 	// Update all enemies
 	for _, enemy := range ig.enemies {
@@ -261,47 +335,14 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		ig.viewportRenderer.DrawFrame(screen)
 	}
 
-	// Layer 7: HUD (no camera offset)
-	ig.drawHUD(screen)
+	// Layer 7: HUD (managed by HUD system)
+	if err := ig.hudManager.Draw(screen); err != nil {
+		// Log error but don't fail the draw
+		engine.LogError("HUD draw error", err)
+	}
 }
 
-// drawHUD renders the HUD elements
-func (ig *InGameState) drawHUD(screen *ebiten.Image) {
-	// Show debug info
-	roomInfo := "No Room"
-	if ig.currentRoom != nil {
-		roomInfo = ig.currentRoom.GetZoneID()
-	}
-
-	backgroundStatus := "ON"
-	if !engine.GetBackgroundVisible() {
-		backgroundStatus = "OFF"
-	}
-
-	gridStatus := "OFF"
-	if engine.GetGridVisible() {
-		gridStatus = "ON"
-	}
-
-	// Add camera position to debug info
-	camX, camY := float64(0), float64(0)
-	if ig.camera != nil {
-		camX, camY = ig.camera.GetPosition()
-	}
-
-	// Check depth of field status
-	depthStatus := "OFF"
-	if engine.GameConfig.EnableDepthOfField {
-		depthStatus = "ON"
-	}
-	
-	msg := fmt.Sprintf("TPS: %0.2f\nRoom: %s\nCamera: (%.0f, %.0f)\nEnemies: %d\nPress SPACE to jump\nR - Switch Room\nP/ESC - Pause\nB - Background: %s\nG - Grid: %s\nD - Depth of Field: %s\nL - Cycle Parallax Layers",
-		ebiten.ActualTPS(), roomInfo, camX, camY, len(ig.enemies), backgroundStatus, gridStatus, depthStatus)
-	ebitenutil.DebugPrint(screen, msg)
-
-	// Add placeholder text for dead zone and HUD areas
-	ig.drawPlaceholderText(screen)
-}
+// Old drawHUD method removed - replaced by HUD delegate system
 
 /*
 drawPlaceholderText renders placeholder text for dead zone and HUD areas.
