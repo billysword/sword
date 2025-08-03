@@ -16,10 +16,24 @@ type DebugHUD struct {
 
 // DebugInfo contains debug information to display
 type DebugInfo struct {
+	// Player info
+	PlayerPos      string
+	PlayerVelocity string
+	PlayerStatus   string // onGround, facing direction, etc.
+	
+	// World info
 	RoomInfo     string
-	PlayerPos    string
 	CameraPos    string
+	
+	// System info
 	WindowSize   string
+	Performance  string
+	
+	// Toggle states - stored here to prevent flashing
+	BackgroundStatus string
+	GridStatus       string
+	DepthStatus      string
+	
 	CustomInfo   map[string]string // For additional debug data
 }
 
@@ -51,29 +65,31 @@ func (dh *DebugHUD) IsVisible() bool {
 
 // Update handles debug HUD logic updates (required by HUDComponent interface)
 func (dh *DebugHUD) Update() error {
-	// Update debug info that can be calculated independently
-	// Window size and performance info
+	// Update window size
 	windowWidth, windowHeight := ebiten.WindowSize()
-	dh.debugInfo.WindowSize = fmt.Sprintf("Window: %dx%d | TPS: %.2f", windowWidth, windowHeight, ebiten.ActualTPS())
+	dh.debugInfo.WindowSize = fmt.Sprintf("%dx%d", windowWidth, windowHeight)
 	
-	// Update debug toggle states
-	backgroundStatus := "ON"
-	if !GetBackgroundVisible() {
-		backgroundStatus = "OFF"
+	// Update performance info
+	dh.debugInfo.Performance = fmt.Sprintf("FPS: %.1f | TPS: %.1f", ebiten.ActualFPS(), ebiten.ActualTPS())
+	
+	// Update toggle states - store in debugInfo to prevent flashing
+	if GetBackgroundVisible() {
+		dh.debugInfo.BackgroundStatus = "ON"
+	} else {
+		dh.debugInfo.BackgroundStatus = "OFF"
 	}
-	dh.SetCustomInfo("Background", backgroundStatus)
 	
-	gridStatus := "OFF"
 	if GetGridVisible() {
-		gridStatus = "ON"
+		dh.debugInfo.GridStatus = "ON"
+	} else {
+		dh.debugInfo.GridStatus = "OFF"
 	}
-	dh.SetCustomInfo("Grid", gridStatus)
 	
-	depthStatus := "OFF"
 	if GameConfig.EnableDepthOfField {
-		depthStatus = "ON"
+		dh.debugInfo.DepthStatus = "ON"
+	} else {
+		dh.debugInfo.DepthStatus = "OFF"
 	}
-	dh.SetCustomInfo("Depth of Field", depthStatus)
 	
 	return nil
 }
@@ -99,7 +115,7 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	// Performance section
 	ebitenutil.DebugPrintAt(ebitenScreen, "=== PERFORMANCE ===", 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("FPS: %.1f | TPS: %.1f", ebiten.ActualFPS(), ebiten.ActualTPS()), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.Performance, 10, y)
 	y += lineHeight * 2
 	
 	// Player section
@@ -109,6 +125,15 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.PlayerPos, 10, y)
 		y += lineHeight
 	}
+	if dh.debugInfo.PlayerVelocity != "" {
+		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.PlayerVelocity, 10, y)
+		y += lineHeight
+	}
+	if dh.debugInfo.PlayerStatus != "" {
+		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.PlayerStatus, 10, y)
+		y += lineHeight
+	}
+	y += lineHeight
 	
 	// Physics section
 	ebitenutil.DebugPrintAt(ebitenScreen, "=== PHYSICS ===", 10, y)
@@ -127,7 +152,7 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	y += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Char Scale: %.2f (%.1f px)", GameConfig.CharScaleFactor, 32.0*GameConfig.CharScaleFactor), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Window: %dx%d", GameConfig.WindowWidth, GameConfig.WindowHeight), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Window: %s", dh.debugInfo.WindowSize), 10, y)
 	y += lineHeight * 2
 	
 	// Camera section
@@ -150,11 +175,25 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Ground Level: %d tiles", GameConfig.GroundLevel), 10, y)
 	y += lineHeight * 2
 	
+	// Toggle states section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== TOGGLES ===", 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Background: %s", dh.debugInfo.BackgroundStatus), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Grid: %s", dh.debugInfo.GridStatus), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Depth of Field: %s", dh.debugInfo.DepthStatus), 10, y)
+	y += lineHeight * 2
+	
 	// Custom debug info
-	for key, value := range dh.debugInfo.CustomInfo {
-		debugText := fmt.Sprintf("%s: %s", key, value)
-		ebitenutil.DebugPrintAt(ebitenScreen, debugText, 10, y)
+	if len(dh.debugInfo.CustomInfo) > 0 {
+		ebitenutil.DebugPrintAt(ebitenScreen, "=== CUSTOM ===", 10, y)
 		y += lineHeight
+		for key, value := range dh.debugInfo.CustomInfo {
+			debugText := fmt.Sprintf("%s: %s", key, value)
+			ebitenutil.DebugPrintAt(ebitenScreen, debugText, 10, y)
+			y += lineHeight
+		}
 	}
 	
 	// Hotkey help (right side of screen)
@@ -204,6 +243,16 @@ func (dh *DebugHUD) UpdatePlayerPos(playerPos string) {
 // UpdateCameraPos updates the camera position information
 func (dh *DebugHUD) UpdateCameraPos(cameraPos string) {
 	dh.debugInfo.CameraPos = cameraPos
+}
+
+// UpdatePlayerVelocity updates the player velocity information
+func (dh *DebugHUD) UpdatePlayerVelocity(velocity string) {
+	dh.debugInfo.PlayerVelocity = velocity
+}
+
+// UpdatePlayerStatus updates the player status information (onGround, facing, etc.)
+func (dh *DebugHUD) UpdatePlayerStatus(status string) {
+	dh.debugInfo.PlayerStatus = status
 }
 
 // SetCustomInfo sets custom debug information

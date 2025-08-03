@@ -317,6 +317,26 @@ func (ig *InGameState) Update() error {
 				playerX, playerY, playerPixelX, playerPixelY, playerTileX, playerTileY)
 			dh.UpdatePlayerPos(playerPos)
 			
+			// Update player velocity
+			vx, vy := ig.player.GetVelocity()
+			velocityPixelX := float64(vx) / float64(physicsUnit)
+			velocityPixelY := float64(vy) / float64(physicsUnit)
+			playerVelocity := fmt.Sprintf("Velocity: Physics: (%d, %d) | Pixels/frame: (%.1f, %.1f)", 
+				vx, vy, velocityPixelX, velocityPixelY)
+			dh.UpdatePlayerVelocity(playerVelocity)
+			
+			// Update player status
+			onGround := "In Air"
+			if ig.player.IsOnGround() {
+				onGround = "On Ground"
+			}
+			facing := "Left"
+			if ig.player.IsFacingRight() {
+				facing = "Right"
+			}
+			playerStatus := fmt.Sprintf("Status: %s | Facing: %s", onGround, facing)
+			dh.UpdatePlayerStatus(playerStatus)
+			
 			// Update camera position if available
 			if ig.camera != nil {
 				camX, camY := ig.camera.GetPosition()
