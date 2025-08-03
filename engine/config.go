@@ -140,8 +140,8 @@ func DefaultConfig() Config {
 		// Player physics configuration
 		PlayerPhysics: PlayerPhysicsConfig{
 			// Sprite dimensions (32x32 base sprite)
-			SpriteWidth:  32,
-			SpriteHeight: 32,
+			SpriteWidth:  16,
+			SpriteHeight: 16,
 			
 			// Collision box (centered horizontally, bottom-aligned)
 			CollisionBoxOffsetX: 0.25,  // 25% from left = centered for 50% width
@@ -155,13 +155,13 @@ func DefaultConfig() Config {
 			
 			// Movement physics
 			MoveSpeed:   2,             // Moderate movement speed
-			JumpPower:   8,             // Good jump height
+			JumpPower:   2,             // Good jump height
 			AirControl:  0.7,           // 70% control in air
 			Friction:    1,             // Quick stopping
 			AirFriction: 0,             // No air friction
 			
 			// Jump mechanics
-			CoyoteTime:         6,      // 6 frames (0.1 seconds at 60fps)
+			CoyoteTime:         2,      // 6 frames (0.1 seconds at 60fps)
 			JumpBufferTime:     10,     // 10 frames buffer
 			VariableJumpHeight: true,   // Can control jump height
 			MinJumpHeight:      0.4,    // 40% minimum jump
