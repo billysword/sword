@@ -58,7 +58,7 @@ type ParallaxLayer struct {
 /*
 Config holds all the adjustable game settings in one place.
 This struct centralizes all configuration values for easy tweaking
-and different game modes (zoomed in vs zoomed out, different difficulties, etc.).
+and different game modes or difficulties.
 All values use consistent units and naming conventions.
 */
 type Config struct {
@@ -188,92 +188,7 @@ func DefaultConfig() Config {
 	}
 }
 
-/*
-ZoomedInConfig returns a configuration optimized for close-up gameplay.
-This configuration provides larger sprites and tighter camera work
-for detailed platformer action with more intimate level design.
-*/
-func ZoomedInConfig() Config {
-	config := DefaultConfig()
-	
-	// Rendering settings for close-up view
-	config.TileScaleFactor = 2.0   // Double-size tiles
-	config.CharScaleFactor = 0.8   // Larger character
-	
-	// Camera settings for closer following
-	config.CameraSmoothing = 0.1   // Slightly smoother camera
-	config.CameraDeadZoneX = 0.05  // Smaller dead zone for tighter following
-	config.CameraDeadZoneY = 0.1
-	
-	// Enhanced Parallax/Depth Settings for closer view
-	config.ParallaxLayers = []ParallaxLayer{
-		{Speed: 0.3, Depth: 0.8, Image: "assets/parallax/background.png"},
-		{Speed: 0.6, Depth: 0.6, Image: "assets/parallax/midground.png"},
-		{Speed: 1.0, Depth: 0.4, Image: "assets/parallax/foreground.png"},
-	}
-	config.EnableDepthOfField = true
-	config.DepthBlurStrength = 0.5
-	
-	// Player physics configuration
-	config.PlayerPhysics.SpriteWidth = 32
-	config.PlayerPhysics.SpriteHeight = 32
-	config.PlayerPhysics.CollisionBoxOffsetX = 0.25
-	config.PlayerPhysics.CollisionBoxOffsetY = 0.5
-	config.PlayerPhysics.CollisionBoxWidth = 0.5
-	config.PlayerPhysics.CollisionBoxHeight = 0.5
-	config.PlayerPhysics.GroundCheckOffset = 2
-	config.PlayerPhysics.GroundCheckWidth = 0.8
-	config.PlayerPhysics.MoveSpeed = 4
-	config.PlayerPhysics.JumpPower = 12
-	config.PlayerPhysics.AirControl = 0.7
-	config.PlayerPhysics.Friction = 2
-	config.PlayerPhysics.AirFriction = 0
-	config.PlayerPhysics.CoyoteTime = 6
-	config.PlayerPhysics.JumpBufferTime = 10
-	config.PlayerPhysics.VariableJumpHeight = true
-	config.PlayerPhysics.MinJumpHeight = 0.4
-	config.PlayerPhysics.Gravity = 1
-	config.PlayerPhysics.MaxFallSpeed = 16
-	config.PlayerPhysics.FastFallMultiplier = 1.5
-	
-	// Enemy physics settings (kept separate for now)
-	config.Gravity = 1
-	config.MaxFallSpeed = 16
-	
-	// Room settings for tighter level design
-	config.RoomWidthTiles = 40     // Smaller, more focused rooms
-	config.RoomHeightTiles = 30
-	config.GroundLevel = 25        // Ground closer to middle
-	
-	return config
-}
 
-/*
-SmallRoomConfig returns a configuration for small rooms with centered viewport.
-This configuration is designed for testing room layouts with black dead areas
-when the room doesn't fill the entire window. The actual room size is determined
-by the tilemap dimensions, not the configuration.
-*/
-func SmallRoomConfig() Config {
-	config := DefaultConfig()
-	
-	// Room dimensions will be set by the tilemap
-	// These are just defaults that can be overridden
-	config.RoomWidthTiles = 10
-	config.RoomHeightTiles = 10
-	config.GroundLevel = 8
-	
-	// Larger tiles for better visibility in small rooms
-	config.TileScaleFactor = 2.0
-	config.CharScaleFactor = 1.0
-	
-	// Disable camera smoothing for precise control
-	config.CameraSmoothing = 0.1
-	config.CameraDeadZoneX = 0.0
-	config.CameraDeadZoneY = 0.0
-	
-	return config
-}
 
 // GameConfig is the global configuration instance
 // Initialize with default config, can be changed at runtime

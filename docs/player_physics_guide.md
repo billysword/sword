@@ -130,7 +130,7 @@ The debug HUD (F3) now shows a dedicated "PLAYER PHYSICS" section with:
 1. **Start with visual debugging**: Enable F4 to see collision boxes
 2. **Test with different room layouts**: Collision box size affects platforming feel
 3. **Consider tile size**: Adjust collision box to match your level design
-4. **Use presets**: Start with DefaultConfig() or ZoomedInConfig() and adjust from there
+4. **Use presets**: Start with DefaultConfig() and adjust from there
 5. **Test edge cases**: Make sure your collision box works well with platforms and walls
 
 ## Integration with Existing Code

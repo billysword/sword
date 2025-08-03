@@ -12,13 +12,13 @@ To make the player appear larger or smaller relative to tiles:
 ```go
 // In gamestate/config.go, adjust these values:
 
-// For zoomed out view (player ~3 tiles wide):
-TileScaleFactor: 1.0,  // Smaller tiles
-CharScaleFactor: 0.4,  // Smaller character
+// For balanced view (default configuration):
+TileScaleFactor: 1.0,  // Standard 16px tiles
+CharScaleFactor: 0.7,  // Proportional character
 
-// For zoomed in view (player ~2 tiles wide):
-TileScaleFactor: 2.0,  // Larger tiles  
-CharScaleFactor: 0.5,  // Slightly larger character
+// For larger, more visible tiles:
+TileScaleFactor: 2.0,  // Larger 32px tiles  
+CharScaleFactor: 0.8,  // Slightly larger character
 ```
 
 ### 2. Changing Window Size
@@ -66,11 +66,8 @@ GroundLevel:     44,    // Where the main ground is
 The config file includes preset configurations:
 
 ```go
-// For zoomed out metroidvania view:
+// Use the default balanced configuration:
 GameConfig = DefaultConfig()
-
-// For more zoomed in view:
-GameConfig = ZoomedInConfig()
 ```
 
 ## Creating Custom Configurations

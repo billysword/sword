@@ -65,11 +65,11 @@ When enabled, shows visual debug information:
 - **Pink Line**: Velocity vector
 - **Red Line**: Facing direction
 
-## Current Configuration (10x10 Room)
-The game is currently using `SmallRoomConfig()` with:
-- Tile Scale: 2.0 (32px tiles)
-- Character Scale: 1.0 (32px sprite)
-- 10x10 tile room
+## Current Configuration
+The game is currently using `DefaultConfig()` with:
+- Tile Scale: 1.0 (16px tiles)
+- Character Scale: 0.7 (scaled sprite)
+- 80x60 tile room
 - Window: 1920x1080
 
 ## Architecture Notes
