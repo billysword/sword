@@ -62,6 +62,7 @@ type Config struct {
 	
 	// Debug settings
 	ShowDebugInfo    bool // Show FPS and other debug text
+	ShowDebugOverlay bool // Show visual debug overlays (bounding boxes, etc)
 	GridColor        [4]uint8 // RGBA color for debug grid
 }
 
@@ -110,7 +111,8 @@ func DefaultConfig() Config {
 		GroundLevel:      45,    // Better vertical layout for platforming
 		
 		// Debug settings
-		ShowDebugInfo:    false,
+		ShowDebugInfo:    true,  // Enable debug info by default for development
+		ShowDebugOverlay: false, // Debug overlay off by default
 		GridColor:        [4]uint8{128, 128, 128, 64}, // Faint gray grid
 	}
 }

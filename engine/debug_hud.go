@@ -89,36 +89,104 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 		return nil // Skip if not Ebiten screen
 	}
 	
-	// Draw debug information
+	// Get physics unit for conversions
+	physicsUnit := GetPhysicsUnit()
+	
+	// Build comprehensive debug text
 	y := 10
 	lineHeight := 15
 	
-	if dh.debugInfo.RoomInfo != "" {
-		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.RoomInfo, 10, y)
-		y += lineHeight
-	}
+	// Performance section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== PERFORMANCE ===", 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("FPS: %.1f | TPS: %.1f", ebiten.ActualFPS(), ebiten.ActualTPS()), 10, y)
+	y += lineHeight * 2
 	
+	// Player section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== PLAYER ===", 10, y)
+	y += lineHeight
 	if dh.debugInfo.PlayerPos != "" {
 		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.PlayerPos, 10, y)
 		y += lineHeight
 	}
 	
+	// Physics section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== PHYSICS ===", 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Physics Unit: %d px", physicsUnit), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed: %d | Jump: %d", GameConfig.PlayerMoveSpeed, GameConfig.PlayerJumpPower), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity: %d | Friction: %d", GameConfig.Gravity, GameConfig.PlayerFriction), 10, y)
+	y += lineHeight * 2
+	
+	// Rendering section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== RENDERING ===", 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Tile: %dx%.1f = %.1f px", GameConfig.TileSize, GameConfig.TileScaleFactor, float64(GameConfig.TileSize)*GameConfig.TileScaleFactor), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Char Scale: %.2f (%.1f px)", GameConfig.CharScaleFactor, 32.0*GameConfig.CharScaleFactor), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Window: %dx%d", GameConfig.WindowWidth, GameConfig.WindowHeight), 10, y)
+	y += lineHeight * 2
+	
+	// Camera section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== CAMERA ===", 10, y)
+	y += lineHeight
 	if dh.debugInfo.CameraPos != "" {
 		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.CameraPos, 10, y)
 		y += lineHeight
 	}
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Smoothing: %.2f", GameConfig.CameraSmoothing), 10, y)
+	y += lineHeight * 2
 	
-	if dh.debugInfo.WindowSize != "" {
-		ebitenutil.DebugPrintAt(ebitenScreen, dh.debugInfo.WindowSize, 10, y)
+	// Room section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== ROOM ===", 10, y)
+	y += lineHeight
+	if dh.debugInfo.RoomInfo != "" {
+		ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Room: %s", dh.debugInfo.RoomInfo), 10, y)
 		y += lineHeight
 	}
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Ground Level: %d tiles", GameConfig.GroundLevel), 10, y)
+	y += lineHeight * 2
 	
-	// Draw custom debug info
+	// Custom debug info
 	for key, value := range dh.debugInfo.CustomInfo {
 		debugText := fmt.Sprintf("%s: %s", key, value)
 		ebitenutil.DebugPrintAt(ebitenScreen, debugText, 10, y)
 		y += lineHeight
 	}
+	
+	// Hotkey help (right side of screen)
+	windowWidth, _ := ebiten.WindowSize()
+	helpX := windowWidth - 300
+	helpY := 10
+	
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== HOTKEYS ===", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "F3: Toggle Debug HUD", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "F4: Toggle Debug Overlay", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "[ ]: Char Scale -/+", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "- =: Tile Scale -/+", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "1: Move Speed +/-", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "2: Jump Power +/-", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "3: Gravity +/-", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "(Hold Shift for fine-tune)", helpX, helpY)
+	helpY += lineHeight * 2
+	ebitenutil.DebugPrintAt(ebitenScreen, "G: Toggle Grid", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "B: Toggle Background", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "M: Toggle Mini-Map", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "ESC/P: Pause", helpX, helpY)
 	
 	return nil
 }
