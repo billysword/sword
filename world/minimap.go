@@ -1,10 +1,15 @@
 package world
 
+import (
+	"sword/engine"
+)
+
 // MiniMapRenderer handles rendering the mini-map overlay
-// TODO: Implement proper Ebiten rendering system
+// Implements engine.HUDComponent interface
 type MiniMapRenderer struct {
 	worldMap *WorldMap
 	visible  bool
+	name     string
 }
 
 // NewMiniMapRenderer creates a new mini-map renderer
@@ -12,15 +17,21 @@ func NewMiniMapRenderer(worldMap *WorldMap, size int, x, y int) *MiniMapRenderer
 	return &MiniMapRenderer{
 		worldMap: worldMap,
 		visible:  true,
+		name:     "minimap",
 	}
 }
 
-// SetVisible toggles mini-map visibility
+// GetName returns the component name (required by HUDComponent interface)
+func (mmr *MiniMapRenderer) GetName() string {
+	return mmr.name
+}
+
+// SetVisible toggles mini-map visibility (required by HUDComponent interface)
 func (mmr *MiniMapRenderer) SetVisible(visible bool) {
 	mmr.visible = visible
 }
 
-// IsVisible returns whether the mini-map is currently visible
+// IsVisible returns whether the mini-map is currently visible (required by HUDComponent interface)
 func (mmr *MiniMapRenderer) IsVisible() bool {
 	return mmr.visible
 }
@@ -30,21 +41,22 @@ func (mmr *MiniMapRenderer) ToggleVisible() {
 	mmr.visible = !mmr.visible
 }
 
-// Update handles mini-map logic updates
-// TODO: Implement mini-map specific update logic if needed
-func (mmr *MiniMapRenderer) Update() {
+// Update handles mini-map logic updates (required by HUDComponent interface)
+func (mmr *MiniMapRenderer) Update() error {
 	// Empty for now - placeholder for future mini-map update logic
+	// TODO: Implement mini-map specific update logic if needed
+	return nil
 }
 
-// Draw renders the mini-map
-// TODO: Implement proper Ebiten image rendering on screen overlay
-func (mmr *MiniMapRenderer) Draw(screen interface{}, player interface{}) {
+// Draw renders the mini-map (required by HUDComponent interface)
+func (mmr *MiniMapRenderer) Draw(screen interface{}) error {
 	if !mmr.visible {
-		return
+		return nil
 	}
 	
 	// Empty for now - placeholder for future mini-map rendering
 	// TODO: Render mini-map overlay to screen using Ebiten
+	return nil
 }
 
 // GetMapData returns the current map data for external rendering systems
