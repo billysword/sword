@@ -95,8 +95,8 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	worldMap.DiscoverRoom(room) // Discover the starting room
 	worldMap.SetCurrentRoom(room.GetZoneID())
 	
-	// Create mini-map renderer (simple ASCII for now)
-	// TODO: Replace with proper Ebiten rendering when display system is implemented
+	// Create mini-map renderer
+	// TODO: Implement rendering when display system is ready
 	miniMapRenderer := world.NewMiniMapRenderer(worldMap, 150, 0, 0)
 
 	return &InGameState{
@@ -124,7 +124,7 @@ Input handling:
   - P/ESC: Pause game
   - B: Toggle background rendering
   - G: Toggle debug grid overlay
-  - M: Toggle mini-map debug output (ASCII to console)
+  - M: Toggle mini-map visibility (placeholder for future rendering)
 
 Returns any error from game systems, or ebiten.Termination to quit.
 */
@@ -164,7 +164,7 @@ func (ig *InGameState) Update() error {
 		engine.ToggleGrid()
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
-		engine.LogPlayerInput("M (Toggle Mini-Map Debug)", playerX, playerY, roomName)
+		engine.LogPlayerInput("M (Toggle Mini-Map)", playerX, playerY, roomName)
 		ig.miniMapRenderer.ToggleVisible()
 	}
 	
@@ -192,6 +192,11 @@ func (ig *InGameState) Update() error {
 		ig.worldMap.DiscoverRoom(ig.currentRoom)
 		ig.worldMap.SetCurrentRoom(currentRoomID)
 		ig.lastRoomID = currentRoomID
+	}
+	
+	// Update mini-map renderer
+	if ig.miniMapRenderer != nil {
+		ig.miniMapRenderer.Update()
 	}
 	
 	// Update all enemies
@@ -301,10 +306,8 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	ig.drawHUD(screen)
 	
 	// Layer 8: Mini-map overlay (always on top)
-	// TODO: Replace with proper Ebiten rendering when display system is implemented
+	// TODO: Implement mini-map rendering when display system is ready
 	if ig.miniMapRenderer != nil && ig.miniMapRenderer.IsVisible() {
-		// For now, mini-map data is available via ig.miniMapRenderer.GetMapData()
-		// ASCII output goes to console for debugging
 		ig.miniMapRenderer.Draw(screen, ig.player)
 	}
 }

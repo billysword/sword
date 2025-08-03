@@ -121,10 +121,10 @@ type MapDisplayData struct {
 - **Comprehensive test suite** with mock implementations
 
 ### 🎯 Display System (TODOs)
-- `minimap.go` currently outputs ASCII to console for debugging
-- All Ebiten rendering methods marked with TODOs
-- `GetMapData()` provides structured data for future rendering
-- Display system can be implemented separately without changing core logic
+- `minimap.go` has empty Update() and Draw() methods ready for implementation
+- All Ebiten rendering methods marked with clear TODOs
+- `GetMapData()` provides structured data for rendering systems
+- Clean separation between game logic and display concerns
 
 ### 📋 Rendering TODOs
 ```go
@@ -155,11 +155,11 @@ mapData := miniMapRenderer.GetMapData()
 // Use mapData to render mini-map overlay
 ```
 
-### Current Debug Features
-- **M Key**: Toggle ASCII debug output to console
-- **Console Output**: Shows current room layout with ASCII characters
-- **Player Position**: Marked with '@' symbol
-- **Room Exits**: Shown with directional arrows (^v<>)
+### Current Integration
+- **M Key**: Toggle mini-map visibility (ready for future rendering)
+- **Update Pipeline**: Mini-map update called in game loop
+- **Draw Pipeline**: Mini-map draw hook ready for implementation
+- **Data Access**: GetMapData() provides all rendering data
 
 ## 🔧 Technical Specifications
 
