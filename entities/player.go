@@ -1,28 +1,34 @@
 package entities
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"sword/engine"
 	"image/color"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 /*
-Player represents the player character with all its functionality.
+Player represents the main character entity in the game.
 Handles movement, physics, input processing, and rendering for the
 main character. Uses physics units for all position and velocity
-calculations to ensure consistent behavior across different scale factors.
+calculations to maintain consistent behavior across different scales.
 
 Position and velocity are stored in physics units (see engine.GetPhysicsUnit()).
+The player's collision box can be configured through engine.GameConfig.PlayerPhysics.
 */
 type Player struct {
-	x          int
-	y          int
-	vx         int
-	vy         int
-	onGround   bool
-	facingRight bool // Track which direction the player is facing
+	x, y   int  // Position in physics units
+	vx, vy int  // Velocity in physics units per frame
+	onGround bool // Whether the player is currently on the ground
+	
+	// Jump mechanics state
+	coyoteTimer     int  // Frames since leaving ground
+	jumpBufferTimer int  // Frames since jump was pressed
+	isJumping       bool // Currently in a jump (for variable height)
+	jumpHeldFrames  int  // How long jump has been held
 }
 
 /*
@@ -48,59 +54,108 @@ func NewPlayer(x, y int) *Player {
 }
 
 /*
-HandleInput processes player input for movement and actions.
+ProcessInput handles player input for movement and actions.
 Reads keyboard input and updates player velocity accordingly.
-Uses engine.GameConfig values for movement speeds and physics calculations.
+This method should be called once per frame before Update().
 
-Input mapping:
-  - A/Left Arrow: Move left
-  - D/Right Arrow: Move right
-  - Space: Jump
+Uses engine.GameConfig.PlayerPhysics values for movement speeds and physics calculations.
+Implements advanced jump mechanics including coyote time and jump buffering.
+*/
+func (p *Player) ProcessInput() {
+	physicsUnit := engine.GetPhysicsUnit()
+	config := &engine.GameConfig.PlayerPhysics
+	
+	// Update jump buffer timer
+	if p.jumpBufferTimer > 0 {
+		p.jumpBufferTimer--
+	}
+	
+	// Horizontal movement
+	p.vx = 0
+	moveSpeed := config.MoveSpeed
+	if !p.onGround {
+		// Apply air control
+		moveSpeed = int(float64(moveSpeed) * config.AirControl)
+	}
+	
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
+		p.vx = -moveSpeed * physicsUnit
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
+		p.vx = moveSpeed * physicsUnit
+	}
+	
+	// Jump input handling
+	jumpPressed := ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyW)
+	
+	if jumpPressed {
+		p.jumpBufferTimer = config.JumpBufferTime
+	}
+	
+	// Check if we can jump (on ground or within coyote time)
+	canJump := p.onGround || (p.coyoteTimer > 0 && p.vy >= 0)
+	
+	// Execute jump if buffered and able
+	if p.jumpBufferTimer > 0 && canJump {
+		p.Jump()
+		p.jumpBufferTimer = 0
+		p.coyoteTimer = 0
+	}
+	
+	// Variable jump height - reduce upward velocity if jump released early
+	if config.VariableJumpHeight && p.isJumping && !jumpPressed && p.vy < 0 {
+		// Calculate how much to reduce jump
+		minVelocity := int(float64(-config.JumpPower*physicsUnit) * config.MinJumpHeight)
+		if p.vy < minVelocity {
+			p.vy = minVelocity
+		}
+		p.isJumping = false
+	}
+	
+	// Fast fall when holding down
+	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
+		if p.vy > 0 {
+			p.vy = int(float64(p.vy) * config.FastFallMultiplier)
+		}
+	}
+}
+
+/*
+Jump makes the player jump if they are on the ground.
+Sets the vertical velocity to the configured jump power.
+*/
+func (p *Player) Jump() {
+	physicsUnit := engine.GetPhysicsUnit()
+	config := &engine.GameConfig.PlayerPhysics
+	
+	p.vy = -config.JumpPower * physicsUnit
+	p.onGround = false
+	p.isJumping = true
+	p.jumpHeldFrames = 0
+}
+
+/*
+HandleInput processes player input for movement and actions.
+Backward compatibility wrapper for ProcessInput().
 */
 func (p *Player) HandleInput() {
-	p.HandleInputWithLogging("")
+	p.ProcessInput()
 }
 
 /*
 HandleInputWithLogging processes player input and logs keystrokes with position.
-This version includes logging for debugging and analytics.
+Backward compatibility wrapper that includes logging.
 
 Parameters:
   - roomName: Name of the current room for logging context
 */
 func (p *Player) HandleInputWithLogging(roomName string) {
-	physicsUnit := engine.GetPhysicsUnit()
-	playerX, playerY := p.GetPosition()
-
-	// Horizontal movement - using config values
-	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		if roomName != "" {
-			engine.LogPlayerInput("A/Left", playerX, playerY, roomName)
-		}
-		p.vx = -engine.GameConfig.PlayerMoveSpeed * physicsUnit
-		p.facingRight = false // Facing left
-	} else if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		if roomName != "" {
-			engine.LogPlayerInput("D/Right", playerX, playerY, roomName)
-		}
-		p.vx = engine.GameConfig.PlayerMoveSpeed * physicsUnit
-		p.facingRight = true // Facing right
+	// Log current position before processing input
+	if roomName != "" {
+		playerX, playerY := p.GetPosition()
+		engine.LogPlayerPosition(playerX, playerY, roomName)
 	}
-
-	// Jumping
-	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-		if roomName != "" {
-			engine.LogPlayerInput("Space/Jump", playerX, playerY, roomName)
-		}
-		p.tryJump()
-	}
-}
-
-// tryJump makes the player jump if possible
-func (p *Player) tryJump() {
-	physicsUnit := engine.GetPhysicsUnit()
-	// Allow jumping even if not on ground (mid-air jumping as per original design)
-	p.vy = -engine.GameConfig.PlayerJumpPower * physicsUnit
+	p.ProcessInput()
 }
 
 /*
@@ -108,41 +163,78 @@ Update handles player physics and movement.
 Applies velocity to position, handles ground collision, applies friction
 to horizontal movement, and applies gravity. Should be called once per frame.
 
-Uses values from engine.GameConfig for all physics calculations including friction,
-gravity, and ground level.
+Uses values from engine.GameConfig.PlayerPhysics for all physics calculations including friction,
+gravity, and ground level. Also updates jump mechanics timers.
 */
 func (p *Player) Update() {
 	physicsUnit := engine.GetPhysicsUnit()
-
-	// Apply movement
+	config := &engine.GameConfig.PlayerPhysics
+	
+	// Update position
 	p.x += p.vx
 	p.y += p.vy
-
+	
+	// Update coyote time
+	if p.onGround {
+		p.coyoteTimer = config.CoyoteTime
+	} else if p.coyoteTimer > 0 {
+		p.coyoteTimer--
+	}
+	
 	// Ground collision - using config ground level
 	groundY := engine.GameConfig.GroundLevel * physicsUnit
 	if p.y > groundY {
 		p.y = groundY
+		p.vy = 0
+		wasInAir := !p.onGround
 		p.onGround = true
+		p.isJumping = false
+		
+		// Reset coyote timer when landing
+		if wasInAir {
+			p.coyoteTimer = config.CoyoteTime
+		}
 	} else {
 		p.onGround = false
 	}
-
-	// Apply friction to horizontal movement
-	if p.vx > 0 {
-		p.vx -= engine.GameConfig.PlayerFriction
-		if p.vx < 0 {
-			p.vx = 0
-		}
-	} else if p.vx < 0 {
-		p.vx += engine.GameConfig.PlayerFriction
+	
+	// Apply friction
+	if p.onGround {
+		// Ground friction
 		if p.vx > 0 {
-			p.vx = 0
+			p.vx -= config.Friction
+			if p.vx < 0 {
+				p.vx = 0
+			}
+		} else if p.vx < 0 {
+			p.vx += config.Friction
+			if p.vx > 0 {
+				p.vx = 0
+			}
+		}
+	} else if config.AirFriction > 0 {
+		// Air friction (if configured)
+		if p.vx > 0 {
+			p.vx -= config.AirFriction
+			if p.vx < 0 {
+				p.vx = 0
+			}
+		} else if p.vx < 0 {
+			p.vx += config.AirFriction
+			if p.vx > 0 {
+				p.vx = 0
+			}
 		}
 	}
-
+	
 	// Apply gravity
-	if p.vy < engine.GameConfig.MaxFallSpeed*physicsUnit {
-		p.vy += engine.GameConfig.Gravity
+	if p.vy < config.MaxFallSpeed*physicsUnit {
+		p.vy += config.Gravity
+	}
+	
+	// Update jump held frames
+	if p.isJumping && p.vy < 0 {
+		p.jumpHeldFrames++
 	}
 }
 
@@ -179,7 +271,8 @@ func (p *Player) Draw(screen *ebiten.Image) {
 
 /*
 DrawDebug renders debug visualization for the player.
-Shows bounding box, position markers, and movement vectors.
+Shows collision box, ground check area, position markers, and movement vectors.
+The collision box is drawn according to the PlayerPhysicsConfig settings.
 
 Parameters:
   - screen: The target screen/image to render debug info to
@@ -189,68 +282,77 @@ Parameters:
 func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Convert player position from physics units to render position
 	physicsUnit := engine.GetPhysicsUnit()
+	config := &engine.GameConfig.PlayerPhysics
 	renderX := float64(p.x)/float64(physicsUnit) + cameraOffsetX
 	renderY := float64(p.y)/float64(physicsUnit) + cameraOffsetY
 	
-	// Get sprite bounds (assuming 32x32 base sprite)
-	spriteWidth := 32.0 * engine.GameConfig.CharScaleFactor
-	spriteHeight := 32.0 * engine.GameConfig.CharScaleFactor
+	// Calculate sprite bounds with scaling
+	spriteWidth := float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor
+	spriteHeight := float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor
 	
-	// Draw bounding box
+	// Calculate collision box based on configuration
+	collisionX := renderX + (spriteWidth * config.CollisionBoxOffsetX)
+	collisionY := renderY + (spriteHeight * config.CollisionBoxOffsetY)
+	collisionWidth := spriteWidth * config.CollisionBoxWidth
+	collisionHeight := spriteHeight * config.CollisionBoxHeight
+	
+	// Draw collision box
 	boxColor := color.RGBA{0, 255, 0, 128} // Green for player
 	if !p.onGround {
 		boxColor = color.RGBA{255, 255, 0, 128} // Yellow when airborne
 	}
+	if p.isJumping {
+		boxColor = color.RGBA{0, 255, 255, 128} // Cyan when jumping
+	}
 	
-	// Draw the bounding box
+	vector.StrokeRect(screen, float32(collisionX), float32(collisionY), 
+		float32(collisionWidth), float32(collisionHeight), 2, boxColor, false)
+	
+	// Draw ground check area
+	groundCheckX := collisionX + (collisionWidth * (1.0 - config.GroundCheckWidth) / 2.0)
+	groundCheckY := collisionY + collisionHeight
+	groundCheckWidth := collisionWidth * config.GroundCheckWidth
+	groundCheckHeight := float64(config.GroundCheckOffset)
+	
+	groundCheckColor := color.RGBA{255, 0, 255, 64} // Magenta for ground check
+	vector.DrawFilledRect(screen, float32(groundCheckX), float32(groundCheckY),
+		float32(groundCheckWidth), float32(groundCheckHeight), groundCheckColor, false)
+	
+	// Draw sprite bounds (for reference)
+	spriteColor := color.RGBA{128, 128, 128, 64} // Gray for sprite bounds
 	vector.StrokeRect(screen, float32(renderX), float32(renderY), 
-		float32(spriteWidth), float32(spriteHeight), 2, boxColor, false)
+		float32(spriteWidth), float32(spriteHeight), 1, spriteColor, false)
 	
-	// Draw center point
-	centerX := renderX + spriteWidth/2
-	centerY := renderY + spriteHeight/2
-	vector.DrawFilledCircle(screen, float32(centerX), float32(centerY), 
-		3, color.RGBA{255, 0, 0, 255}, false)
+	// Draw center point of collision box
+	centerX := collisionX + collisionWidth/2
+	centerY := collisionY + collisionHeight/2
+	vector.DrawFilledCircle(screen, float32(centerX), float32(centerY), 3, color.RGBA{255, 0, 0, 255}, false)
 	
-	// Draw velocity vector if moving
+	// Draw velocity vector
 	if p.vx != 0 || p.vy != 0 {
-		// Scale velocity for visualization
-		velScale := 5.0
+		velScale := 0.5 // Scale factor for velocity visualization
 		endX := centerX + float64(p.vx)*velScale/float64(physicsUnit)
 		endY := centerY + float64(p.vy)*velScale/float64(physicsUnit)
-		
-		vector.StrokeLine(screen, float32(centerX), float32(centerY),
-			float32(endX), float32(endY), 2, color.RGBA{255, 0, 255, 200}, false)
-		
-		// Draw arrowhead
-		vector.DrawFilledCircle(screen, float32(endX), float32(endY), 
-			3, color.RGBA{255, 0, 255, 255}, false)
+		vector.StrokeLine(screen, float32(centerX), float32(centerY), 
+			float32(endX), float32(endY), 2, color.RGBA{255, 0, 0, 255}, false)
 	}
 	
-	// Draw facing direction indicator
-	dirIndicatorY := renderY + spriteHeight + 5
-	if p.facingRight {
-		vector.StrokeLine(screen, float32(centerX), float32(dirIndicatorY),
-			float32(centerX+10), float32(dirIndicatorY), 3, color.RGBA{0, 255, 255, 255}, false)
-		// Arrow point
-		vector.StrokeLine(screen, float32(centerX+10), float32(dirIndicatorY),
-			float32(centerX+7), float32(dirIndicatorY-3), 2, color.RGBA{0, 255, 255, 255}, false)
-		vector.StrokeLine(screen, float32(centerX+10), float32(dirIndicatorY),
-			float32(centerX+7), float32(dirIndicatorY+3), 2, color.RGBA{0, 255, 255, 255}, false)
-	} else {
-		vector.StrokeLine(screen, float32(centerX), float32(dirIndicatorY),
-			float32(centerX-10), float32(dirIndicatorY), 3, color.RGBA{0, 255, 255, 255}, false)
-		// Arrow point
-		vector.StrokeLine(screen, float32(centerX-10), float32(dirIndicatorY),
-			float32(centerX-7), float32(dirIndicatorY-3), 2, color.RGBA{0, 255, 255, 255}, false)
-		vector.StrokeLine(screen, float32(centerX-10), float32(dirIndicatorY),
-			float32(centerX-7), float32(dirIndicatorY+3), 2, color.RGBA{0, 255, 255, 255}, false)
+	// Draw debug text
+	debugY := int(renderY - 20)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", p.x/physicsUnit, p.y/physicsUnit), 
+		int(renderX), debugY)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", p.vx, p.vy), 
+		int(renderX), debugY+12)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Ground: %v", p.onGround), 
+		int(renderX), debugY+24)
+	if p.coyoteTimer > 0 {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Coyote: %d", p.coyoteTimer), 
+			int(renderX), debugY+36)
 	}
-	
-	// Draw ground sensor line
-	groundCheckY := float32(renderY + spriteHeight)
-	vector.StrokeLine(screen, float32(renderX), groundCheckY,
-		float32(renderX+spriteWidth), groundCheckY, 1, color.RGBA{255, 128, 0, 128}, false)
+	if p.jumpBufferTimer > 0 {
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("JumpBuf: %d", p.jumpBufferTimer), 
+			int(renderX), debugY+48)
+	}
 }
 
 /*

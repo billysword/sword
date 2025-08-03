@@ -175,6 +175,21 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Ground Level: %d tiles", GameConfig.GroundLevel), 10, y)
 	y += lineHeight * 2
 	
+	// Player Physics section
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== PLAYER PHYSICS ===", 10, y)
+	y += lineHeight
+	config := &GameConfig.PlayerPhysics
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Sprite: %dx%d px", config.SpriteWidth, config.SpriteHeight), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Collision Box: %.0f%%x%.0f%%", config.CollisionBoxWidth*100, config.CollisionBoxHeight*100), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed: %d | Jump: %d", config.MoveSpeed, config.JumpPower), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity: %d | Max Fall: %d", config.Gravity, config.MaxFallSpeed), 10, y)
+	y += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Coyote: %df | Jump Buf: %df", config.CoyoteTime, config.JumpBufferTime), 10, y)
+	y += lineHeight * 2
+	
 	// Toggle states section
 	ebitenutil.DebugPrintAt(ebitenScreen, "=== TOGGLES ===", 10, y)
 	y += lineHeight
@@ -198,11 +213,18 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	
 	// Hotkey help (right side of screen)
 	windowWidth, _ := ebiten.WindowSize()
-	helpX := windowWidth - 300
-	helpY := 10
+	helpX := windowWidth - 200
+	y = 20
 	
-	ebitenutil.DebugPrintAt(ebitenScreen, "=== HOTKEYS ===", helpX, helpY)
-	helpY += lineHeight
+	// Physics tuner status (top center)
+	tuner := GetPhysicsTuner()
+	if tunerStatus := tuner.GetStatusText(); tunerStatus != "" {
+		statusX := (windowWidth - len(tunerStatus)*6) / 2
+		ebitenutil.DebugPrintAt(ebitenScreen, tunerStatus, statusX, 5)
+	}
+	
+	ebitenutil.DebugPrintAt(ebitenScreen, "=== HOTKEYS ===", helpX, y)
+	helpY := y + lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "F3: Toggle Debug HUD", helpX, helpY)
 	helpY += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "F4: Toggle Debug Overlay", helpX, helpY)
@@ -226,6 +248,12 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	ebitenutil.DebugPrintAt(ebitenScreen, "M: Toggle Mini-Map", helpX, helpY)
 	helpY += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "ESC/P: Pause", helpX, helpY)
+	ebitenutil.DebugPrintAt(ebitenScreen, "F7: Toggle Grid", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "F8: Toggle Depth of Field", helpX, helpY)
+	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "F9: Toggle Physics Tuner", helpX, helpY)
+	helpY += lineHeight
 	
 	return nil
 }

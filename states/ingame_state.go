@@ -177,6 +177,10 @@ func (ig *InGameState) Update() error {
 		engine.LogInfo(fmt.Sprintf("Debug overlay: %v", engine.GameConfig.ShowDebugOverlay))
 	}
 	
+	// Update physics tuner
+	tuner := engine.GetPhysicsTuner()
+	tuner.Update()
+	
 	// Runtime configuration adjustments (with Shift modifier for fine-tuning)
 	shiftPressed := ebiten.IsKeyPressed(ebiten.KeyShift)
 	
