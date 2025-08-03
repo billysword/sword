@@ -3,8 +3,6 @@ package entities
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"sword/engine"
-	"image/color"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 /*
@@ -172,7 +170,7 @@ func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraO
 
 /*
 DrawDebug renders debug visualization for the enemy.
-Shows bounding box, position markers, and movement vectors.
+TODO: Implement debug visualization (bounding box, position markers, movement vectors)
 
 Parameters:
   - screen: The target screen/image to render debug info to
@@ -180,57 +178,11 @@ Parameters:
   - cameraOffsetY: Camera Y offset for viewport transformation
 */
 func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Convert enemy position from physics units to render position
-	physicsUnit := engine.GetPhysicsUnit()
-	renderX := float64(be.x)/float64(physicsUnit) + cameraOffsetX
-	renderY := float64(be.y)/float64(physicsUnit) + cameraOffsetY
-	
-	// Get sprite bounds
-	bounds := be.sprite.Bounds()
-	spriteWidth := float64(bounds.Dx()) * be.scaleX
-	spriteHeight := float64(bounds.Dy()) * be.scaleY
-	
-	// Draw bounding box
-	boxColor := color.RGBA{255, 0, 0, 128} // Red for enemies
-	if !be.onGround {
-		boxColor = color.RGBA{255, 128, 0, 128} // Orange when airborne
-	}
-	
-	// Draw the bounding box
-	vector.StrokeRect(screen, float32(renderX), float32(renderY), 
-		float32(spriteWidth), float32(spriteHeight), 2, boxColor, false)
-	
-	// Draw center point
-	centerX := renderX + spriteWidth/2
-	centerY := renderY + spriteHeight/2
-	vector.DrawFilledCircle(screen, float32(centerX), float32(centerY), 
-		3, color.RGBA{255, 255, 0, 255}, false)
-	
-	// Draw velocity vector if moving
-	if be.vx != 0 || be.vy != 0 {
-		// Scale velocity for visualization
-		velScale := 5.0
-		endX := centerX + float64(be.vx)*velScale/float64(physicsUnit)
-		endY := centerY + float64(be.vy)*velScale/float64(physicsUnit)
-		
-		vector.StrokeLine(screen, float32(centerX), float32(centerY),
-			float32(endX), float32(endY), 2, color.RGBA{255, 128, 255, 200}, false)
-		
-		// Draw arrowhead
-		vector.DrawFilledCircle(screen, float32(endX), float32(endY), 
-			3, color.RGBA{255, 128, 255, 255}, false)
-	}
-	
-	// Draw facing direction indicator
-	dirIndicatorY := renderY + spriteHeight + 5
-	facingRight := be.scaleX > 0
-	if facingRight {
-		vector.StrokeLine(screen, float32(centerX), float32(dirIndicatorY),
-			float32(centerX+10), float32(dirIndicatorY), 3, color.RGBA{255, 100, 100, 255}, false)
-	} else {
-		vector.StrokeLine(screen, float32(centerX), float32(dirIndicatorY),
-			float32(centerX-10), float32(dirIndicatorY), 3, color.RGBA{255, 100, 100, 255}, false)
-	}
+	// TODO: Implement debug rendering
+	// - Draw bounding box based on sprite dimensions
+	// - Draw center point
+	// - Draw velocity vector
+	// - Show ground state (different colors for airborne vs grounded)
 }
 
 /*

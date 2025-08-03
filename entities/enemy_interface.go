@@ -20,6 +20,7 @@ type Enemy interface {
 	// Rendering methods
 	Draw(screen *ebiten.Image)    // Render without camera offset
 	DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) // Render with camera offset
+	DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) // Render debug info
 	
 	// Position and movement methods
 	GetPosition() (int, int)      // Get current position in physics units

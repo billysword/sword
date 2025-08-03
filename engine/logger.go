@@ -9,6 +9,38 @@ import (
 	"time"
 )
 
+// LogLevel represents the logging level
+type LogLevel int
+
+const (
+	LogLevelOff LogLevel = iota  // No logging
+	LogLevelError                // Only errors
+	LogLevelWarn                 // Warnings and errors
+	LogLevelInfo                 // Info, warnings, and errors
+	LogLevelDebug                // All messages including debug
+)
+
+var (
+	// CurrentLogLevel controls what messages are logged
+	// Set to LogLevelOff for production to eliminate all logging overhead
+	CurrentLogLevel = LogLevelDebug
+)
+
+// SetLogLevel sets the global logging level
+func SetLogLevel(level LogLevel) {
+	CurrentLogLevel = level
+}
+
+// GetLogLevel returns the current logging level
+func GetLogLevel() LogLevel {
+	return CurrentLogLevel
+}
+
+// shouldLog checks if a message at the given level should be logged
+func shouldLog(level LogLevel) bool {
+	return CurrentLogLevel >= level
+}
+
 // Logger handles file-based logging for the game
 type Logger struct {
 	file   *os.File
@@ -106,6 +138,9 @@ func GetLoggerManager() *LoggerManager {
 
 // LogInfo logs an informational message
 func (l *Logger) LogInfo(message string) {
+	if !shouldLog(LogLevelInfo) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
@@ -115,10 +150,37 @@ func (l *Logger) LogInfo(message string) {
 
 // LogDebug logs a debug message
 func (l *Logger) LogDebug(message string) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
 		l.logger.Printf("[DEBUG] %s", message)
+	}
+}
+
+// LogError logs an error message
+func (l *Logger) LogError(message string) {
+	if !shouldLog(LogLevelError) {
+		return
+	}
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[ERROR] %s", message)
+	}
+}
+
+// LogWarn logs a warning message
+func (l *Logger) LogWarn(message string) {
+	if !shouldLog(LogLevelWarn) {
+		return
+	}
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[WARN] %s", message)
 	}
 }
 
@@ -160,6 +222,9 @@ func (l *Logger) LogRoomLayout(roomName string, width, height int, layout string
 
 // LogCameraDebug logs camera position, viewport, and world bounds - routes to player logger
 func (l *Logger) LogCameraDebug(cameraX, cameraY, targetX, targetY float64, viewportW, viewportH, worldW, worldH int) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
@@ -179,6 +244,9 @@ func (l *Logger) LogCameraDebug(cameraX, cameraY, targetX, targetY float64, view
 
 // LogViewportDebug logs viewport and scale debugging information - routes to game logger
 func (l *Logger) LogViewportDebug(windowW, windowH int, tileScale, charScale float64, physicsUnit int) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
@@ -201,6 +269,9 @@ func (l *Logger) LogViewportDebug(windowW, windowH int, tileScale, charScale flo
 
 // LogTileMapDebug logs tile map dimensions and rendering info - routes to room logger
 func (l *Logger) LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, worldPixelW, worldPixelH int) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
@@ -225,6 +296,9 @@ func (l *Logger) LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, w
 
 // LogRenderingDebug logs rendering coordinates and transformations - routes to game logger
 func (l *Logger) LogRenderingDebug(objectType string, worldX, worldY, renderX, renderY float64, scale float64) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
@@ -246,6 +320,9 @@ func (l *Logger) LogRenderingDebug(objectType string, worldX, worldY, renderX, r
 
 // LogCoordinateConversion logs coordinate system conversions - routes to player logger
 func (l *Logger) LogCoordinateConversion(conversionType string, inputX, inputY, outputX, outputY int) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	if l.logger != nil {
@@ -315,6 +392,16 @@ func LogInfo(message string) {
 // LogDebug logs a debug message using the general game logger
 func LogDebug(message string) {
 	GetLoggerManager().gameLogger.LogDebug(message)
+}
+
+// LogError logs an error message using the general game logger
+func LogError(message string) {
+	GetLoggerManager().gameLogger.LogError(message)
+}
+
+// LogWarn logs a warning message using the general game logger
+func LogWarn(message string) {
+	GetLoggerManager().gameLogger.LogWarn(message)
 }
 
 // LogRoomTile logs room tile information using the room logger

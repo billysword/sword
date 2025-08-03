@@ -434,9 +434,7 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		
 		// Draw enemy debug overlays
 		for _, enemy := range ig.enemies {
-			if baseEnemy, ok := enemy.(*entities.BaseEnemy); ok {
-				baseEnemy.DrawDebug(worldSurface, 0, 0)
-			}
+			enemy.DrawDebug(worldSurface, 0, 0)
 		}
 	}
 	
