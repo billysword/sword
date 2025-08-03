@@ -1,4 +1,4 @@
-# Forest Tilemap Platformer Demo
+# Forest Tilemap Platformer
 
 A 2D platformer game built with Ebitengine featuring a forest-themed tilemap system.
 
@@ -14,7 +14,7 @@ A 2D platformer game built with Ebitengine featuring a forest-themed tilemap sys
 
 - **Movement**: A/D or Arrow Keys (Left/Right)
 - **Jump**: Spacebar
-- **Room Switch**: R key (demo feature)
+- **Room Switch**: R key
 - **Pause**: P or Escape
 
 ## Building and Running
@@ -33,13 +33,13 @@ sudo apt-get install -y libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev \
 ### Build
 
 ```bash
-go build -o demo
+go build -o game
 ```
 
 ### Run
 
 ```bash
-./demo
+./game
 ```
 
 ## Project Structure
@@ -47,7 +47,7 @@ go build -o demo
 - `main.go` - Entry point and sprite loading
 - `gamestate/` - Game state management and room system
   - `room.go` - Base room interface and tilemap system
-  - `simple_room.go` - Forest-themed demo room implementation
+  - `simple_room.go` - Forest-themed room implementation
   - `ingame_state.go` - Main gameplay state
   - `state.go` - State management framework
 - `resources/images/` - Game assets

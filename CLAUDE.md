@@ -1,176 +1,358 @@
-# CLAUDE.md - Demo/Placeholder Code Cleanup Locations
+# CLAUDE.md - Character Movement Logging for Collision & Physics Development
 
-## Overview
+## ✅ **CLEANUP COMPLETED**
 
-This document systematically lists all locations in the codebase that contain demo/placeholder code, hardcoded values, or incomplete implementations that need to be cleaned up or properly implemented.
+All demo/placeholder code has been successfully cleaned up:
+- ✅ **State Factory** - Fixed broken unimplemented methods
+- ✅ **Enemy AI System** - Removed empty stub, proper interface pattern
+- ✅ **Demo Content** - Deleted example room layouts and examples directory
+- ✅ **Legacy Constants** - Removed deprecated hardcoded values
+- ✅ **Documentation** - Updated all demo references to production language
 
-## 🎯 Priority Categories
+## 🎯 **NEXT PHASE: Character Movement Logging for Collision & Physics**
 
-### 🔴 **HIGH PRIORITY - Broken/Incomplete Functionality**
+To properly design and implement collision detection and physics systems, we need comprehensive logging of character movement data. This will help us understand current behavior and identify areas for improvement.
 
-#### 1. State Factory - Unimplemented Methods
-**Location:** `engine/state_factory.go:201-214`
+### 📊 **Character Movement Data We Need to Track**
+
+#### 1. **Position & Velocity Tracking**
 ```go
-func (sf *StateFactory) createStartState(config StateConfig) (State, error) {
-    return nil, fmt.Errorf("StartState creation not yet implemented in factory")
-}
-func (sf *StateFactory) createInGameState(config StateConfig) (State, error) {
-    return nil, fmt.Errorf("InGameState creation not yet implemented in factory")
-}
-func (sf *StateFactory) createPauseState(config StateConfig) (State, error) {
-    return nil, fmt.Errorf("PauseState creation not yet implemented in factory")
+// entities/movement_logger.go
+type MovementFrame struct {
+    Timestamp    int64   // Frame number or time
+    PlayerID     string  // For multi-entity tracking
+    
+    // Position data
+    X, Y         float64 // Current position (sub-pixel precision)
+    PrevX, PrevY float64 // Previous frame position
+    
+    // Velocity data  
+    VelX, VelY   float64 // Current velocity
+    PrevVelX, PrevVelY float64 // Previous frame velocity
+    
+    // Movement state
+    IsMoving     bool    // Any movement this frame
+    IsOnGround   bool    // Ground contact
+    IsJumping    bool    // Jump in progress
+    IsFalling    bool    // Falling state
+    
+    // Input state
+    InputLeft    bool    // Left key pressed
+    InputRight   bool    // Right key pressed  
+    InputJump    bool    // Jump key pressed
+    InputJumpHeld bool   // Jump key held (for variable jump height)
 }
 ```
-**Issue:** Core state creation methods return errors instead of creating states
-**Impact:** State factory system is non-functional
 
-#### 2. Base Enemy - Empty AI Implementation
-**Location:** `entities/base_enemy.go:61-64`
+#### 2. **Collision Detection Events**
 ```go
-func (be *BaseEnemy) HandleAI() {
-    // Empty stub - concrete enemy types must implement their own AI logic
+type CollisionEvent struct {
+    Timestamp    int64
+    PlayerID     string
+    
+    // Collision details
+    CollisionType CollisionType // Ground, Wall, Ceiling, Entity
+    CollisionSide CollisionSide // Top, Bottom, Left, Right
+    
+    // Position at collision
+    CollisionX, CollisionY float64
+    
+    // Velocity at collision
+    PreCollisionVelX, PreCollisionVelY   float64
+    PostCollisionVelX, PostCollisionVelY float64
+    
+    // Tile/Entity info
+    TileX, TileY     int    // Tile coordinates if tile collision
+    TileType         int    // Tile type ID
+    EntityID         string // Entity ID if entity collision
+    
+    // Resolution info
+    Penetration      float64 // How far entity penetrated
+    CorrectionX, CorrectionY float64 // Position correction applied
 }
-```
-**Issue:** Base class has empty AI method that should be abstract/interface-based
-**Impact:** Breaks polymorphism expectations for enemy system
 
-### 🟡 **MEDIUM PRIORITY - Demo Content & Hardcoded Values**
-
-#### 3. Hardcoded Window Resolution
-**Location:** `engine/config.go:75-76`
-```go
-WindowWidth:  1920,
-WindowHeight: 1080,
-```
-**Issue:** Fixed 1920x1080 resolution doesn't adapt to different displays
-**Impact:** Poor experience on non-1080p displays
-
-#### 4. Demo Room Layouts
-**Location:** `room_layouts/` directory
-- `example_platform.go` - Demo platformer layout
-- `tower_climb.go` - Demo tower layout  
-- `empty_room.go` - Demo empty layout
-
-**Issue:** These are clearly demo/example layouts with hardcoded hex values
-**Impact:** Takes up space, not production-ready content
-
-#### 5. Examples Directory - Demo Code
-**Location:** `examples/simple_room_usage.go`
-```go
-fmt.Println("=== Simple Room Layout Usage ===\n")
-fmt.Println("1. Using predefined layout (ExamplePlatform):")
-// ... more demo output
-fmt.Println("That's it! Much simpler than the complex file generation system.")
-```
-**Issue:** Pure demo/tutorial code with console output
-**Impact:** Not needed for production game
-
-#### 6. Legacy Config Constants
-**Location:** `engine/config.go:191-196`
-```go
+type CollisionType int
 const (
-    TILE_SIZE         = 16   // Deprecated: use GameConfig.TileSize
-    TILE_SCALE_FACTOR = 1.0  // Deprecated: use GameConfig.TileScaleFactor
-    CHAR_SCALE_FACTOR = 0.4  // Deprecated: use GameConfig.CharScaleFactor
-    PHYSICS_UNIT      = 16   // Deprecated: use GetPhysicsUnit()
+    CollisionTile CollisionType = iota
+    CollisionEntity
+    CollisionWorldBounds
+)
+
+type CollisionSide int  
+const (
+    CollisionTop CollisionSide = iota
+    CollisionBottom
+    CollisionLeft
+    CollisionRight
 )
 ```
-**Issue:** Deprecated constants maintained for "backward compatibility"
-**Impact:** Code confusion, technical debt
 
-### 🟢 **LOW PRIORITY - Documentation & Polish**
+#### 3. **Physics State Transitions**
+```go
+type PhysicsStateChange struct {
+    Timestamp    int64
+    PlayerID     string
+    
+    // State transition
+    FromState    PhysicsState
+    ToState      PhysicsState
+    TriggerEvent string // What caused the transition
+    
+    // Context data
+    Position     Point2D
+    Velocity     Point2D
+    GroundY      float64
+    
+    // Timing info
+    StateFrameCount int // How long in previous state
+}
 
-#### 7. Demo References in Documentation
-**Locations:**
-- `docs/README.md:1` - "Forest Tilemap Platformer **Demo**"
-- `docs/README.md:17` - "Room Switch**: R key (**demo feature**)"
-- `docs/README.md:36` - `go build -o **demo**`
-- `docs/README.md:50` - "Forest-themed **demo** room implementation"
+type PhysicsState int
+const (
+    StateIdle PhysicsState = iota
+    StateWalking
+    StateJumping
+    StateFalling
+    StateOnGround
+    StateInAir
+    StateWallSliding
+    StateLanding
+)
+```
 
-**Issue:** Documentation treats this as a demo rather than a real game
-**Impact:** Confusing for users/developers
+### 🔧 **Implementation Strategy**
 
-#### 8. Demo-style Debug Output
-**Location:** Multiple files contain excessive debug logging and console output
-- `examples/simple_room_usage.go` - Multiple `fmt.Println` calls
-- Various debug logging scattered throughout
+#### Phase 1: Basic Movement Logging
+```go
+// engine/movement_logger.go
+type MovementLogger struct {
+    enabled      bool
+    frameBuffer  []MovementFrame
+    bufferSize   int
+    currentFrame int64
+    logFile      *os.File
+    
+    // Performance settings
+    logEveryNFrames int  // Log every N frames (default: 1)
+    maxBufferSize   int  // Max frames in memory before flush
+}
 
-**Issue:** Debug code should be configurable/removable for production
-**Impact:** Performance and log noise
+func NewMovementLogger(enabled bool, logFilePath string) *MovementLogger {
+    if !enabled {
+        return &MovementLogger{enabled: false}
+    }
+    
+    file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+    if err != nil {
+        engine.LogError("Failed to open movement log: " + err.Error())
+        return &MovementLogger{enabled: false}
+    }
+    
+    return &MovementLogger{
+        enabled:         true,
+        frameBuffer:     make([]MovementFrame, 0, 1000),
+        bufferSize:      1000,
+        logFile:         file,
+        logEveryNFrames: 1,
+        maxBufferSize:   1000,
+    }
+}
 
-#### 9. Hardcoded Magic Numbers in Configurations
-**Locations:**
-- `CLAUDE.md:15-19` - Room sizes, ground levels in architectural proposals
-- `engine/config.go` - Various magic numbers like `80x60 tiles`, `25 ground level`
+func (ml *MovementLogger) LogMovementFrame(frame MovementFrame) {
+    if !ml.enabled || ml.currentFrame % int64(ml.logEveryNFrames) != 0 {
+        return
+    }
+    
+    frame.Timestamp = ml.currentFrame
+    ml.frameBuffer = append(ml.frameBuffer, frame)
+    ml.currentFrame++
+    
+    // Flush if buffer is full
+    if len(ml.frameBuffer) >= ml.maxBufferSize {
+        ml.FlushToFile()
+    }
+}
+```
 
-**Issue:** Configuration values are hardcoded without semantic meaning
-**Impact:** Difficult to understand and modify
+#### Phase 2: Integration with Player Entity
+```go
+// entities/player.go - Add to Update() method
 
-## 🔧 **Recommended Actions**
+func (p *Player) Update() {
+    // Capture pre-update state
+    prevX, prevY := p.x, p.y
+    prevVelX, prevVelY := p.vx, p.vy
+    
+    // ... existing update logic ...
+    
+    // Log movement data if logger is enabled
+    if movementLogger := engine.GetMovementLogger(); movementLogger != nil {
+        frame := MovementFrame{
+            PlayerID:     "player_1",
+            X:            float64(p.x),
+            Y:            float64(p.y),
+            PrevX:        float64(prevX),
+            PrevY:        float64(prevY),
+            VelX:         float64(p.vx),
+            VelY:         float64(p.vy),
+            PrevVelX:     float64(prevVelX),
+            PrevVelY:     float64(prevVelY),
+            IsMoving:     p.vx != 0 || p.vy != 0,
+            IsOnGround:   p.onGround,
+            IsJumping:    p.jumpKeyHeld && p.jumpTimer > 0,
+            IsFalling:    p.vy > 0 && !p.onGround,
+            InputLeft:    ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft),
+            InputRight:   ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight),
+            InputJump:    ebiten.IsKeyPressed(ebiten.KeySpace),
+            InputJumpHeld: p.jumpKeyHeld,
+        }
+        movementLogger.LogMovementFrame(frame)
+    }
+}
+```
 
-### Phase 1: Fix Broken Functionality
-1. **Implement State Factory Methods**
-   - Replace error returns with actual state creation
-   - Integrate with existing state constructors in `states/` directory
+#### Phase 3: Collision Logging Integration
+```go
+// world/collision_detector.go - New collision system with logging
 
-2. **Refactor Enemy AI System**
-   - Make `HandleAI()` abstract or use proper interface pattern
-   - Remove empty stub implementation
+type CollisionDetector struct {
+    logger *CollisionLogger
+}
 
-### Phase 2: Clean Demo Content
-3. **Remove Demo Room Layouts**
-   - Delete `room_layouts/example_platform.go`
-   - Delete `room_layouts/tower_climb.go`
-   - Keep only `empty_room.go` as a template if needed
+func (cd *CollisionDetector) CheckTileCollision(entity Entity, tileMap [][]int) []CollisionEvent {
+    events := make([]CollisionEvent, 0)
+    
+    // ... collision detection logic ...
+    
+    if collisionDetected {
+        event := CollisionEvent{
+            PlayerID:             entity.GetID(),
+            CollisionType:        CollisionTile,
+            CollisionSide:        determineSide(entity, tile),
+            CollisionX:           float64(entity.GetX()),
+            CollisionY:           float64(entity.GetY()),
+            PreCollisionVelX:     float64(entity.GetVelX()),
+            PreCollisionVelY:     float64(entity.GetVelY()),
+            TileX:                tileX,
+            TileY:                tileY,
+            TileType:             tileMap[tileY][tileX],
+            Penetration:          calculatePenetration(entity, tile),
+        }
+        
+        // Apply collision resolution
+        correctionX, correctionY := resolveCollision(entity, tile)
+        event.CorrectionX = correctionX
+        event.CorrectionY = correctionY
+        event.PostCollisionVelX = float64(entity.GetVelX())
+        event.PostCollisionVelY = float64(entity.GetVelY())
+        
+        events = append(events, event)
+        
+        // Log to collision logger
+        if cd.logger != nil {
+            cd.logger.LogCollision(event)
+        }
+    }
+    
+    return events
+}
+```
 
-4. **Remove Examples Directory**
-   - Delete `examples/simple_room_usage.go`
-   - Move any useful patterns to actual game code or tests
+### 📈 **Analysis Tools for Logged Data**
 
-5. **Remove Legacy Constants**
-   - Delete deprecated constants in `engine/config.go`
-   - Update any remaining usage to use `GameConfig`
+#### 1. **Movement Pattern Analysis**
+```go
+// tools/movement_analyzer.go
+func AnalyzeMovementPatterns(logFile string) MovementAnalysis {
+    // Analyze for:
+    // - Average movement speed
+    // - Jump height consistency
+    // - Landing accuracy
+    // - Input responsiveness
+    // - Physics stability
+}
+```
 
-### Phase 3: Production Polish
-6. **Update Documentation Language**
-   - Remove "demo" references
-   - Rebrand as production game documentation
-   - Update build targets from "demo" to "game"
+#### 2. **Collision Frequency Analysis**
+```go
+func AnalyzeCollisionFrequency(logFile string) CollisionAnalysis {
+    // Analyze for:
+    // - Most common collision types
+    // - Collision hotspots on map
+    // - Penetration depth patterns
+    // - Resolution effectiveness
+}
+```
 
-7. **Make Debug Output Configurable**
-   - Add debug level configuration
-   - Remove hardcoded `fmt.Println` statements
-   - Use proper logging with levels
+#### 3. **Performance Impact Analysis**
+```go
+func AnalyzePerformanceImpact(logFile string) PerformanceAnalysis {
+    // Analyze for:
+    // - Frame time impact of collision detection
+    // - Memory usage patterns
+    // - CPU usage spikes
+    // - Optimization opportunities
+}
+```
 
-8. **Create Semantic Configuration**
-   - Replace magic numbers with named constants
-   - Add configuration validation
-   - Document what each value means
+### 🚀 **Configuration & Control**
 
-## 🗂️ **File Cleanup Summary**
+#### Runtime Configuration
+```go
+// engine/config.go - Add to Config struct
+type Config struct {
+    // ... existing fields ...
+    
+    // Movement logging settings
+    EnableMovementLogging    bool    `json:"enable_movement_logging"`
+    MovementLogPath         string  `json:"movement_log_path"`
+    MovementLogLevel        int     `json:"movement_log_level"` // 1=basic, 2=detailed, 3=verbose
+    LogEveryNFrames         int     `json:"log_every_n_frames"`
+    
+    // Collision logging settings  
+    EnableCollisionLogging   bool    `json:"enable_collision_logging"`
+    CollisionLogPath        string  `json:"collision_log_path"`
+    LogCollisionDetails     bool    `json:"log_collision_details"`
+    
+    // Performance settings
+    MaxLogBufferSize        int     `json:"max_log_buffer_size"`
+    FlushLogEveryNSeconds   int     `json:"flush_log_every_n_seconds"`
+}
+```
 
-### Files to Delete:
-- `examples/simple_room_usage.go` - Pure demo code
-- `room_layouts/example_platform.go` - Demo layout
-- `room_layouts/tower_climb.go` - Demo layout
+#### Development vs Production Settings
+```go
+func DevelopmentLoggingConfig() Config {
+    config := DefaultConfig()
+    config.EnableMovementLogging = true
+    config.EnableCollisionLogging = true
+    config.MovementLogLevel = 3 // Verbose
+    config.LogEveryNFrames = 1  // Every frame
+    return config
+}
 
-### Files to Significantly Modify:
-- `engine/state_factory.go` - Implement missing methods
-- `entities/base_enemy.go` - Fix AI interface
-- `engine/config.go` - Remove legacy constants
-- `docs/README.md` - Remove demo language
-- `CLAUDE.md` - Replace with production roadmap
+func ProductionLoggingConfig() Config {
+    config := DefaultConfig()
+    config.EnableMovementLogging = false // Disabled for performance
+    config.EnableCollisionLogging = false
+    return config
+}
+```
 
-### Files to Clean (Remove Debug/Demo Code):
-- All files with `fmt.Println` debug output
-- Documentation with "demo" references
-- Hardcoded configuration values
+### 🎯 **Integration Plan**
 
-## 🎯 **Next Steps**
+1. **Week 1**: Implement basic movement logging framework
+2. **Week 2**: Add collision detection logging  
+3. **Week 3**: Create analysis tools and visualizations
+4. **Week 4**: Use data to design improved collision system
+5. **Week 5**: Implement physics improvements based on analysis
 
-1. **Start with Phase 1** - Fix the broken state factory and enemy AI
-2. **Remove demo content** - Clean up examples and demo layouts  
-3. **Polish documentation** - Update language to reflect production status
-4. **Create configuration system** - Replace hardcoded values with semantic configs
+### 💡 **Benefits for Collision & Physics Development**
 
-This cleanup will transform the project from a demo/prototype into a production-ready game foundation.
+1. **Data-Driven Design**: Make decisions based on actual movement patterns
+2. **Bug Identification**: Catch edge cases and inconsistencies  
+3. **Performance Optimization**: Identify bottlenecks before they become problems
+4. **Regression Testing**: Ensure changes don't break existing behavior
+5. **Player Experience**: Optimize feel and responsiveness based on real data
+
+This logging system will provide the foundation for building robust, data-driven collision detection and physics systems that feel great to play.

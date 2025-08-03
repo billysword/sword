@@ -54,14 +54,10 @@ func NewBaseEnemy(x, y int) *BaseEnemy {
 }
 
 /*
-HandleAI is an empty stub that must be implemented by concrete enemy types.
-This method should contain the AI logic specific to each enemy type.
-The base implementation does nothing - subclasses must override this.
+NOTE: HandleAI() is intentionally NOT implemented in BaseEnemy.
+This method must be implemented by concrete enemy types (SlimeEnemy, etc.)
+to provide their specific AI behavior. BaseEnemy is not meant to be used directly.
 */
-func (be *BaseEnemy) HandleAI() {
-	// Empty stub - concrete enemy types must implement their own AI logic
-	// This ensures that each enemy type explicitly defines its behavior
-}
 
 /*
 Update handles common physics and movement for all enemy types.
