@@ -1,353 +1,176 @@
-# CLAUDE.md - Architectural Proposals for Game Development
+# CLAUDE.md - Demo/Placeholder Code Cleanup Locations
 
-## Project Overview
+## Overview
 
-This is a Go-based 2D platformer/metroidvania game built using Ebitengine. The project uses a modular architecture with state management, configurable settings, and a flexible room layout system.
+This document systematically lists all locations in the codebase that contain demo/placeholder code, hardcoded values, or incomplete implementations that need to be cleaned up or properly implemented.
 
-## Current Architecture Status
+## 🎯 Priority Categories
 
-### Window & Display
-- **Current Resolution**: 1920x1080 (16:9 aspect ratio)
-- **Tile Size**: 16x16 pixels (standard)
-- **Tile Scale Factor**: 1.0 (no scaling in default config)
-- **Character Scale Factor**: 0.7 (default), 0.4 (legacy)
+### 🔴 **HIGH PRIORITY - Broken/Incomplete Functionality**
 
-### Room System
-- **Default Room Size**: 80x60 tiles (1280x960 pixels)
-- **Zoomed-in Room Size**: 40x30 tiles (640x480 pixels)
-- **Ground Level**: 45 tiles from top (default)
-
-## Architectural Proposals
-
-### 1. Aspect Ratio & Resolution System
-
-**Current Issues:**
-- Fixed 16:9 aspect ratio doesn't adapt to different displays
-- No support for ultrawide (21:9) or legacy (4:3) monitors
-- Room layouts don't adjust to different aspect ratios
-
-**Proposed Solution:**
-
+#### 1. State Factory - Unimplemented Methods
+**Location:** `engine/state_factory.go:201-214`
 ```go
-// engine/display_config.go
-type AspectRatio struct {
-    Name   string
-    Width  int
-    Height int
-    // Calculated room dimensions for this aspect
-    DefaultRoomTilesX int
-    DefaultRoomTilesY int
+func (sf *StateFactory) createStartState(config StateConfig) (State, error) {
+    return nil, fmt.Errorf("StartState creation not yet implemented in factory")
 }
-
-var SupportedAspectRatios = []AspectRatio{
-    {"16:9 HD", 1920, 1080, 80, 45},
-    {"16:9 FHD", 2560, 1440, 106, 60},
-    {"21:9 UW", 2560, 1080, 106, 45},
-    {"16:10", 1920, 1200, 80, 50},
-    {"4:3", 1600, 1200, 66, 50},
+func (sf *StateFactory) createInGameState(config StateConfig) (State, error) {
+    return nil, fmt.Errorf("InGameState creation not yet implemented in factory")
 }
-
-// Auto-detect and adapt room layouts
-func AdaptRoomToAspectRatio(room *Room, aspectRatio AspectRatio) {
-    // Dynamically adjust room bounds and camera limits
+func (sf *StateFactory) createPauseState(config StateConfig) (State, error) {
+    return nil, fmt.Errorf("PauseState creation not yet implemented in factory")
 }
 ```
+**Issue:** Core state creation methods return errors instead of creating states
+**Impact:** State factory system is non-functional
 
-### 2. Dynamic Tile Size System
-
-**Current Issues:**
-- Fixed 16x16 tile size limits visual fidelity
-- No support for high-DPI displays
-- Character sprites don't scale proportionally with tiles
-
-**Proposed Solution:**
-
+#### 2. Base Enemy - Empty AI Implementation
+**Location:** `entities/base_enemy.go:61-64`
 ```go
-// engine/tile_system.go
-type TileConfig struct {
-    BaseSize     int     // Original tile size (16)
-    RenderSize   int     // Actual rendered size
-    ScaleFactor  float64 // Dynamic scale based on resolution
-    PixelPerfect bool    // Maintain pixel boundaries
-}
-
-// Calculate optimal tile size based on display
-func CalculateOptimalTileSize(windowWidth, windowHeight int) TileConfig {
-    // Target ~80-120 tiles horizontally for good visibility
-    targetTilesX := 100
-    optimalSize := windowWidth / targetTilesX
-    
-    // Snap to nearest multiple of base size
-    scaleFactor := float64(optimalSize) / 16.0
-    if pixelPerfect {
-        scaleFactor = math.Round(scaleFactor)
-    }
-    
-    return TileConfig{
-        BaseSize:     16,
-        RenderSize:   int(16 * scaleFactor),
-        ScaleFactor:  scaleFactor,
-        PixelPerfect: true,
-    }
+func (be *BaseEnemy) HandleAI() {
+    // Empty stub - concrete enemy types must implement their own AI logic
 }
 ```
+**Issue:** Base class has empty AI method that should be abstract/interface-based
+**Impact:** Breaks polymorphism expectations for enemy system
 
-### 3. Character Size & Proportion System
+### 🟡 **MEDIUM PRIORITY - Demo Content & Hardcoded Values**
 
-**Current Issues:**
-- Character scale is hardcoded relative to tiles
-- No visual hierarchy between player, enemies, and bosses
-- Sprites look too small in zoomed-out view
-
-**Proposed Solution:**
-
+#### 3. Hardcoded Window Resolution
+**Location:** `engine/config.go:75-76`
 ```go
-// entities/size_config.go
-type EntitySizeConfig struct {
-    BaseWidth    int     // Base sprite width
-    BaseHeight   int     // Base sprite height
-    ScaleRelativeToTile float64 // Scale relative to tile size
-    
-    // Size categories
-    SizeClass    EntitySize
-    
-    // Collision box relative to sprite size
-    CollisionScale float64
-}
+WindowWidth:  1920,
+WindowHeight: 1080,
+```
+**Issue:** Fixed 1920x1080 resolution doesn't adapt to different displays
+**Impact:** Poor experience on non-1080p displays
 
-type EntitySize int
+#### 4. Demo Room Layouts
+**Location:** `room_layouts/` directory
+- `example_platform.go` - Demo platformer layout
+- `tower_climb.go` - Demo tower layout  
+- `empty_room.go` - Demo empty layout
+
+**Issue:** These are clearly demo/example layouts with hardcoded hex values
+**Impact:** Takes up space, not production-ready content
+
+#### 5. Examples Directory - Demo Code
+**Location:** `examples/simple_room_usage.go`
+```go
+fmt.Println("=== Simple Room Layout Usage ===\n")
+fmt.Println("1. Using predefined layout (ExamplePlatform):")
+// ... more demo output
+fmt.Println("That's it! Much simpler than the complex file generation system.")
+```
+**Issue:** Pure demo/tutorial code with console output
+**Impact:** Not needed for production game
+
+#### 6. Legacy Config Constants
+**Location:** `engine/config.go:191-196`
+```go
 const (
-    SizeTiny EntitySize = iota  // 0.5x tile (items, projectiles)
-    SizeSmall                   // 1x tile (small enemies)
-    SizeMedium                  // 1.5x tile (player, regular enemies)
-    SizeLarge                   // 2x tile (mini-bosses)
-    SizeHuge                    // 3x+ tiles (bosses)
+    TILE_SIZE         = 16   // Deprecated: use GameConfig.TileSize
+    TILE_SCALE_FACTOR = 1.0  // Deprecated: use GameConfig.TileScaleFactor
+    CHAR_SCALE_FACTOR = 0.4  // Deprecated: use GameConfig.CharScaleFactor
+    PHYSICS_UNIT      = 16   // Deprecated: use GetPhysicsUnit()
 )
-
-// Standardized entity sizes
-var EntitySizes = map[EntitySize]EntitySizeConfig{
-    SizeMedium: {
-        BaseWidth:  32,
-        BaseHeight: 32,
-        ScaleRelativeToTile: 1.5,
-        CollisionScale: 0.8,
-    },
-    // ... other sizes
-}
 ```
+**Issue:** Deprecated constants maintained for "backward compatibility"
+**Impact:** Code confusion, technical debt
 
-### 4. Advanced Room Layout System
+### 🟢 **LOW PRIORITY - Documentation & Polish**
 
-**Current Issues:**
-- Simple 2D array limits complex room designs
-- No support for room templates or procedural generation
-- Difficult to create interconnected metroidvania-style maps
+#### 7. Demo References in Documentation
+**Locations:**
+- `docs/README.md:1` - "Forest Tilemap Platformer **Demo**"
+- `docs/README.md:17` - "Room Switch**: R key (**demo feature**)"
+- `docs/README.md:36` - `go build -o **demo**`
+- `docs/README.md:50` - "Forest-themed **demo** room implementation"
 
-**Proposed Solution:**
+**Issue:** Documentation treats this as a demo rather than a real game
+**Impact:** Confusing for users/developers
 
-```go
-// world/room_architecture.go
-type RoomTemplate struct {
-    ID          string
-    Name        string
-    BaseLayout  [][]int
-    
-    // Room properties
-    Type        RoomType
-    Biome       BiomeType
-    Difficulty  int
-    
-    // Connection points
-    Exits       []ExitPoint
-    
-    // Dynamic elements
-    SpawnPoints []SpawnPoint
-    Triggers    []Trigger
-}
+#### 8. Demo-style Debug Output
+**Location:** Multiple files contain excessive debug logging and console output
+- `examples/simple_room_usage.go` - Multiple `fmt.Println` calls
+- Various debug logging scattered throughout
 
-type RoomType int
-const (
-    RoomNormal RoomType = iota
-    RoomBoss
-    RoomSave
-    RoomSecret
-    RoomTransition
-    RoomHub
-)
+**Issue:** Debug code should be configurable/removable for production
+**Impact:** Performance and log noise
 
-type ExitPoint struct {
-    Side      Direction // North, South, East, West
-    Position  int       // Position along that side (in tiles)
-    Width     int       // Width of exit (in tiles)
-    LeadsTo   string    // Room ID or "any" for procedural
-    Required  bool      // Must connect to another room
-}
+#### 9. Hardcoded Magic Numbers in Configurations
+**Locations:**
+- `CLAUDE.md:15-19` - Room sizes, ground levels in architectural proposals
+- `engine/config.go` - Various magic numbers like `80x60 tiles`, `25 ground level`
 
-// Room generation system
-type RoomGenerator struct {
-    templates map[string]RoomTemplate
-    biomes    map[BiomeType]BiomeConfig
-}
+**Issue:** Configuration values are hardcoded without semantic meaning
+**Impact:** Difficult to understand and modify
 
-func (rg *RoomGenerator) GenerateRoom(template string, seed int64) *Room {
-    // Create room from template with variations
-    // Add procedural elements based on seed
-    // Ensure exit compatibility
-}
+## 🔧 **Recommended Actions**
 
-// Metroidvania map structure
-type WorldMap struct {
-    Rooms       map[string]*Room
-    Connections map[string][]string // Room connections
-    Regions     map[string]Region   // Named regions (e.g., "Forest", "Caves")
-    
-    // Player progression tracking
-    VisitedRooms   map[string]bool
-    UnlockedExits  map[string]bool
-}
-```
+### Phase 1: Fix Broken Functionality
+1. **Implement State Factory Methods**
+   - Replace error returns with actual state creation
+   - Integrate with existing state constructors in `states/` directory
 
-### 5. Responsive UI Scaling
+2. **Refactor Enemy AI System**
+   - Make `HandleAI()` abstract or use proper interface pattern
+   - Remove empty stub implementation
 
-**Current Issues:**
-- UI elements don't scale with resolution
-- HUD takes up fixed pixel space
-- No adaptive layout for different screen sizes
+### Phase 2: Clean Demo Content
+3. **Remove Demo Room Layouts**
+   - Delete `room_layouts/example_platform.go`
+   - Delete `room_layouts/tower_climb.go`
+   - Keep only `empty_room.go` as a template if needed
 
-**Proposed Solution:**
+4. **Remove Examples Directory**
+   - Delete `examples/simple_room_usage.go`
+   - Move any useful patterns to actual game code or tests
 
-```go
-// ui/responsive_ui.go
-type UIScaler struct {
-    BaseResolution  Resolution // Design resolution (e.g., 1920x1080)
-    CurrentResolution Resolution
-    
-    // Scaling modes
-    Mode UIScaleMode
-    
-    // Safe areas for different aspect ratios
-    SafeArea Rectangle
-}
+5. **Remove Legacy Constants**
+   - Delete deprecated constants in `engine/config.go`
+   - Update any remaining usage to use `GameConfig`
 
-type UIScaleMode int
-const (
-    UIScaleFit UIScaleMode = iota   // Fit to screen, may have bars
-    UIScaleStretch                   // Stretch to fill (may distort)
-    UIScalePixelPerfect              // Integer scaling only
-    UIScaleAdaptive                  // Smart scaling with layout changes
-)
+### Phase 3: Production Polish
+6. **Update Documentation Language**
+   - Remove "demo" references
+   - Rebrand as production game documentation
+   - Update build targets from "demo" to "game"
 
-// Calculate UI element positions/sizes
-func (ui *UIScaler) ScaleElement(baseRect Rectangle) Rectangle {
-    switch ui.Mode {
-    case UIScaleAdaptive:
-        // Reposition elements for optimal layout
-        return ui.adaptiveScale(baseRect)
-    default:
-        // Simple scaling
-        return ui.uniformScale(baseRect)
-    }
-}
-```
+7. **Make Debug Output Configurable**
+   - Add debug level configuration
+   - Remove hardcoded `fmt.Println` statements
+   - Use proper logging with levels
 
-### 6. Configuration Presets System
+8. **Create Semantic Configuration**
+   - Replace magic numbers with named constants
+   - Add configuration validation
+   - Document what each value means
 
-**Proposed Enhancement to Current Config:**
+## 🗂️ **File Cleanup Summary**
 
-```go
-// engine/config_presets.go
-type ConfigPreset struct {
-    Name        string
-    Description string
-    Config      Config
-    
-    // Preset categories
-    Category    PresetCategory
-    Recommended ForDisplayType
-}
+### Files to Delete:
+- `examples/simple_room_usage.go` - Pure demo code
+- `room_layouts/example_platform.go` - Demo layout
+- `room_layouts/tower_climb.go` - Demo layout
 
-type PresetCategory int
-const (
-    PresetBalanced PresetCategory = iota
-    PresetPerformance
-    PresetQuality
-    PresetAccessibility
-)
+### Files to Significantly Modify:
+- `engine/state_factory.go` - Implement missing methods
+- `entities/base_enemy.go` - Fix AI interface
+- `engine/config.go` - Remove legacy constants
+- `docs/README.md` - Remove demo language
+- `CLAUDE.md` - Replace with production roadmap
 
-var ConfigPresets = map[string]ConfigPreset{
-    "pixel_perfect": {
-        Name: "Pixel Perfect",
-        Description: "Crisp pixels with integer scaling",
-        Config: Config{
-            TileScaleFactor: 2.0,
-            CharScaleFactor: 2.0,
-            // ... pixel-perfect settings
-        },
-    },
-    "smooth_hd": {
-        Name: "Smooth HD",
-        Description: "High resolution with smooth scaling",
-        // ...
-    },
-    "performance": {
-        Name: "Performance",
-        Description: "Optimized for lower-end systems",
-        // ...
-    },
-}
-```
+### Files to Clean (Remove Debug/Demo Code):
+- All files with `fmt.Println` debug output
+- Documentation with "demo" references
+- Hardcoded configuration values
 
-## Implementation Roadmap
+## 🎯 **Next Steps**
 
-### Phase 1: Foundation (Current Sprint)
-1. ✅ Clean up duplicate documentation
-2. 🔄 Implement dynamic tile sizing system
-3. 🔄 Create character size standardization
-4. 🔄 Add aspect ratio detection
+1. **Start with Phase 1** - Fix the broken state factory and enemy AI
+2. **Remove demo content** - Clean up examples and demo layouts  
+3. **Polish documentation** - Update language to reflect production status
+4. **Create configuration system** - Replace hardcoded values with semantic configs
 
-### Phase 2: Room System Enhancement
-1. Implement room template system
-2. Add procedural generation support
-3. Create room connection validator
-4. Build metroidvania map structure
-
-### Phase 3: Visual Polish
-1. Implement responsive UI system
-2. Add configuration presets
-3. Create smooth camera transitions
-4. Implement parallax depth system
-
-### Phase 4: Advanced Features
-1. Add room-specific visual themes
-2. Implement dynamic lighting system
-3. Create advanced particle effects
-4. Add post-processing pipeline
-
-## Technical Considerations
-
-### Performance
-- Use object pooling for tiles and entities
-- Implement frustum culling for off-screen objects
-- Cache scaled sprites at common resolutions
-- Use spatial partitioning for collision detection
-
-### Compatibility
-- Test on various aspect ratios and resolutions
-- Ensure pixel-perfect mode works correctly
-- Support both windowed and fullscreen modes
-- Handle display DPI scaling properly
-
-### Modularity
-- Keep systems decoupled and configurable
-- Use interfaces for extensibility
-- Maintain backwards compatibility
-- Document all configuration options
-
-## Next Steps
-
-1. **Immediate**: Update `engine/config.go` with new tile sizing options
-2. **Short-term**: Implement basic aspect ratio support
-3. **Medium-term**: Create room template system
-4. **Long-term**: Build full metroidvania map editor
-
-This architecture provides a solid foundation for a scalable, professional-quality 2D platformer that can adapt to different displays and player preferences while maintaining visual consistency and performance.
+This cleanup will transform the project from a demo/prototype into a production-ready game foundation.
