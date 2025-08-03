@@ -3,6 +3,8 @@ package world
 import (
 	"testing"
 	"image"
+	"github.com/hajimehoshi/ebiten/v2"
+	"sword/entities"
 )
 
 // MockRoom implements the Room interface for testing
@@ -20,19 +22,19 @@ func (mr *MockRoom) GetZoneID() string {
 	return mr.zoneID
 }
 
-func (mr *MockRoom) Update(player interface{}) error {
+func (mr *MockRoom) Update(player *entities.Player) error {
 	return nil
 }
 
-func (mr *MockRoom) HandleCollisions(player interface{}) {
+func (mr *MockRoom) HandleCollisions(player *entities.Player) {
 	// Mock implementation
 }
 
-func (mr *MockRoom) OnEnter(player interface{}) {
+func (mr *MockRoom) OnEnter(player *entities.Player) {
 	// Mock implementation
 }
 
-func (mr *MockRoom) OnExit(player interface{}) {
+func (mr *MockRoom) OnExit(player *entities.Player) {
 	// Mock implementation
 }
 
@@ -40,7 +42,15 @@ func (mr *MockRoom) FindFloorAtX(x int) int {
 	return 0
 }
 
-func (mr *MockRoom) Draw(screen interface{}) {
+func (mr *MockRoom) Draw(screen *ebiten.Image) {
+	// Mock implementation
+}
+
+func (mr *MockRoom) DrawTiles(screen *ebiten.Image, spriteProvider func(int) *ebiten.Image) {
+	// Mock implementation
+}
+
+func (mr *MockRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Mock implementation
 }
 

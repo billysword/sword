@@ -193,7 +193,7 @@ func (ig *InGameState) Update() error {
 	ig.player.Update()
 	
 	// Update world map with player position
-	playerX, playerY := ig.player.GetPosition()
+	playerX, playerY = ig.player.GetPosition()
 	ig.worldMap.AddPlayerPosition(playerX, playerY)
 	
 	// Check for room changes (for future multi-room support)
@@ -234,7 +234,8 @@ func (ig *InGameState) Update() error {
 	
 	// Update all enemies
 	for _, enemy := range ig.enemies {
-		enemy.Update()
+		enemy.HandleAI() // Let enemy make AI decisions first
+		enemy.Update()   // Then apply physics
 	}
 	
 	// Update camera to follow player
@@ -338,7 +339,7 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 	// Layer 7: HUD (managed by HUD system)
 	if err := ig.hudManager.Draw(screen); err != nil {
 		// Log error but don't fail the draw
-		engine.LogError("HUD draw error", err)
+		engine.LogDebug("HUD draw error: " + err.Error())
 	}
 }
 

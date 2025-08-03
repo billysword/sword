@@ -135,11 +135,11 @@ func min(a, b int) int {
 
 // WorldMap manages the discovered world map and spatial relationships between rooms
 type WorldMap struct {
-	discoveredRooms map[string]*DiscoveredRoom           `json:"discovered_rooms"`
-	currentRoomID   string                               `json:"current_room_id"`
-	roomConnections map[string]map[Direction]string      `json:"room_connections"` // room_id -> direction -> connected_room_id
-	playerTrail     []Point                              `json:"player_trail"`     // Recent player movement for mini-map
-	mutex           sync.RWMutex                         `json:"-"`                // Thread safety, not serialized
+	discoveredRooms map[string]*DiscoveredRoom      // discovered rooms by ID
+	currentRoomID   string                          // current room ID
+	roomConnections map[string]map[Direction]string // room_id -> direction -> connected_room_id
+	playerTrail     []Point                         // recent player movement for mini-map
+	mutex           sync.RWMutex                    // thread safety
 }
 
 // NewWorldMap creates a new world map manager

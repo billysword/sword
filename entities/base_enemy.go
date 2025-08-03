@@ -61,17 +61,17 @@ to provide their specific AI behavior. BaseEnemy is not meant to be used directl
 
 /*
 Update handles common physics and movement for all enemy types.
-Calls HandleAI() first to let the specific enemy type make movement decisions,
-then applies physics like velocity, ground collision, friction, and gravity.
-Should be called once per frame.
+Applies physics like velocity, ground collision, friction, and gravity.
+Should be called once per frame AFTER the concrete enemy type has
+handled its AI logic and set velocity values.
 
 Uses values from engine.GameConfig for physics calculations.
 */
 func (be *BaseEnemy) Update() {
 	physicsUnit := engine.GetPhysicsUnit()
 	
-	// Let the specific enemy type handle its AI logic
-	be.HandleAI()
+	// NOTE: AI logic should be handled by the concrete enemy type
+	// before calling this Update() method
 	
 	// Apply movement
 	be.x += be.vx

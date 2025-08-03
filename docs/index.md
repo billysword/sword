@@ -1,10 +1,10 @@
 # Sword Game Documentation Index
 
-Welcome to the Sword game documentation! This index provides links to all available documentation files.
+Welcome to the Sword game documentation! This index provides links to all available documentation files organized with numbered prefixes for easy navigation.
 
-## Documentation Files
+## Documentation Files (Organized by Index)
 
-### Core Game Documentation
+### Core Game Documentation (00-09)
 - **[00_readme.md](00_readme.md)** - Main README with project overview and setup instructions
 - **[01_config_usage.md](01_config_usage.md)** - Configuration system usage and examples
 - **[02_metroidvania_changes.md](02_metroidvania_changes.md)** - Metroidvania-style changes and features
@@ -12,36 +12,38 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - **[04_hexadecimal_layouts.md](04_hexadecimal_layouts.md)** - Hexadecimal room layout system and debugging
 - **[05_simple_room_layouts.md](05_simple_room_layouts.md)** - Simple room layout system (CURRENT)
 
-### Enemy System Documentation
-- **[enemies_01.md](enemies_01.md)** - Original enemies implementation (historical)
-- **[enemies_interface_02.md](enemies_interface_02.md)** - Interface-based enemy system (current implementation)
+### Project Architecture (10-19)
+- **[10_claude_project_instructions.md](10_claude_project_instructions.md)** - Movement logging system for collision & physics development
+- **[15_hud_delegate_system.md](15_hud_delegate_system.md)** - HUD delegate system architecture
 
-### Development & Debugging
-- **[logging_bugs_found.md](logging_bugs_found.md)** - Logging system bugs and fixes
-- **[integration_patches.md](integration_patches.md)** - Integration patches and updates
+### World & Level Systems (20-29)
+- **[20_worldmap_core.md](20_worldmap_core.md)** - World map system core implementation
+- **[25_enemies_legacy.md](25_enemies_legacy.md)** - Original enemies implementation (historical)
+- **[26_enemies_interface.md](26_enemies_interface.md)** - Interface-based enemy system (current implementation)
 
-### Implementation Guides
-- **[PARALLAX_IMPROVEMENTS.md](PARALLAX_IMPROVEMENTS.md)** - Parallax scrolling implementation
-- **[SETTINGS_MENU_GUIDE.md](SETTINGS_MENU_GUIDE.md)** - Settings menu implementation guide
-- **[SPRITE_MANAGER_USAGE.md](SPRITE_MANAGER_USAGE.md)** - Sprite manager usage guide
+### Development & Debugging (30-39)
+- **[30_logging_bugs_found.md](30_logging_bugs_found.md)** - Logging system bugs and fixes
+- **[31_debug_integration_patches.md](31_debug_integration_patches.md)** - Debug integration patches and updates
+- **[35_sprite_manager_usage.md](35_sprite_manager_usage.md)** - Sprite manager usage guide
+- **[36_settings_menu_guide.md](36_settings_menu_guide.md)** - Settings menu implementation guide
 
-### Update Summaries
-- **[AGENTS_UPDATE_SUMMARY.md](AGENTS_UPDATE_SUMMARY.md)** - Summary of agents file updates
-- **[GITIGNORE_UPDATE_SUMMARY.md](GITIGNORE_UPDATE_SUMMARY.md)** - Git ignore patterns for generated files
-- **[QUIT_FIXES_SUMMARY.md](QUIT_FIXES_SUMMARY.md)** - Quit functionality fixes
-- **[README_DOCS_ORGANIZATION.md](README_DOCS_ORGANIZATION.md)** - Documentation organization summary
+### Implementation & Updates (40-49)
+- **[40_parallax_improvements.md](40_parallax_improvements.md)** - Parallax scrolling implementation
+- **[41_quit_fixes_summary.md](41_quit_fixes_summary.md)** - Quit functionality fixes
+- **[42_gitignore_update_summary.md](42_gitignore_update_summary.md)** - Git ignore patterns for generated files
+- **[43_agents_update_summary.md](43_agents_update_summary.md)** - Summary of agents file updates
 
 ## Quick Navigation
 
 ### For New Developers
 1. Start with [00_readme.md](00_readme.md) for project setup
 2. Review [01_config_usage.md](01_config_usage.md) for configuration options
-3. Check [enemies_interface_02.md](enemies_interface_02.md) for current enemy system architecture
+3. Check [26_enemies_interface.md](26_enemies_interface.md) for current enemy system architecture
 4. Explore [05_simple_room_layouts.md](05_simple_room_layouts.md) for room layout tools
 
 ### For Game Designers
 1. Review [02_metroidvania_changes.md](02_metroidvania_changes.md) for game features
-2. Study [enemies_interface_02.md](enemies_interface_02.md) for enemy behavior patterns
+2. Study [26_enemies_interface.md](26_enemies_interface.md) for enemy behavior patterns
 3. See [01_config_usage.md](01_config_usage.md) for gameplay tuning options
 4. Use [05_simple_room_layouts.md](05_simple_room_layouts.md) for level design workflows
 
@@ -52,9 +54,9 @@ Welcome to the Sword game documentation! This index provides links to all availa
 
 ### For Contributors
 1. Read [03_claude_notes.md](03_claude_notes.md) for development context
-2. Review [enemies_interface_02.md](enemies_interface_02.md) for code architecture
+2. Review [26_enemies_interface.md](26_enemies_interface.md) for code architecture
 3. Check [00_readme.md](00_readme.md) for contribution guidelines
-4. Study [SPRITE_MANAGER_USAGE.md](SPRITE_MANAGER_USAGE.md) for asset management
+4. Study [35_sprite_manager_usage.md](35_sprite_manager_usage.md) for asset management
 
 ## Documentation Categories
 
@@ -84,14 +86,7 @@ Welcome to the Sword game documentation! This index provides links to all availa
 
 ## Additional Resources
 
-### Example Files
-- **[../examples/hex_layout_example.go](../examples/hex_layout_example.go)** - Working hexadecimal layout example
-
-### Root Documentation Files
-- **[../CLAUDE.md](../CLAUDE.md)** - Architectural proposals for game development (aspect ratios, tile sizes, etc.)
-- **[../README.md](../README.md)** - Quick project overview
-
 ## Last Updated
-This index was last updated after cleaning up duplicate documentation files and adding architectural proposals to CLAUDE.md.
+This index was completely reorganized with numbered prefixes for better navigation and duplicate files removed.
 
 For the most current information, always check the individual documentation files as they may contain more recent updates than this index.

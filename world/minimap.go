@@ -1,9 +1,5 @@
 package world
 
-import (
-	"sword/engine"
-)
-
 // MiniMapRenderer handles rendering the mini-map overlay
 // Implements engine.HUDComponent interface
 type MiniMapRenderer struct {
