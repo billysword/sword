@@ -1,353 +1,358 @@
-# CLAUDE.md - Architectural Proposals for Game Development
+# CLAUDE.md - Character Movement Logging for Collision & Physics Development
 
-## Project Overview
+## ✅ **CLEANUP COMPLETED**
 
-This is a Go-based 2D platformer/metroidvania game built using Ebitengine. The project uses a modular architecture with state management, configurable settings, and a flexible room layout system.
+All demo/placeholder code has been successfully cleaned up:
+- ✅ **State Factory** - Fixed broken unimplemented methods
+- ✅ **Enemy AI System** - Removed empty stub, proper interface pattern
+- ✅ **Demo Content** - Deleted example room layouts and examples directory
+- ✅ **Legacy Constants** - Removed deprecated hardcoded values
+- ✅ **Documentation** - Updated all demo references to production language
 
-## Current Architecture Status
+## 🎯 **NEXT PHASE: Character Movement Logging for Collision & Physics**
 
-### Window & Display
-- **Current Resolution**: 1920x1080 (16:9 aspect ratio)
-- **Tile Size**: 16x16 pixels (standard)
-- **Tile Scale Factor**: 1.0 (no scaling in default config)
-- **Character Scale Factor**: 0.7 (default), 0.4 (legacy)
+To properly design and implement collision detection and physics systems, we need comprehensive logging of character movement data. This will help us understand current behavior and identify areas for improvement.
 
-### Room System
-- **Default Room Size**: 80x60 tiles (1280x960 pixels)
-- **Zoomed-in Room Size**: 40x30 tiles (640x480 pixels)
-- **Ground Level**: 45 tiles from top (default)
+### 📊 **Character Movement Data We Need to Track**
 
-## Architectural Proposals
-
-### 1. Aspect Ratio & Resolution System
-
-**Current Issues:**
-- Fixed 16:9 aspect ratio doesn't adapt to different displays
-- No support for ultrawide (21:9) or legacy (4:3) monitors
-- Room layouts don't adjust to different aspect ratios
-
-**Proposed Solution:**
-
+#### 1. **Position & Velocity Tracking**
 ```go
-// engine/display_config.go
-type AspectRatio struct {
-    Name   string
-    Width  int
-    Height int
-    // Calculated room dimensions for this aspect
-    DefaultRoomTilesX int
-    DefaultRoomTilesY int
-}
-
-var SupportedAspectRatios = []AspectRatio{
-    {"16:9 HD", 1920, 1080, 80, 45},
-    {"16:9 FHD", 2560, 1440, 106, 60},
-    {"21:9 UW", 2560, 1080, 106, 45},
-    {"16:10", 1920, 1200, 80, 50},
-    {"4:3", 1600, 1200, 66, 50},
-}
-
-// Auto-detect and adapt room layouts
-func AdaptRoomToAspectRatio(room *Room, aspectRatio AspectRatio) {
-    // Dynamically adjust room bounds and camera limits
+// entities/movement_logger.go
+type MovementFrame struct {
+    Timestamp    int64   // Frame number or time
+    PlayerID     string  // For multi-entity tracking
+    
+    // Position data
+    X, Y         float64 // Current position (sub-pixel precision)
+    PrevX, PrevY float64 // Previous frame position
+    
+    // Velocity data  
+    VelX, VelY   float64 // Current velocity
+    PrevVelX, PrevVelY float64 // Previous frame velocity
+    
+    // Movement state
+    IsMoving     bool    // Any movement this frame
+    IsOnGround   bool    // Ground contact
+    IsJumping    bool    // Jump in progress
+    IsFalling    bool    // Falling state
+    
+    // Input state
+    InputLeft    bool    // Left key pressed
+    InputRight   bool    // Right key pressed  
+    InputJump    bool    // Jump key pressed
+    InputJumpHeld bool   // Jump key held (for variable jump height)
 }
 ```
 
-### 2. Dynamic Tile Size System
-
-**Current Issues:**
-- Fixed 16x16 tile size limits visual fidelity
-- No support for high-DPI displays
-- Character sprites don't scale proportionally with tiles
-
-**Proposed Solution:**
-
+#### 2. **Collision Detection Events**
 ```go
-// engine/tile_system.go
-type TileConfig struct {
-    BaseSize     int     // Original tile size (16)
-    RenderSize   int     // Actual rendered size
-    ScaleFactor  float64 // Dynamic scale based on resolution
-    PixelPerfect bool    // Maintain pixel boundaries
+type CollisionEvent struct {
+    Timestamp    int64
+    PlayerID     string
+    
+    // Collision details
+    CollisionType CollisionType // Ground, Wall, Ceiling, Entity
+    CollisionSide CollisionSide // Top, Bottom, Left, Right
+    
+    // Position at collision
+    CollisionX, CollisionY float64
+    
+    // Velocity at collision
+    PreCollisionVelX, PreCollisionVelY   float64
+    PostCollisionVelX, PostCollisionVelY float64
+    
+    // Tile/Entity info
+    TileX, TileY     int    // Tile coordinates if tile collision
+    TileType         int    // Tile type ID
+    EntityID         string // Entity ID if entity collision
+    
+    // Resolution info
+    Penetration      float64 // How far entity penetrated
+    CorrectionX, CorrectionY float64 // Position correction applied
 }
 
-// Calculate optimal tile size based on display
-func CalculateOptimalTileSize(windowWidth, windowHeight int) TileConfig {
-    // Target ~80-120 tiles horizontally for good visibility
-    targetTilesX := 100
-    optimalSize := windowWidth / targetTilesX
+type CollisionType int
+const (
+    CollisionTile CollisionType = iota
+    CollisionEntity
+    CollisionWorldBounds
+)
+
+type CollisionSide int  
+const (
+    CollisionTop CollisionSide = iota
+    CollisionBottom
+    CollisionLeft
+    CollisionRight
+)
+```
+
+#### 3. **Physics State Transitions**
+```go
+type PhysicsStateChange struct {
+    Timestamp    int64
+    PlayerID     string
     
-    // Snap to nearest multiple of base size
-    scaleFactor := float64(optimalSize) / 16.0
-    if pixelPerfect {
-        scaleFactor = math.Round(scaleFactor)
+    // State transition
+    FromState    PhysicsState
+    ToState      PhysicsState
+    TriggerEvent string // What caused the transition
+    
+    // Context data
+    Position     Point2D
+    Velocity     Point2D
+    GroundY      float64
+    
+    // Timing info
+    StateFrameCount int // How long in previous state
+}
+
+type PhysicsState int
+const (
+    StateIdle PhysicsState = iota
+    StateWalking
+    StateJumping
+    StateFalling
+    StateOnGround
+    StateInAir
+    StateWallSliding
+    StateLanding
+)
+```
+
+### 🔧 **Implementation Strategy**
+
+#### Phase 1: Basic Movement Logging
+```go
+// engine/movement_logger.go
+type MovementLogger struct {
+    enabled      bool
+    frameBuffer  []MovementFrame
+    bufferSize   int
+    currentFrame int64
+    logFile      *os.File
+    
+    // Performance settings
+    logEveryNFrames int  // Log every N frames (default: 1)
+    maxBufferSize   int  // Max frames in memory before flush
+}
+
+func NewMovementLogger(enabled bool, logFilePath string) *MovementLogger {
+    if !enabled {
+        return &MovementLogger{enabled: false}
     }
     
-    return TileConfig{
-        BaseSize:     16,
-        RenderSize:   int(16 * scaleFactor),
-        ScaleFactor:  scaleFactor,
-        PixelPerfect: true,
+    file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+    if err != nil {
+        engine.LogError("Failed to open movement log: " + err.Error())
+        return &MovementLogger{enabled: false}
+    }
+    
+    return &MovementLogger{
+        enabled:         true,
+        frameBuffer:     make([]MovementFrame, 0, 1000),
+        bufferSize:      1000,
+        logFile:         file,
+        logEveryNFrames: 1,
+        maxBufferSize:   1000,
     }
 }
-```
 
-### 3. Character Size & Proportion System
-
-**Current Issues:**
-- Character scale is hardcoded relative to tiles
-- No visual hierarchy between player, enemies, and bosses
-- Sprites look too small in zoomed-out view
-
-**Proposed Solution:**
-
-```go
-// entities/size_config.go
-type EntitySizeConfig struct {
-    BaseWidth    int     // Base sprite width
-    BaseHeight   int     // Base sprite height
-    ScaleRelativeToTile float64 // Scale relative to tile size
+func (ml *MovementLogger) LogMovementFrame(frame MovementFrame) {
+    if !ml.enabled || ml.currentFrame % int64(ml.logEveryNFrames) != 0 {
+        return
+    }
     
-    // Size categories
-    SizeClass    EntitySize
+    frame.Timestamp = ml.currentFrame
+    ml.frameBuffer = append(ml.frameBuffer, frame)
+    ml.currentFrame++
     
-    // Collision box relative to sprite size
-    CollisionScale float64
-}
-
-type EntitySize int
-const (
-    SizeTiny EntitySize = iota  // 0.5x tile (items, projectiles)
-    SizeSmall                   // 1x tile (small enemies)
-    SizeMedium                  // 1.5x tile (player, regular enemies)
-    SizeLarge                   // 2x tile (mini-bosses)
-    SizeHuge                    // 3x+ tiles (bosses)
-)
-
-// Standardized entity sizes
-var EntitySizes = map[EntitySize]EntitySizeConfig{
-    SizeMedium: {
-        BaseWidth:  32,
-        BaseHeight: 32,
-        ScaleRelativeToTile: 1.5,
-        CollisionScale: 0.8,
-    },
-    // ... other sizes
-}
-```
-
-### 4. Advanced Room Layout System
-
-**Current Issues:**
-- Simple 2D array limits complex room designs
-- No support for room templates or procedural generation
-- Difficult to create interconnected metroidvania-style maps
-
-**Proposed Solution:**
-
-```go
-// world/room_architecture.go
-type RoomTemplate struct {
-    ID          string
-    Name        string
-    BaseLayout  [][]int
-    
-    // Room properties
-    Type        RoomType
-    Biome       BiomeType
-    Difficulty  int
-    
-    // Connection points
-    Exits       []ExitPoint
-    
-    // Dynamic elements
-    SpawnPoints []SpawnPoint
-    Triggers    []Trigger
-}
-
-type RoomType int
-const (
-    RoomNormal RoomType = iota
-    RoomBoss
-    RoomSave
-    RoomSecret
-    RoomTransition
-    RoomHub
-)
-
-type ExitPoint struct {
-    Side      Direction // North, South, East, West
-    Position  int       // Position along that side (in tiles)
-    Width     int       // Width of exit (in tiles)
-    LeadsTo   string    // Room ID or "any" for procedural
-    Required  bool      // Must connect to another room
-}
-
-// Room generation system
-type RoomGenerator struct {
-    templates map[string]RoomTemplate
-    biomes    map[BiomeType]BiomeConfig
-}
-
-func (rg *RoomGenerator) GenerateRoom(template string, seed int64) *Room {
-    // Create room from template with variations
-    // Add procedural elements based on seed
-    // Ensure exit compatibility
-}
-
-// Metroidvania map structure
-type WorldMap struct {
-    Rooms       map[string]*Room
-    Connections map[string][]string // Room connections
-    Regions     map[string]Region   // Named regions (e.g., "Forest", "Caves")
-    
-    // Player progression tracking
-    VisitedRooms   map[string]bool
-    UnlockedExits  map[string]bool
-}
-```
-
-### 5. Responsive UI Scaling
-
-**Current Issues:**
-- UI elements don't scale with resolution
-- HUD takes up fixed pixel space
-- No adaptive layout for different screen sizes
-
-**Proposed Solution:**
-
-```go
-// ui/responsive_ui.go
-type UIScaler struct {
-    BaseResolution  Resolution // Design resolution (e.g., 1920x1080)
-    CurrentResolution Resolution
-    
-    // Scaling modes
-    Mode UIScaleMode
-    
-    // Safe areas for different aspect ratios
-    SafeArea Rectangle
-}
-
-type UIScaleMode int
-const (
-    UIScaleFit UIScaleMode = iota   // Fit to screen, may have bars
-    UIScaleStretch                   // Stretch to fill (may distort)
-    UIScalePixelPerfect              // Integer scaling only
-    UIScaleAdaptive                  // Smart scaling with layout changes
-)
-
-// Calculate UI element positions/sizes
-func (ui *UIScaler) ScaleElement(baseRect Rectangle) Rectangle {
-    switch ui.Mode {
-    case UIScaleAdaptive:
-        // Reposition elements for optimal layout
-        return ui.adaptiveScale(baseRect)
-    default:
-        // Simple scaling
-        return ui.uniformScale(baseRect)
+    // Flush if buffer is full
+    if len(ml.frameBuffer) >= ml.maxBufferSize {
+        ml.FlushToFile()
     }
 }
 ```
 
-### 6. Configuration Presets System
-
-**Proposed Enhancement to Current Config:**
-
+#### Phase 2: Integration with Player Entity
 ```go
-// engine/config_presets.go
-type ConfigPreset struct {
-    Name        string
-    Description string
-    Config      Config
+// entities/player.go - Add to Update() method
+
+func (p *Player) Update() {
+    // Capture pre-update state
+    prevX, prevY := p.x, p.y
+    prevVelX, prevVelY := p.vx, p.vy
     
-    // Preset categories
-    Category    PresetCategory
-    Recommended ForDisplayType
-}
-
-type PresetCategory int
-const (
-    PresetBalanced PresetCategory = iota
-    PresetPerformance
-    PresetQuality
-    PresetAccessibility
-)
-
-var ConfigPresets = map[string]ConfigPreset{
-    "pixel_perfect": {
-        Name: "Pixel Perfect",
-        Description: "Crisp pixels with integer scaling",
-        Config: Config{
-            TileScaleFactor: 2.0,
-            CharScaleFactor: 2.0,
-            // ... pixel-perfect settings
-        },
-    },
-    "smooth_hd": {
-        Name: "Smooth HD",
-        Description: "High resolution with smooth scaling",
-        // ...
-    },
-    "performance": {
-        Name: "Performance",
-        Description: "Optimized for lower-end systems",
-        // ...
-    },
+    // ... existing update logic ...
+    
+    // Log movement data if logger is enabled
+    if movementLogger := engine.GetMovementLogger(); movementLogger != nil {
+        frame := MovementFrame{
+            PlayerID:     "player_1",
+            X:            float64(p.x),
+            Y:            float64(p.y),
+            PrevX:        float64(prevX),
+            PrevY:        float64(prevY),
+            VelX:         float64(p.vx),
+            VelY:         float64(p.vy),
+            PrevVelX:     float64(prevVelX),
+            PrevVelY:     float64(prevVelY),
+            IsMoving:     p.vx != 0 || p.vy != 0,
+            IsOnGround:   p.onGround,
+            IsJumping:    p.jumpKeyHeld && p.jumpTimer > 0,
+            IsFalling:    p.vy > 0 && !p.onGround,
+            InputLeft:    ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft),
+            InputRight:   ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight),
+            InputJump:    ebiten.IsKeyPressed(ebiten.KeySpace),
+            InputJumpHeld: p.jumpKeyHeld,
+        }
+        movementLogger.LogMovementFrame(frame)
+    }
 }
 ```
 
-## Implementation Roadmap
+#### Phase 3: Collision Logging Integration
+```go
+// world/collision_detector.go - New collision system with logging
 
-### Phase 1: Foundation (Current Sprint)
-1. ✅ Clean up duplicate documentation
-2. 🔄 Implement dynamic tile sizing system
-3. 🔄 Create character size standardization
-4. 🔄 Add aspect ratio detection
+type CollisionDetector struct {
+    logger *CollisionLogger
+}
 
-### Phase 2: Room System Enhancement
-1. Implement room template system
-2. Add procedural generation support
-3. Create room connection validator
-4. Build metroidvania map structure
+func (cd *CollisionDetector) CheckTileCollision(entity Entity, tileMap [][]int) []CollisionEvent {
+    events := make([]CollisionEvent, 0)
+    
+    // ... collision detection logic ...
+    
+    if collisionDetected {
+        event := CollisionEvent{
+            PlayerID:             entity.GetID(),
+            CollisionType:        CollisionTile,
+            CollisionSide:        determineSide(entity, tile),
+            CollisionX:           float64(entity.GetX()),
+            CollisionY:           float64(entity.GetY()),
+            PreCollisionVelX:     float64(entity.GetVelX()),
+            PreCollisionVelY:     float64(entity.GetVelY()),
+            TileX:                tileX,
+            TileY:                tileY,
+            TileType:             tileMap[tileY][tileX],
+            Penetration:          calculatePenetration(entity, tile),
+        }
+        
+        // Apply collision resolution
+        correctionX, correctionY := resolveCollision(entity, tile)
+        event.CorrectionX = correctionX
+        event.CorrectionY = correctionY
+        event.PostCollisionVelX = float64(entity.GetVelX())
+        event.PostCollisionVelY = float64(entity.GetVelY())
+        
+        events = append(events, event)
+        
+        // Log to collision logger
+        if cd.logger != nil {
+            cd.logger.LogCollision(event)
+        }
+    }
+    
+    return events
+}
+```
 
-### Phase 3: Visual Polish
-1. Implement responsive UI system
-2. Add configuration presets
-3. Create smooth camera transitions
-4. Implement parallax depth system
+### 📈 **Analysis Tools for Logged Data**
 
-### Phase 4: Advanced Features
-1. Add room-specific visual themes
-2. Implement dynamic lighting system
-3. Create advanced particle effects
-4. Add post-processing pipeline
+#### 1. **Movement Pattern Analysis**
+```go
+// tools/movement_analyzer.go
+func AnalyzeMovementPatterns(logFile string) MovementAnalysis {
+    // Analyze for:
+    // - Average movement speed
+    // - Jump height consistency
+    // - Landing accuracy
+    // - Input responsiveness
+    // - Physics stability
+}
+```
 
-## Technical Considerations
+#### 2. **Collision Frequency Analysis**
+```go
+func AnalyzeCollisionFrequency(logFile string) CollisionAnalysis {
+    // Analyze for:
+    // - Most common collision types
+    // - Collision hotspots on map
+    // - Penetration depth patterns
+    // - Resolution effectiveness
+}
+```
 
-### Performance
-- Use object pooling for tiles and entities
-- Implement frustum culling for off-screen objects
-- Cache scaled sprites at common resolutions
-- Use spatial partitioning for collision detection
+#### 3. **Performance Impact Analysis**
+```go
+func AnalyzePerformanceImpact(logFile string) PerformanceAnalysis {
+    // Analyze for:
+    // - Frame time impact of collision detection
+    // - Memory usage patterns
+    // - CPU usage spikes
+    // - Optimization opportunities
+}
+```
 
-### Compatibility
-- Test on various aspect ratios and resolutions
-- Ensure pixel-perfect mode works correctly
-- Support both windowed and fullscreen modes
-- Handle display DPI scaling properly
+### 🚀 **Configuration & Control**
 
-### Modularity
-- Keep systems decoupled and configurable
-- Use interfaces for extensibility
-- Maintain backwards compatibility
-- Document all configuration options
+#### Runtime Configuration
+```go
+// engine/config.go - Add to Config struct
+type Config struct {
+    // ... existing fields ...
+    
+    // Movement logging settings
+    EnableMovementLogging    bool    `json:"enable_movement_logging"`
+    MovementLogPath         string  `json:"movement_log_path"`
+    MovementLogLevel        int     `json:"movement_log_level"` // 1=basic, 2=detailed, 3=verbose
+    LogEveryNFrames         int     `json:"log_every_n_frames"`
+    
+    // Collision logging settings  
+    EnableCollisionLogging   bool    `json:"enable_collision_logging"`
+    CollisionLogPath        string  `json:"collision_log_path"`
+    LogCollisionDetails     bool    `json:"log_collision_details"`
+    
+    // Performance settings
+    MaxLogBufferSize        int     `json:"max_log_buffer_size"`
+    FlushLogEveryNSeconds   int     `json:"flush_log_every_n_seconds"`
+}
+```
 
-## Next Steps
+#### Development vs Production Settings
+```go
+func DevelopmentLoggingConfig() Config {
+    config := DefaultConfig()
+    config.EnableMovementLogging = true
+    config.EnableCollisionLogging = true
+    config.MovementLogLevel = 3 // Verbose
+    config.LogEveryNFrames = 1  // Every frame
+    return config
+}
 
-1. **Immediate**: Update `engine/config.go` with new tile sizing options
-2. **Short-term**: Implement basic aspect ratio support
-3. **Medium-term**: Create room template system
-4. **Long-term**: Build full metroidvania map editor
+func ProductionLoggingConfig() Config {
+    config := DefaultConfig()
+    config.EnableMovementLogging = false // Disabled for performance
+    config.EnableCollisionLogging = false
+    return config
+}
+```
 
-This architecture provides a solid foundation for a scalable, professional-quality 2D platformer that can adapt to different displays and player preferences while maintaining visual consistency and performance.
+### 🎯 **Integration Plan**
+
+1. **Week 1**: Implement basic movement logging framework
+2. **Week 2**: Add collision detection logging  
+3. **Week 3**: Create analysis tools and visualizations
+4. **Week 4**: Use data to design improved collision system
+5. **Week 5**: Implement physics improvements based on analysis
+
+### 💡 **Benefits for Collision & Physics Development**
+
+1. **Data-Driven Design**: Make decisions based on actual movement patterns
+2. **Bug Identification**: Catch edge cases and inconsistencies  
+3. **Performance Optimization**: Identify bottlenecks before they become problems
+4. **Regression Testing**: Ensure changes don't break existing behavior
+5. **Player Experience**: Optimize feel and responsiveness based on real data
+
+This logging system will provide the foundation for building robust, data-driven collision detection and physics systems that feel great to play.

@@ -187,18 +187,12 @@ func SmallRoomConfig() Config {
 // Initialize with default config, can be changed at runtime
 var GameConfig = DefaultConfig()
 
-// Legacy constants for backward compatibility - use GameConfig instead
-const (
-	TILE_SIZE         = 16   // Deprecated: use GameConfig.TileSize
-	TILE_SCALE_FACTOR = 1.0  // Deprecated: use GameConfig.TileScaleFactor
-	CHAR_SCALE_FACTOR = 0.4  // Deprecated: use GameConfig.CharScaleFactor
-	PHYSICS_UNIT      = 16   // Deprecated: use GetPhysicsUnit()
-)
+// Legacy constants removed - use GameConfig and GetPhysicsUnit() instead
 
 /*
 GetPhysicsUnit returns the current physics unit size in pixels.
 This is the fundamental unit for all physics calculations, derived from
-the tile size and scale factor. Use this instead of the deprecated PHYSICS_UNIT constant.
+the tile size and scale factor.
 
 Returns the physics unit size as an integer number of pixels.
 */

@@ -41,6 +41,14 @@ type StateConfig struct {
 }
 
 /*
+State constructor function types for avoiding circular imports.
+These allow the states package to register its constructors with the engine.
+*/
+type StartStateConstructor func(*StateManager) State
+type InGameStateConstructor func(*StateManager) State  
+type PauseStateConstructor func(*StateManager, State) State
+
+/*
 StateFactory provides centralized state creation and management.
 Handles state initialization with proper configuration and
 provides a clean interface for state transitions.
@@ -48,6 +56,11 @@ provides a clean interface for state transitions.
 type StateFactory struct {
 	stateManager *StateManager
 	configs      map[StateType]StateConfig
+	
+	// Constructor function registry to avoid circular imports
+	startStateConstructor   StartStateConstructor
+	inGameStateConstructor  InGameStateConstructor
+	pauseStateConstructor   PauseStateConstructor
 }
 
 /*
@@ -69,6 +82,30 @@ func NewStateFactory(sm *StateManager) *StateFactory {
 	factory.initDefaultConfigs()
 	
 	return factory
+}
+
+/*
+RegisterStartStateConstructor registers the constructor function for start states.
+This avoids circular imports between engine and states packages.
+*/
+func (sf *StateFactory) RegisterStartStateConstructor(constructor StartStateConstructor) {
+	sf.startStateConstructor = constructor
+}
+
+/*
+RegisterInGameStateConstructor registers the constructor function for in-game states.
+This avoids circular imports between engine and states packages.
+*/
+func (sf *StateFactory) RegisterInGameStateConstructor(constructor InGameStateConstructor) {
+	sf.inGameStateConstructor = constructor
+}
+
+/*
+RegisterPauseStateConstructor registers the constructor function for pause states.
+This avoids circular imports between engine and states packages.
+*/
+func (sf *StateFactory) RegisterPauseStateConstructor(constructor PauseStateConstructor) {
+	sf.pauseStateConstructor = constructor
 }
 
 /*
@@ -197,18 +234,28 @@ func (sf *StateFactory) TransitionToPause() error {
 	return sf.TransitionTo(StateTypePause)
 }
 
-// Internal state creation methods - these will be implemented to create actual state instances
+// Internal state creation methods - use registered constructors
 func (sf *StateFactory) createStartState(config StateConfig) (State, error) {
-	// Will be implemented to create StartState
-	return nil, fmt.Errorf("StartState creation not yet implemented in factory")
+	if sf.startStateConstructor == nil {
+		return nil, fmt.Errorf("start state constructor not registered")
+	}
+	return sf.startStateConstructor(sf.stateManager), nil
 }
 
 func (sf *StateFactory) createInGameState(config StateConfig) (State, error) {
-	// Will be implemented to create InGameState with config
-	return nil, fmt.Errorf("InGameState creation not yet implemented in factory")
+	if sf.inGameStateConstructor == nil {
+		return nil, fmt.Errorf("in-game state constructor not registered")
+	}
+	return sf.inGameStateConstructor(sf.stateManager), nil
 }
 
 func (sf *StateFactory) createPauseState(config StateConfig) (State, error) {
-	// Will be implemented to create PauseState with config
-	return nil, fmt.Errorf("PauseState creation not yet implemented in factory")
+	if sf.pauseStateConstructor == nil {
+		return nil, fmt.Errorf("pause state constructor not registered")
+	}
+	// For pause state, we need the background state from config
+	if config.BackgroundState == nil {
+		return nil, fmt.Errorf("pause state requires background state in config")
+	}
+	return sf.pauseStateConstructor(sf.stateManager, config.BackgroundState), nil
 }

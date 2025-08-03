@@ -197,7 +197,7 @@ The new system is fully backward compatible:
 
 ## Testing
 
-A complete working example is available at `examples/hex_layout_example.go` demonstrating:
+Working examples of hexadecimal layouts can be found in the room_layouts directory demonstrating:
 - Creating layouts with hex notation
 - Generating debug output
 - Copy-paste workflow
