@@ -196,14 +196,49 @@ func (br *BaseRoom) GetTileMap() *TileMap {
 }
 
 /*
-GetZoneID returns the room's zone identifier.
-The zone ID is used for room identification, save systems,
-and debugging purposes.
-
-Returns the room's unique identifier string.
+GetZoneID returns the zone identifier for this room.
+Used for organizing rooms into logical areas or zones within the game world.
 */
 func (br *BaseRoom) GetZoneID() string {
 	return br.zoneID
+}
+
+/*
+GetTiles returns a flattened array of all tiles in the room.
+Converts the 2D tile array into a 1D array for easier iteration.
+*/
+func (br *BaseRoom) GetTiles() []int {
+	if br.tileMap == nil {
+		return []int{}
+	}
+	
+	tiles := make([]int, br.tileMap.Width*br.tileMap.Height)
+	for y := 0; y < br.tileMap.Height; y++ {
+		for x := 0; x < br.tileMap.Width; x++ {
+			tiles[y*br.tileMap.Width+x] = br.tileMap.Tiles[y][x]
+		}
+	}
+	return tiles
+}
+
+/*
+GetWidth returns the width of the room in tiles.
+*/
+func (br *BaseRoom) GetWidth() int {
+	if br.tileMap == nil {
+		return 0
+	}
+	return br.tileMap.Width
+}
+
+/*
+GetHeight returns the height of the room in tiles.
+*/
+func (br *BaseRoom) GetHeight() int {
+	if br.tileMap == nil {
+		return 0
+	}
+	return br.tileMap.Height
 }
 
 /*

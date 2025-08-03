@@ -140,9 +140,9 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	y += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Physics Unit: %d px", physicsUnit), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed: %d | Jump: %d", GameConfig.PlayerMoveSpeed, GameConfig.PlayerJumpPower), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed: %d | Jump: %d", GameConfig.PlayerPhysics.MoveSpeed, GameConfig.PlayerPhysics.JumpPower), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity: %d | Friction: %d", GameConfig.Gravity, GameConfig.PlayerFriction), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity: %d | Friction: %d", GameConfig.Gravity, GameConfig.PlayerPhysics.Friction), 10, y)
 	y += lineHeight * 2
 	
 	// Rendering section

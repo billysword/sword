@@ -336,6 +336,18 @@ func (l *Logger) LogCoordinateConversion(conversionType string, inputX, inputY, 
 	}
 }
 
+// LogPlayerPosition logs the player's current position
+func (l *Logger) LogPlayerPosition(x, y int, roomName string) {
+	if !shouldLog(LogLevelDebug) {
+		return
+	}
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	if l.logger != nil {
+		l.logger.Printf("[PLAYER_POS] Room=%s, Position=(%d,%d)", roomName, x, y)
+	}
+}
+
 // Close closes the log file
 func (l *Logger) Close() error {
 	l.mutex.Lock()
@@ -447,6 +459,11 @@ func LogRenderingDebug(objectType string, worldX, worldY, renderX, renderY float
 // LogCoordinateConversion logs coordinate conversion debugging using the player logger
 func LogCoordinateConversion(conversionType string, inputX, inputY, outputX, outputY int) {
 	GetLoggerManager().playerLogger.LogCoordinateConversion(conversionType, inputX, inputY, outputX, outputY)
+}
+
+// LogPlayerPosition logs the player's current position
+func LogPlayerPosition(x, y int, roomName string) {
+	GetLoggerManager().playerLogger.LogPlayerPosition(x, y, roomName)
 }
 
 // CloseLogger closes all loggers

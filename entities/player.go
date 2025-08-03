@@ -3,7 +3,6 @@ package entities
 import (
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"sword/engine"
 	"image/color"
@@ -29,6 +28,9 @@ type Player struct {
 	jumpBufferTimer int  // Frames since jump was pressed
 	isJumping       bool // Currently in a jump (for variable height)
 	jumpHeldFrames  int  // How long jump has been held
+	
+	// Direction state
+	facingRight bool // Whether the player is facing right
 }
 
 /*

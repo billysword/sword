@@ -46,8 +46,8 @@ func NewBaseEnemy(x, y int) *BaseEnemy {
 		onGround: false,
 		
 		// Default properties
-		moveSpeed: engine.GameConfig.PlayerMoveSpeed / 2, // Half player speed by default
-		friction:  engine.GameConfig.PlayerFriction,
+		moveSpeed: engine.GameConfig.PlayerPhysics.MoveSpeed / 2, // Half player speed by default
+		friction:  engine.GameConfig.PlayerPhysics.Friction,
 		scaleX:    engine.GameConfig.CharScaleFactor,
 		scaleY:    engine.GameConfig.CharScaleFactor,
 	}
