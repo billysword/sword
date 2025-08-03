@@ -1,6 +1,45 @@
 package engine
 
 /*
+PlayerPhysicsConfig holds all player-specific physics and collision settings.
+This allows fine-tuning of player movement, collision detection, and sprite sizing
+relative to the tileset without modifying code.
+*/
+type PlayerPhysicsConfig struct {
+	// Sprite dimensions
+	SpriteWidth  int     // Base sprite width in pixels
+	SpriteHeight int     // Base sprite height in pixels
+	
+	// Collision box (relative to sprite dimensions)
+	CollisionBoxOffsetX float64 // Offset from sprite left edge (0-1)
+	CollisionBoxOffsetY float64 // Offset from sprite top edge (0-1)
+	CollisionBoxWidth   float64 // Width as fraction of sprite width (0-1)
+	CollisionBoxHeight  float64 // Height as fraction of sprite height (0-1)
+	
+	// Ground detection
+	GroundCheckOffset   int     // Pixels below collision box to check for ground
+	GroundCheckWidth    float64 // Width of ground check as fraction of collision box
+	
+	// Movement physics
+	MoveSpeed          int     // Horizontal movement speed in physics units
+	JumpPower          int     // Initial jump velocity in physics units
+	AirControl         float64 // Movement control while airborne (0-1)
+	Friction           int     // Ground friction applied each frame
+	AirFriction        int     // Air friction applied each frame
+	
+	// Jump mechanics
+	CoyoteTime         int     // Frames after leaving ground where jump is still allowed
+	JumpBufferTime     int     // Frames to buffer jump input before landing
+	VariableJumpHeight bool    // Allow controlling jump height by release timing
+	MinJumpHeight      float64 // Minimum jump height as fraction of full jump
+	
+	// Gravity and falling
+	Gravity            int     // Gravity acceleration per frame
+	MaxFallSpeed       int     // Terminal velocity in physics units
+	FastFallMultiplier float64 // Gravity multiplier when holding down
+}
+
+/*
 ParallaxLayer represents a single layer in the parallax background system.
 Each layer can have different scroll speeds, depths, and visual effects
 to create immersive layered depth in the game world.
@@ -48,12 +87,12 @@ type Config struct {
 	EnableDepthOfField bool           // Enable blur/transparency effects
 	DepthBlurStrength  float64        // Strength of depth blur (0-1)
 	
-	// Physics settings
-	PlayerMoveSpeed   int // Horizontal movement speed in physics units
-	PlayerJumpPower   int // Initial jump velocity in physics units
-	PlayerFriction    int // Friction applied each frame
-	Gravity           int // Gravity acceleration per frame
-	MaxFallSpeed      int // Terminal velocity in physics units
+	// Player physics configuration
+	PlayerPhysics PlayerPhysicsConfig
+	
+	// Enemy physics settings (kept separate for now)
+	Gravity      int // Gravity for enemies
+	MaxFallSpeed int // Terminal velocity for enemies
 	
 	// Room settings
 	RoomWidthTiles   int // Room width in tiles
@@ -98,12 +137,44 @@ func DefaultConfig() Config {
 		EnableDepthOfField: false,
 		DepthBlurStrength:  0.0,
 		
-		// Physics settings (lower values for zoomed-out feel)
-		PlayerMoveSpeed:  2,     // Moderate movement speed
-		PlayerJumpPower:  8,     // Good jump height
-		PlayerFriction:   1,     // Quick stopping
-		Gravity:          1,     // Moderate gravity
-		MaxFallSpeed:     12,    // Terminal velocity
+		// Player physics configuration
+		PlayerPhysics: PlayerPhysicsConfig{
+			// Sprite dimensions (32x32 base sprite)
+			SpriteWidth:  32,
+			SpriteHeight: 32,
+			
+			// Collision box (centered horizontally, bottom-aligned)
+			CollisionBoxOffsetX: 0.25,  // 25% from left = centered for 50% width
+			CollisionBoxOffsetY: 0.5,   // 50% from top
+			CollisionBoxWidth:   0.5,   // 50% of sprite width
+			CollisionBoxHeight:  0.5,   // 50% of sprite height
+			
+			// Ground detection
+			GroundCheckOffset: 2,       // 2 pixels below collision box
+			GroundCheckWidth:  0.8,     // 80% of collision box width
+			
+			// Movement physics
+			MoveSpeed:   2,             // Moderate movement speed
+			JumpPower:   8,             // Good jump height
+			AirControl:  0.7,           // 70% control in air
+			Friction:    1,             // Quick stopping
+			AirFriction: 0,             // No air friction
+			
+			// Jump mechanics
+			CoyoteTime:         6,      // 6 frames (0.1 seconds at 60fps)
+			JumpBufferTime:     10,     // 10 frames buffer
+			VariableJumpHeight: true,   // Can control jump height
+			MinJumpHeight:      0.4,    // 40% minimum jump
+			
+			// Gravity and falling
+			Gravity:            1,      // Moderate gravity
+			MaxFallSpeed:       12,     // Terminal velocity
+			FastFallMultiplier: 1.5,    // 50% faster when holding down
+		},
+		
+		// Enemy physics settings (kept separate for now)
+		Gravity:      1,     // Same as player gravity
+		MaxFallSpeed: 12,    // Same as player terminal velocity
 		
 		// Room settings
 		RoomWidthTiles:   80,    // Wide rooms for exploration
@@ -143,12 +214,31 @@ func ZoomedInConfig() Config {
 	config.EnableDepthOfField = true
 	config.DepthBlurStrength = 0.5
 	
-	// Physics settings (higher values for zoomed-in responsiveness)
-	config.PlayerMoveSpeed = 4     // Faster movement
-	config.PlayerJumpPower = 12    // Higher jumps
-	config.PlayerFriction = 2      // More responsive stopping
-	config.Gravity = 1             // Same gravity
-	config.MaxFallSpeed = 16       // Faster falling
+	// Player physics configuration
+	config.PlayerPhysics.SpriteWidth = 32
+	config.PlayerPhysics.SpriteHeight = 32
+	config.PlayerPhysics.CollisionBoxOffsetX = 0.25
+	config.PlayerPhysics.CollisionBoxOffsetY = 0.5
+	config.PlayerPhysics.CollisionBoxWidth = 0.5
+	config.PlayerPhysics.CollisionBoxHeight = 0.5
+	config.PlayerPhysics.GroundCheckOffset = 2
+	config.PlayerPhysics.GroundCheckWidth = 0.8
+	config.PlayerPhysics.MoveSpeed = 4
+	config.PlayerPhysics.JumpPower = 12
+	config.PlayerPhysics.AirControl = 0.7
+	config.PlayerPhysics.Friction = 2
+	config.PlayerPhysics.AirFriction = 0
+	config.PlayerPhysics.CoyoteTime = 6
+	config.PlayerPhysics.JumpBufferTime = 10
+	config.PlayerPhysics.VariableJumpHeight = true
+	config.PlayerPhysics.MinJumpHeight = 0.4
+	config.PlayerPhysics.Gravity = 1
+	config.PlayerPhysics.MaxFallSpeed = 16
+	config.PlayerPhysics.FastFallMultiplier = 1.5
+	
+	// Enemy physics settings (kept separate for now)
+	config.Gravity = 1
+	config.MaxFallSpeed = 16
 	
 	// Room settings for tighter level design
 	config.RoomWidthTiles = 40     // Smaller, more focused rooms
