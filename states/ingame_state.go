@@ -368,11 +368,12 @@ Called when transitioning from menu or resume from pause.
 */
 func (ig *InGameState) OnEnter() {
 	// Reset player position or load level data
+	tileMap := ig.currentRoom.GetTileMap()
+
 	if ig.player == nil {
 		physicsUnit := engine.GetPhysicsUnit()
 		
 		// Get room dimensions
-		tileMap := ig.currentRoom.GetTileMap()
 		roomWidth := tileMap.Width
 		roomHeight := tileMap.Height
 		
@@ -396,31 +397,8 @@ func (ig *InGameState) OnEnter() {
 		ig.currentRoom = world.NewSimpleRoom("main")
 	}
 
-	// Spawn some test enemies if the enemies slice is empty
-	if len(ig.enemies) == 0 && engine.GameConfig.RoomWidthTiles > 10 {
-		physicsUnit := engine.GetPhysicsUnit()
-
-		// Use tile-based floor detection for enemy spawning
-		enemy1X := 300 * physicsUnit
-		enemy2X := 600 * physicsUnit
-		enemy3X := 900 * physicsUnit
-		enemy4X := 1200 * physicsUnit
-		
-		enemy1Y := ig.currentRoom.FindFloorAtX(enemy1X)
-		enemy2Y := ig.currentRoom.FindFloorAtX(enemy2X)
-		enemy3Y := ig.currentRoom.FindFloorAtX(enemy3X)
-		enemy4Y := ig.currentRoom.FindFloorAtX(enemy4X)
-
-		// Spawn different types of enemies to demonstrate the interface system
-		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(enemy1X, enemy1Y))     // Patrol behavior
-		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(enemy2X, enemy2Y))  // Random behavior
-		ig.enemies = append(ig.enemies, entities.NewSlimeEnemy(enemy3X, enemy3Y))     // Patrol behavior
-		ig.enemies = append(ig.enemies, entities.NewWandererEnemy(enemy4X, enemy4Y)) // Random behavior
-	}
-
 	// Set up camera bounds based on room size
 	if ig.camera != nil && ig.currentRoom != nil {
-		tileMap := ig.currentRoom.GetTileMap()
 		if tileMap != nil {
 			// Convert tile dimensions to pixel dimensions
 			physicsUnit := engine.GetPhysicsUnit()
@@ -528,38 +506,6 @@ Parameters:
 */
 func (ig *InGameState) AddEnemy(enemy entities.Enemy) {
 	ig.enemies = append(ig.enemies, enemy)
-}
-
-/*
-AddSlimeEnemy adds a new slime enemy to the current room.
-Convenience method for creating and adding slime enemies.
-
-Parameters:
-  - x: Horizontal spawn position in physics units
-  - y: Vertical spawn position in physics units
-
-Returns a pointer to the newly created slime enemy.
-*/
-func (ig *InGameState) AddSlimeEnemy(x, y int) *entities.SlimeEnemy {
-	slime := entities.NewSlimeEnemy(x, y)
-	ig.enemies = append(ig.enemies, slime)
-	return slime
-}
-
-/*
-AddWandererEnemy adds a new wanderer enemy to the current room.
-Convenience method for creating and adding wanderer enemies.
-
-Parameters:
-  - x: Horizontal spawn position in physics units
-  - y: Vertical spawn position in physics units
-
-Returns a pointer to the newly created wanderer enemy.
-*/
-func (ig *InGameState) AddWandererEnemy(x, y int) *entities.WandererEnemy {
-	wanderer := entities.NewWandererEnemy(x, y)
-	ig.enemies = append(ig.enemies, wanderer)
-	return wanderer
 }
 
 /*
