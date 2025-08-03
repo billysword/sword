@@ -45,9 +45,9 @@ func NewWandererEnemy(x, y int) *WandererEnemy {
 		pauseChance:     0.3,                            // 30% chance to pause
 	}
 	
-	// Customize wanderer properties (faster and smaller than slime)
-	wanderer.SetMoveSpeed(engine.GameConfig.PlayerMoveSpeed * 3 / 4) // 75% of player speed (faster than slime)
-	wanderer.SetScale(engine.GameConfig.CharScaleFactor*0.8, engine.GameConfig.CharScaleFactor*0.8) // Smaller sprite
+	// Configure wanderer-specific properties
+	wanderer.SetMoveSpeed(engine.GameConfig.PlayerPhysics.MoveSpeed * 3 / 4) // 75% of player speed (faster than slime)
+	wanderer.SetScale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
 	
 	return wanderer
 }

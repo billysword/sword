@@ -2,7 +2,6 @@ package entities
 
 import (
 	"sword/engine"
-	"sword/world"
 )
 
 /*
@@ -43,14 +42,14 @@ func (p *Player) GetCollisionBox() CollisionBox {
 }
 
 /*
-CheckTileCollision checks for collision between the player and solid tiles.
-Returns true if there's a collision at the given position.
+CheckTileCollision checks if the player would collide with solid tiles at a given position.
+Used for movement validation and collision response.
 
 Parameters:
-  - room: The current room to check tiles in
+  - tileProvider: The tile provider (room) to check tiles in
   - testX, testY: Position to test in physics units
 */
-func (p *Player) CheckTileCollision(room world.Room, testX, testY int) bool {
+func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int) bool {
 	// Save current position
 	oldX, oldY := p.x, p.y
 	
@@ -72,9 +71,9 @@ func (p *Player) CheckTileCollision(room world.Room, testX, testY int) bool {
 	bottomTile := (box.Y + box.Height) / physicsUnit / tileSize
 	
 	// Check all tiles the collision box overlaps
-	tiles := room.GetTiles()
-	roomWidth := room.GetWidth()
-	roomHeight := room.GetHeight()
+	tiles := tileProvider.GetTiles()
+	roomWidth := tileProvider.GetWidth()
+	roomHeight := tileProvider.GetHeight()
 	
 	for y := topTile; y <= bottomTile; y++ {
 		for x := leftTile; x <= rightTile; x++ {
@@ -86,7 +85,7 @@ func (p *Player) CheckTileCollision(room world.Room, testX, testY int) bool {
 			// Get tile at this position
 			tileIndex := y*roomWidth + x
 			if tileIndex >= 0 && tileIndex < len(tiles) {
-				if world.IsSolidTile(tiles[tileIndex]) {
+				if IsSolidTile(tiles[tileIndex]) {
 					return true
 				}
 			}
@@ -101,14 +100,11 @@ UpdateWithTileCollision updates the player with proper tile collision detection.
 This replaces the simple ground collision with actual tile-based physics.
 
 Parameters:
-  - room: The current room for collision detection
+  - tileProvider: The tile provider (room) for collision detection
 */
-func (p *Player) UpdateWithTileCollision(room world.Room) {
+func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
-	
-	// Store initial position
-	startX, startY := p.x, p.y
 	
 	// Update coyote time
 	if p.onGround {
@@ -119,7 +115,7 @@ func (p *Player) UpdateWithTileCollision(room world.Room) {
 	
 	// Try horizontal movement first
 	targetX := p.x + p.vx
-	if !p.CheckTileCollision(room, targetX, p.y) {
+	if !p.CheckTileCollision(tileProvider, targetX, p.y) {
 		p.x = targetX
 	} else {
 		// Hit a wall, stop horizontal movement
@@ -130,7 +126,7 @@ func (p *Player) UpdateWithTileCollision(room world.Room) {
 	targetY := p.y + p.vy
 	wasOnGround := p.onGround
 	
-	if !p.CheckTileCollision(room, p.x, targetY) {
+	if !p.CheckTileCollision(tileProvider, p.x, targetY) {
 		p.y = targetY
 		p.onGround = false
 	} else {
@@ -149,9 +145,7 @@ func (p *Player) UpdateWithTileCollision(room world.Room) {
 	}
 	
 	// Ground check - look slightly below collision box
-	box := p.GetCollisionBox()
-	groundCheckY := box.Y + box.Height + config.GroundCheckOffset*physicsUnit/engine.GameConfig.TileSize
-	if p.CheckTileCollision(room, p.x, p.y+config.GroundCheckOffset*physicsUnit/engine.GameConfig.TileSize) {
+	if p.CheckTileCollision(tileProvider, p.x, p.y+config.GroundCheckOffset*physicsUnit/engine.GameConfig.TileSize) {
 		p.onGround = true
 	}
 	
@@ -199,7 +193,7 @@ func (p *Player) UpdateWithTileCollision(room world.Room) {
 		p.x = 0
 		p.vx = 0
 	}
-	maxX := room.GetWidth() * int(float64(engine.GameConfig.TileSize)*engine.GameConfig.TileScaleFactor) * physicsUnit
+	maxX := tileProvider.GetWidth() * int(float64(engine.GameConfig.TileSize)*engine.GameConfig.TileScaleFactor) * physicsUnit
 	if p.x > maxX {
 		p.x = maxX
 		p.vx = 0
@@ -209,9 +203,34 @@ func (p *Player) UpdateWithTileCollision(room world.Room) {
 		p.y = 0
 		p.vy = 0
 	}
-	maxY := room.GetHeight() * int(float64(engine.GameConfig.TileSize)*engine.GameConfig.TileScaleFactor) * physicsUnit
+	maxY := tileProvider.GetHeight() * int(float64(engine.GameConfig.TileSize)*engine.GameConfig.TileScaleFactor) * physicsUnit
 	if p.y > maxY {
 		p.y = maxY
 		p.vy = 0
+	}
+}
+
+// IsSolidTile checks if a tile index represents a solid tile for collision.
+// This is a copy of the logic from world package to avoid circular dependency.
+func IsSolidTile(tileIndex int) bool {
+	// Define which tile indices are solid for collision
+	switch tileIndex {
+	case -1: // empty
+		return false
+	case 0: // dirt - solid
+		return true
+	case 1, 2, 3, 4, 5, 6, 7, 8: // walls, corners, ceilings - solid
+		return true
+	case 9, 10, 11, 12, 13, 14, 15: // platform tiles - solid
+		return true
+	case 16, 17, 18, 19: // inner corners - solid
+		return true
+	case 20, 21: // floor tiles - solid
+		return true
+	case 22, 23: // more walls - solid
+		return true
+	default:
+		// Unknown tiles are considered non-solid by default
+		return false
 	}
 }

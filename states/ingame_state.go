@@ -228,23 +228,21 @@ func (ig *InGameState) Update() error {
 		engine.LogInfo(fmt.Sprintf("Tile scale increased to: %.1f", engine.GameConfig.TileScaleFactor))
 	}
 	
-	// Physics adjustments with number keys
-	if inpututil.IsKeyJustPressed(ebiten.Key1) {
-		if shiftPressed {
-			engine.GameConfig.PlayerMoveSpeed = max(1, engine.GameConfig.PlayerMoveSpeed-1)
-		} else {
-			engine.GameConfig.PlayerMoveSpeed++
-		}
-		engine.LogInfo(fmt.Sprintf("Player move speed: %d", engine.GameConfig.PlayerMoveSpeed))
+	// Debug controls for player physics tuning
+	if ebiten.IsKeyPressed(ebiten.KeyLeftBracket) {
+		engine.GameConfig.PlayerPhysics.MoveSpeed = max(1, engine.GameConfig.PlayerPhysics.MoveSpeed-1)
+	} else if ebiten.IsKeyPressed(ebiten.KeyRightBracket) {
+		engine.GameConfig.PlayerPhysics.MoveSpeed++
 	}
-	if inpututil.IsKeyJustPressed(ebiten.Key2) {
-		if shiftPressed {
-			engine.GameConfig.PlayerJumpPower = max(1, engine.GameConfig.PlayerJumpPower-1)
-		} else {
-			engine.GameConfig.PlayerJumpPower++
-		}
-		engine.LogInfo(fmt.Sprintf("Player jump power: %d", engine.GameConfig.PlayerJumpPower))
+	engine.LogInfo(fmt.Sprintf("Player move speed: %d", engine.GameConfig.PlayerPhysics.MoveSpeed))
+		
+	// Jump power adjustment
+	if ebiten.IsKeyPressed(ebiten.KeyMinus) {
+		engine.GameConfig.PlayerPhysics.JumpPower = max(1, engine.GameConfig.PlayerPhysics.JumpPower-1)
+	} else if ebiten.IsKeyPressed(ebiten.KeyEqual) {
+		engine.GameConfig.PlayerPhysics.JumpPower++
 	}
+	engine.LogInfo(fmt.Sprintf("Player jump power: %d", engine.GameConfig.PlayerPhysics.JumpPower))
 	if inpututil.IsKeyJustPressed(ebiten.Key3) {
 		if shiftPressed {
 			engine.GameConfig.Gravity = max(0, engine.GameConfig.Gravity-1)

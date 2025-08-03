@@ -48,8 +48,8 @@ func NewSlimeEnemy(x, y int) *SlimeEnemy {
 		spawnX:        x,                          // Remember spawn position
 	}
 	
-	// Customize slime properties
-	slime.SetMoveSpeed(engine.GameConfig.PlayerMoveSpeed / 2) // Half player speed
+	// Configure slime-specific properties
+	slime.SetMoveSpeed(engine.GameConfig.PlayerPhysics.MoveSpeed / 2) // Half player speed
 	slime.SetScale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
 	
 	return slime
