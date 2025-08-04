@@ -93,6 +93,7 @@ Input handling:
   - Up/Down arrows or W/S: Scroll through the tile grid
   - ESC/Q: Return to main menu
   - Page Up/Page Down: Fast scroll
+  - T: Open tile debug viewer
 
 Returns any error from state transitions.
 */
@@ -109,6 +110,12 @@ func (s *SettingsState) Update() error {
 		} else {
 			s.stateManager.ChangeState(NewStartState(s.stateManager))
 		}
+		return nil
+	}
+
+	// Handle tile debug viewer
+	if inpututil.IsKeyJustPressed(ebiten.KeyT) {
+		s.stateManager.ChangeState(NewTileDebugState(s.stateManager, s))
 		return nil
 	}
 
@@ -156,9 +163,9 @@ func (s *SettingsState) Draw(screen *ebiten.Image) {
 	// Instructions
 	var instructions string
 	if s.returnToPause {
-		instructions = "ESC/Q - Back to Pause | W/S or Arrow Keys - Scroll | Page Up/Down - Fast Scroll"
+		instructions = "ESC/Q - Back to Pause | W/S or Arrow Keys - Scroll | Page Up/Down - Fast Scroll | T - Tile Debug"
 	} else {
-		instructions = "ESC/Q - Back to Menu | W/S or Arrow Keys - Scroll | Page Up/Down - Fast Scroll"
+		instructions = "ESC/Q - Back to Menu | W/S or Arrow Keys - Scroll | Page Up/Down - Fast Scroll | T - Tile Debug"
 	}
 	ebitenutil.DebugPrintAt(screen, instructions, 10, 30)
 
