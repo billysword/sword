@@ -201,8 +201,6 @@ func (s *TileDebugState) Draw(screen *ebiten.Image) {
 		} else if tileIndex == -1 {
 			// Draw an X for empty tiles
 			emptyText := "X"
-			textBounds := ebitenutil.DebugPrintAt(screen, "", 0, 0) // Measure text
-			_ = textBounds
 			ebitenutil.DebugPrintAt(screen, emptyText, x+s.tileSize/2-4, y+s.tileSize/2-4)
 		}
 
