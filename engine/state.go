@@ -131,6 +131,28 @@ func GetGridVisible() bool {
 }
 
 /*
+IsGridEnabled returns whether grid is enabled.
+Alias for GetGridVisible for consistency with settings interface.
+*/
+func IsGridEnabled() bool {
+	return showGrid
+}
+
+/*
+EnableGrid enables the debug grid overlay.
+*/
+func EnableGrid() {
+	showGrid = true
+}
+
+/*
+DisableGrid disables the debug grid overlay.
+*/
+func DisableGrid() {
+	showGrid = false
+}
+
+/*
 DrawGrid renders a faint grid overlay for debugging tile positions.
 The grid uses the current GameConfig settings for color and spacing.
 This version draws a static grid that doesn't move with the camera.
