@@ -13,6 +13,7 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - **[05_simple_room_layouts.md](05_simple_room_layouts.md)** - Simple room layout system (CURRENT)
 
 ### Project Architecture (10-19)
+- **[game_architecture.md](game_architecture.md)** - Complete game architecture overview with Mermaid diagram
 - **[10_claude_project_instructions.md](10_claude_project_instructions.md)** - Movement logging system for collision & physics development
 - **[15_hud_delegate_system.md](15_hud_delegate_system.md)** - HUD delegate system architecture
 
@@ -37,9 +38,10 @@ Welcome to the Sword game documentation! This index provides links to all availa
 
 ### For New Developers
 1. Start with [00_readme.md](00_readme.md) for project setup
-2. Review [01_config_usage.md](01_config_usage.md) for configuration options
-3. Check [26_enemies_interface.md](26_enemies_interface.md) for current enemy system architecture
-4. Explore [05_simple_room_layouts.md](05_simple_room_layouts.md) for room layout tools
+2. Review [game_architecture.md](game_architecture.md) for complete system overview
+3. Check [01_config_usage.md](01_config_usage.md) for configuration options
+4. Study [26_enemies_interface.md](26_enemies_interface.md) for current enemy system architecture
+5. Explore [05_simple_room_layouts.md](05_simple_room_layouts.md) for room layout tools
 
 ### For Game Designers
 1. Review [02_metroidvania_changes.md](02_metroidvania_changes.md) for game features
@@ -61,6 +63,7 @@ Welcome to the Sword game documentation! This index provides links to all availa
 ## Documentation Categories
 
 ### Architecture & Code
+- Complete game architecture overview with visual diagrams
 - Enemy system implementation and interface patterns
 - Configuration system usage
 - Game state management
