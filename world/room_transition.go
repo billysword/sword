@@ -1,0 +1,281 @@
+package world
+
+import (
+	"fmt"
+	"sword/engine"
+	"sword/entities"
+)
+
+// TransitionType defines how players move between rooms
+type TransitionType int
+
+const (
+	TransitionWalk TransitionType = iota // Player walks to edge and transitions
+	TransitionDoor                       // Player interacts with door/portal
+	TransitionTeleport                   // Instant teleportation
+	TransitionStairs                     // Vertical movement between levels
+)
+
+// String returns the string representation of a transition type
+func (tt TransitionType) String() string {
+	switch tt {
+	case TransitionWalk:
+		return "Walk"
+	case TransitionDoor:
+		return "Door"
+	case TransitionTeleport:
+		return "Teleport"
+	case TransitionStairs:
+		return "Stairs"
+	default:
+		return "Unknown"
+	}
+}
+
+// TransitionPoint represents a connection point between rooms
+type TransitionPoint struct {
+	Type           TransitionType `json:"type"`             // How the transition works
+	TriggerBounds  Rectangle      `json:"trigger_bounds"`   // Area that triggers the transition
+	TargetRoomID   string         `json:"target_room_id"`   // ID of the room to transition to
+	TargetSpawnID  string         `json:"target_spawn_id"`  // Spawn point in target room
+	RequiresAction bool           `json:"requires_action"`  // Does player need to press a key?
+	IsEnabled      bool           `json:"is_enabled"`       // Can this transition be used?
+	Direction      Direction      `json:"direction"`        // Which direction triggers this
+}
+
+// Rectangle represents a rectangular area
+type Rectangle struct {
+	X, Y, Width, Height int
+}
+
+// Contains checks if a point is within the rectangle
+func (r Rectangle) Contains(x, y int) bool {
+	return x >= r.X && x < r.X+r.Width && y >= r.Y && y < r.Y+r.Height
+}
+
+// SpawnPoint represents a place where players can appear in a room
+type SpawnPoint struct {
+	ID       string `json:"id"`        // Unique identifier for this spawn point
+	X, Y     int    `json:"x,y"`       // Position in physics units
+	FacingID string `json:"facing_id"` // Direction player should face when spawning
+}
+
+// RoomTransitionManager handles room transitions and connections
+type RoomTransitionManager struct {
+	currentRoomID    string
+	rooms            map[string]Room
+	transitionPoints map[string][]TransitionPoint // room_id -> transition points
+	spawnPoints      map[string][]SpawnPoint      // room_id -> spawn points
+	pendingTransition *PendingTransition          // Queued room transition
+}
+
+// PendingTransition represents a room change that will happen at the end of the frame
+type PendingTransition struct {
+	TargetRoomID  string
+	TargetSpawnID string
+	TransitionType TransitionType
+}
+
+// NewRoomTransitionManager creates a new room transition manager
+func NewRoomTransitionManager() *RoomTransitionManager {
+	return &RoomTransitionManager{
+		rooms:            make(map[string]Room),
+		transitionPoints: make(map[string][]TransitionPoint),
+		spawnPoints:      make(map[string][]SpawnPoint),
+	}
+}
+
+// RegisterRoom adds a room to the transition system
+func (rtm *RoomTransitionManager) RegisterRoom(room Room) {
+	rtm.rooms[room.GetZoneID()] = room
+	
+	// Initialize empty transition and spawn point slices if they don't exist
+	if _, exists := rtm.transitionPoints[room.GetZoneID()]; !exists {
+		rtm.transitionPoints[room.GetZoneID()] = make([]TransitionPoint, 0)
+	}
+	if _, exists := rtm.spawnPoints[room.GetZoneID()]; !exists {
+		rtm.spawnPoints[room.GetZoneID()] = make([]SpawnPoint, 0)
+	}
+}
+
+// SetCurrentRoom sets the active room
+func (rtm *RoomTransitionManager) SetCurrentRoom(roomID string) error {
+	if _, exists := rtm.rooms[roomID]; !exists {
+		return fmt.Errorf("room %s not found", roomID)
+	}
+	rtm.currentRoomID = roomID
+	return nil
+}
+
+// GetCurrentRoom returns the current room
+func (rtm *RoomTransitionManager) GetCurrentRoom() Room {
+	if room, exists := rtm.rooms[rtm.currentRoomID]; exists {
+		return room
+	}
+	return nil
+}
+
+// GetCurrentRoomID returns the current room ID
+func (rtm *RoomTransitionManager) GetCurrentRoomID() string {
+	return rtm.currentRoomID
+}
+
+// AddTransitionPoint adds a transition point to a room
+func (rtm *RoomTransitionManager) AddTransitionPoint(roomID string, transition TransitionPoint) error {
+	if _, exists := rtm.rooms[roomID]; !exists {
+		return fmt.Errorf("room %s not found", roomID)
+	}
+	
+	rtm.transitionPoints[roomID] = append(rtm.transitionPoints[roomID], transition)
+	engine.LogInfo(fmt.Sprintf("Added %s transition from %s to %s", 
+		transition.Type.String(), roomID, transition.TargetRoomID))
+	return nil
+}
+
+// AddSpawnPoint adds a spawn point to a room
+func (rtm *RoomTransitionManager) AddSpawnPoint(roomID string, spawn SpawnPoint) error {
+	if _, exists := rtm.rooms[roomID]; !exists {
+		return fmt.Errorf("room %s not found", roomID)
+	}
+	
+	rtm.spawnPoints[roomID] = append(rtm.spawnPoints[roomID], spawn)
+	engine.LogInfo(fmt.Sprintf("Added spawn point %s to room %s at (%d, %d)", 
+		spawn.ID, roomID, spawn.X, spawn.Y))
+	return nil
+}
+
+// CheckTransitions checks if the player should transition to another room
+func (rtm *RoomTransitionManager) CheckTransitions(player *entities.Player, actionPressed bool) bool {
+	if rtm.currentRoomID == "" {
+		return false
+	}
+	
+	playerX, playerY := player.GetPosition()
+	transitions := rtm.transitionPoints[rtm.currentRoomID]
+	
+	for _, transition := range transitions {
+		if !transition.IsEnabled {
+			continue
+		}
+		
+		// Check if player is in trigger area
+		if transition.TriggerBounds.Contains(playerX, playerY) {
+			// Check if action is required and was pressed
+			if transition.RequiresAction && !actionPressed {
+				continue
+			}
+			
+			// Queue the transition
+			rtm.pendingTransition = &PendingTransition{
+				TargetRoomID:   transition.TargetRoomID,
+				TargetSpawnID:  transition.TargetSpawnID,
+				TransitionType: transition.Type,
+			}
+			
+			engine.LogInfo(fmt.Sprintf("Triggered %s transition from %s to %s", 
+				transition.Type.String(), rtm.currentRoomID, transition.TargetRoomID))
+			return true
+		}
+	}
+	
+	return false
+}
+
+// ProcessPendingTransition executes any queued room transition
+func (rtm *RoomTransitionManager) ProcessPendingTransition(player *entities.Player) (Room, error) {
+	if rtm.pendingTransition == nil {
+		return nil, nil
+	}
+	
+	transition := rtm.pendingTransition
+	rtm.pendingTransition = nil // Clear the pending transition
+	
+	// Validate target room exists
+	targetRoom, exists := rtm.rooms[transition.TargetRoomID]
+	if !exists {
+		return nil, fmt.Errorf("target room %s not found", transition.TargetRoomID)
+	}
+	
+	// Exit current room
+	if currentRoom := rtm.GetCurrentRoom(); currentRoom != nil {
+		currentRoom.OnExit(player)
+	}
+	
+	// Set new current room
+	rtm.currentRoomID = transition.TargetRoomID
+	
+	// Position player at spawn point
+	if err := rtm.SpawnPlayerInRoom(player, transition.TargetRoomID, transition.TargetSpawnID); err != nil {
+		engine.LogInfo(fmt.Sprintf("Warning: spawn positioning failed: %v", err))
+		// Continue with transition anyway, but player might be at wrong position
+	}
+	
+	// Enter new room
+	targetRoom.OnEnter(player)
+	
+	engine.LogInfo(fmt.Sprintf("Completed room transition to %s", transition.TargetRoomID))
+	return targetRoom, nil
+}
+
+// SpawnPlayerInRoom positions the player at a specific spawn point
+func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roomID, spawnID string) error {
+	spawnPoints := rtm.spawnPoints[roomID]
+	
+	// Find the specific spawn point
+	for _, spawn := range spawnPoints {
+		if spawn.ID == spawnID {
+			player.SetPosition(spawn.X, spawn.Y)
+			// TODO: Set player facing direction based on spawn.FacingID
+			engine.LogInfo(fmt.Sprintf("Spawned player at %s in room %s", spawnID, roomID))
+			return nil
+		}
+	}
+	
+	// Fallback: use first spawn point if specific one not found
+	if len(spawnPoints) > 0 {
+		spawn := spawnPoints[0]
+		player.SetPosition(spawn.X, spawn.Y)
+		engine.LogInfo(fmt.Sprintf("Spawned player at fallback spawn %s in room %s", spawn.ID, roomID))
+		return nil
+	}
+	
+	// Ultimate fallback: center of room
+	if room, exists := rtm.rooms[roomID]; exists {
+		if tileMap := room.GetTileMap(); tileMap != nil {
+			physicsUnit := engine.GetPhysicsUnit()
+			centerX := (tileMap.Width / 2) * physicsUnit
+			centerY := (tileMap.Height / 2) * physicsUnit
+			player.SetPosition(centerX, centerY)
+			engine.LogInfo(fmt.Sprintf("Spawned player at room center (%d, %d) in %s", centerX, centerY, roomID))
+			return nil
+		}
+	}
+	
+	return fmt.Errorf("could not determine spawn location for room %s", roomID)
+}
+
+// GetTransitionPoints returns all transition points for a room
+func (rtm *RoomTransitionManager) GetTransitionPoints(roomID string) []TransitionPoint {
+	return rtm.transitionPoints[roomID]
+}
+
+// GetSpawnPoints returns all spawn points for a room
+func (rtm *RoomTransitionManager) GetSpawnPoints(roomID string) []SpawnPoint {
+	return rtm.spawnPoints[roomID]
+}
+
+// EnableTransition enables or disables a specific transition
+func (rtm *RoomTransitionManager) EnableTransition(roomID string, targetRoomID string, enabled bool) {
+	transitions := rtm.transitionPoints[roomID]
+	for i := range transitions {
+		if transitions[i].TargetRoomID == targetRoomID {
+			transitions[i].IsEnabled = enabled
+			break
+		}
+	}
+}
+
+// HasPendingTransition returns true if there's a room transition queued
+func (rtm *RoomTransitionManager) HasPendingTransition() bool {
+	return rtm.pendingTransition != nil
+}
