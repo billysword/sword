@@ -21,6 +21,7 @@ Key responsibilities:
   - Player input processing and movement
   - Camera following and world rendering
   - Room management and collision handling
+  - Room transitions and exit trigger handling
   - Debug feature toggles (background, grid)
   - Pause state transitions
 */
@@ -36,6 +37,9 @@ type InGameState struct {
 	// World map system
 	worldMap   *world.WorldMap // Manages discovered rooms and connections
 	lastRoomID string          // Track room changes for discovery
+	
+	// Room transition system
+	transitionSystem *world.RoomTransitionSystem // Manages room transitions and loading
 	
 	// HUD system
 	hudManager *engine.HUDManager // Manages all HUD components
@@ -97,6 +101,12 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	worldMap.DiscoverRoom(room) // Discover the starting room
 	worldMap.SetCurrentRoom(room.GetZoneID())
 	
+	// Initialize room transition system
+	transitionSystem := world.NewRoomTransitionSystem(world.GetRoomFactory())
+	roomFactory := world.NewRoomFactory()
+	roomFactory.SetupDefaultRoomConnections(transitionSystem)
+	transitionSystem.SetCurrentRoomID(room.GetZoneID())
+	
 	// Initialize HUD system
 	hudManager := engine.NewHUDManager()
 	
@@ -118,6 +128,9 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		// World map system
 		worldMap:   worldMap,
 		lastRoomID: room.GetZoneID(),
+		
+		// Room transition system
+		transitionSystem: transitionSystem,
 		
 		// HUD system
 		hudManager: hudManager,
@@ -369,6 +382,47 @@ func (ig *InGameState) Update() error {
 		// Let the room handle collisions
 		ig.currentRoom.HandleCollisions(ig.player)
 	}
+	
+	// Check for room transitions
+	if ig.transitionSystem != nil && ig.currentRoom != nil {
+		if transitionData := ig.transitionSystem.CheckExitTriggers(ig.player, ig.currentRoom.GetZoneID()); transitionData != nil {
+			// Perform room transition
+			newRoom, err := ig.transitionSystem.PerformTransition(transitionData, ig.player, ig.camera)
+			if err != nil {
+				engine.LogError(fmt.Sprintf("Room transition failed: %v", err))
+				return nil // Don't fail the game, just log the error
+			}
+			
+			// Update current room and related systems
+			if newRoom != nil {
+				// Call exit on old room
+				ig.currentRoom.OnExit(ig.player)
+				
+				// Update to new room
+				ig.currentRoom = newRoom
+				
+				// Clear enemies (they're room-specific)
+				ig.ClearEnemies()
+				
+				// Update world map
+				ig.worldMap.DiscoverRoom(newRoom)
+				ig.worldMap.SetCurrentRoom(newRoom.GetZoneID())
+				ig.lastRoomID = newRoom.GetZoneID()
+				
+				// Update viewport renderer bounds
+				if ig.viewportRenderer != nil {
+					if tileMap := newRoom.GetTileMap(); tileMap != nil {
+						physicsUnit := engine.GetPhysicsUnit()
+						worldWidth := tileMap.Width * physicsUnit
+						worldHeight := tileMap.Height * physicsUnit
+						ig.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
+					}
+				}
+				
+				engine.LogInfo(fmt.Sprintf("Room transition completed to: %s", newRoom.GetZoneID()))
+			}
+		}
+	}
 
 	return nil
 }
@@ -453,6 +507,12 @@ func (ig *InGameState) Draw(screen *ebiten.Image) {
 		// Draw enemy debug overlays
 		for _, enemy := range ig.enemies {
 			enemy.DrawDebug(worldSurface, 0, 0)
+		}
+		
+		// Draw room transition debug overlays
+		if ig.transitionSystem != nil && ig.currentRoom != nil {
+			ig.transitionSystem.DrawExitTriggers(worldSurface, ig.currentRoom.GetZoneID(), 0, 0)
+			ig.transitionSystem.DrawEntrances(worldSurface, ig.currentRoom.GetZoneID(), 0, 0)
 		}
 	}
 	
