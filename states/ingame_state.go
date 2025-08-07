@@ -312,7 +312,7 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Clear()
 
-	// Draw background if enabled
+	engine.LogDebug("DRAW_LAYER: Background")
 	if engine.GetBackgroundVisible() {
 		if backgroundImage := engine.GetBackgroundImage(); backgroundImage != nil {
 			// Scale and draw background
@@ -322,34 +322,38 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// Draw current room with camera offset
+	engine.LogDebug("DRAW_LAYER: Room")
 	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
 	if currentRoom != nil {
 		cameraX, cameraY := ris.camera.GetPosition()
 		currentRoom.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
 
+	engine.LogDebug("DRAW_LAYER: Player")
 	// Draw player - Player uses its own Draw method without camera offset
 	// The camera offset is handled internally by the player
 	if ris.player != nil {
 		ris.player.Draw(screen)
 	}
 
+	engine.LogDebug(fmt.Sprintf("DRAW_LAYER: Enemies (%d)", len(ris.enemies)))
 	// Draw enemies with camera offset
 	cameraX, cameraY := ris.camera.GetPosition()
 	for _, enemy := range ris.enemies {
 		enemy.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
 
-	// Draw debug grid if enabled
 	if engine.GetGridVisible() {
+		engine.LogDebug("DRAW_LAYER: Grid")
 		cameraX, cameraY := ris.camera.GetPosition()
 		engine.DrawGridWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
 
+	engine.LogDebug("DRAW_LAYER: HUD")
 	// Draw HUD elements on top
 	ris.hudManager.Draw(screen)
 
+	engine.LogDebug("DRAW_LAYER: DebugText")
 	// Draw simple debug info
 	playerX, playerY := ris.player.GetPosition()
 	debugText := fmt.Sprintf("Player: (%d, %d)", playerX, playerY)

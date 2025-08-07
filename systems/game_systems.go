@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"sword/engine"
 	"sword/entities"
 	"sword/world"
@@ -23,11 +24,10 @@ InputSystem handles all player input and translates it to game actions.
 Manages keyboard input for movement, jumping, and other player actions.
 */
 type InputSystem struct {
-	player           *entities.Player
-	keysPressed      map[ebiten.Key]bool
+	player            *entities.Player
 	roomTransitionMgr *world.RoomTransitionManager
-	pauseRequested   bool
-	settingsRequested bool  // Add settings request flag
+	pauseRequested    bool
+	settingsRequested bool // Add settings request flag
 }
 
 /*
@@ -38,11 +38,10 @@ Parameters:
 */
 func NewInputSystem(player *entities.Player, roomTransitionMgr *world.RoomTransitionManager) *InputSystem {
 	return &InputSystem{
-		player:           player,
-		keysPressed:      make(map[ebiten.Key]bool),
+		player:            player,
 		roomTransitionMgr: roomTransitionMgr,
 		pauseRequested:    false,
-		settingsRequested: false,  // Initialize settings request flag
+		settingsRequested: false, // Initialize settings request flag
 	}
 }
 
@@ -55,67 +54,65 @@ func (is *InputSystem) Update() error {
 	if is.roomTransitionMgr != nil {
 		// Check for room transitions
 		is.roomTransitionMgr.CheckTransitions(is.player, ebiten.IsKeyPressed(ebiten.KeyE))
+		if inpututil.IsKeyJustPressed(ebiten.KeyE) {
+			is.logKeyPress("E (Interact)")
+		}
 	}
-	
+
 	// Handle movement inputs - Player handles its own input
 	is.player.ProcessInput()
-	
+
 	// Debug toggle inputs
-	if ebiten.IsKeyPressed(ebiten.KeyF3) {
-		if !is.keysPressed[ebiten.KeyF3] {
-			engine.GameConfig.ShowDebugInfo = !engine.GameConfig.ShowDebugInfo
-			is.keysPressed[ebiten.KeyF3] = true
-		}
-	} else {
-		is.keysPressed[ebiten.KeyF3] = false
+	if inpututil.IsKeyJustPressed(ebiten.KeyF3) {
+		engine.GameConfig.ShowDebugInfo = !engine.GameConfig.ShowDebugInfo
+		is.logKeyPress("F3 (Toggle Debug Info)")
 	}
-	
-	if ebiten.IsKeyPressed(ebiten.KeyF4) {
-		if !is.keysPressed[ebiten.KeyF4] {
-			engine.GameConfig.ShowDebugOverlay = !engine.GameConfig.ShowDebugOverlay
-			is.keysPressed[ebiten.KeyF4] = true
-		}
-	} else {
-		is.keysPressed[ebiten.KeyF4] = false
+	if inpututil.IsKeyJustPressed(ebiten.KeyF4) {
+		engine.GameConfig.ShowDebugOverlay = !engine.GameConfig.ShowDebugOverlay
+		is.logKeyPress("F4 (Toggle Debug Overlay)")
 	}
-	
+
 	// Grid toggle with G key
-	if ebiten.IsKeyPressed(ebiten.KeyG) {
-		if !is.keysPressed[ebiten.KeyG] {
-			engine.ToggleGrid()
-			is.keysPressed[ebiten.KeyG] = true
-		}
-	} else {
-		is.keysPressed[ebiten.KeyG] = false
+	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
+		engine.ToggleGrid()
+		is.logKeyPress("G (Toggle Grid)")
 	}
-	
-	// Room transition debug keys
-	if is.roomTransitionMgr != nil {
-		// Quick room transitions for testing - removed as the new API doesn't support this
-		// The room transition manager now uses transition points instead of manual triggers
-	}
-	
+
 	// Pause request handling
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		if !is.keysPressed[ebiten.KeyEscape] {
-			is.pauseRequested = true
-			is.keysPressed[ebiten.KeyEscape] = true
-		}
-	} else {
-		is.keysPressed[ebiten.KeyEscape] = false
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		is.pauseRequested = true
+		is.logKeyPress("Escape (Pause)")
 	}
-	
+
 	// Settings request handling
-	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		if !is.keysPressed[ebiten.KeyS] {
-			is.settingsRequested = true
-			is.keysPressed[ebiten.KeyS] = true
-		}
-	} else {
-		is.keysPressed[ebiten.KeyS] = false
+	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
+		is.settingsRequested = true
+		is.logKeyPress("S (Settings)")
 	}
-	
+
+	// Log movement and action keys
+	keys := []ebiten.Key{
+		ebiten.KeyLeft, ebiten.KeyRight, ebiten.KeyUp, ebiten.KeyDown,
+		ebiten.KeyA, ebiten.KeyD, ebiten.KeyW, ebiten.KeySpace,
+	}
+	for _, k := range keys {
+		if inpututil.IsKeyJustPressed(k) {
+			is.logKeyPress(k.String())
+		}
+	}
+
 	return nil
+}
+
+func (is *InputSystem) logKeyPress(desc string) {
+	playerX, playerY := is.player.GetPosition()
+	roomName := ""
+	if is.roomTransitionMgr != nil {
+		if currentRoom := is.roomTransitionMgr.GetCurrentRoom(); currentRoom != nil {
+			roomName = currentRoom.GetZoneID()
+		}
+	}
+	engine.LogPlayerInput(desc, playerX, playerY, roomName)
 }
 
 func (is *InputSystem) HasPauseRequest() bool {
@@ -136,9 +133,9 @@ PhysicsSystem handles physics simulation for all entities.
 Manages gravity, collisions, and movement for the player and enemies.
 */
 type PhysicsSystem struct {
-	player   *entities.Player
-	enemies  []entities.Enemy
-	room     world.Room
+	player  *entities.Player
+	enemies []entities.Enemy
+	room    world.Room
 }
 
 /*
@@ -146,8 +143,8 @@ NewPhysicsSystem creates a new physics system instance.
 */
 func NewPhysicsSystem(player *entities.Player) *PhysicsSystem {
 	return &PhysicsSystem{
-		player:     player,
-		enemies:    make([]entities.Enemy, 0),
+		player:  player,
+		enemies: make([]entities.Enemy, 0),
 	}
 }
 
@@ -175,12 +172,12 @@ func (ps *PhysicsSystem) ClearEnemies() {
 func (ps *PhysicsSystem) Update() error {
 	// Update player physics
 	ps.player.Update()
-	
+
 	// Update enemies
 	for _, enemy := range ps.enemies {
 		enemy.Update()
 	}
-	
+
 	// Handle collision detection
 	if ps.room != nil {
 		// Update player with tile collision
@@ -188,7 +185,7 @@ func (ps *PhysicsSystem) Update() error {
 			ps.player.UpdateWithTileCollision(tileProvider)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -197,10 +194,10 @@ CameraSystem manages the game camera and viewport.
 Handles camera following, boundaries, and smooth transitions.
 */
 type CameraSystem struct {
-	camera   *engine.Camera
-	player   *entities.Player
-	room     world.Room
-	enabled  bool
+	camera  *engine.Camera
+	player  *entities.Player
+	room    world.Room
+	enabled bool
 }
 
 func NewCameraSystem(camera *engine.Camera, player *entities.Player) *CameraSystem {
@@ -235,10 +232,10 @@ func (cs *CameraSystem) SetCurrentRoom(room world.Room) {
 func (cs *CameraSystem) Update() error {
 	// Get player position for camera tracking
 	playerX, playerY := cs.player.GetPosition()
-	
+
 	// Update camera position
 	cs.camera.Update(playerX, playerY)
-	
+
 	return nil
 }
 
@@ -292,11 +289,11 @@ func (rs *RoomSystem) Update() error {
 			if err != nil {
 				return fmt.Errorf("failed to process room transition: %w", err)
 			}
-			
+
 			if newRoom != nil {
 				// Update the current room
 				rs.currentRoom = newRoom
-				
+
 				// Notify other systems about the room change
 				if rs.physicsSystem != nil {
 					rs.physicsSystem.SetRoom(newRoom)
@@ -307,7 +304,7 @@ func (rs *RoomSystem) Update() error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -361,7 +358,7 @@ func (gsm *GameSystemManager) UpdateAll() error {
 			}
 		}
 	}
-	
+
 	// Update any systems not in the order list
 	for name, system := range gsm.systems {
 		found := false
@@ -377,7 +374,7 @@ func (gsm *GameSystemManager) UpdateAll() error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 

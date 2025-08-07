@@ -62,7 +62,6 @@ func (g *Game) Update() error {
 
 	if g.stateManager == nil {
 		g.stateManager = engine.NewStateManager()
-		startState := states.NewStartState(g.stateManager)
 
 		// Initialize sprite manager and load sheets from configuration
 		engine.InitSpriteManager()
@@ -77,9 +76,17 @@ func (g *Game) Update() error {
 			if err := sm.LoadSpriteSheet(cfg.Name, ebImg, cfg.TileWidth, cfg.TileHeight); err != nil {
 				panic(err)
 			}
+			engine.LogInfo("Loaded spritesheet: " + cfg.Name)
 		}
 
-		g.stateManager.ChangeState(startState)
+		// Determine starting state: load from save if available
+		if _, err := os.Stat("savegame.json"); err == nil {
+			engine.LogInfo("Save file found - loading saved game (TODO)")
+			g.stateManager.ChangeState(states.NewInGameState(g.stateManager))
+		} else {
+			engine.LogInfo("No save file found - starting new game")
+			g.stateManager.ChangeState(states.NewInGameState(g.stateManager))
+		}
 	}
 	return g.stateManager.Update()
 }

@@ -14,7 +14,7 @@ Each tile type has different properties and behaviors in the game world.
 type TileType int
 
 const (
-	TileEmpty TileType = iota      // Empty space, no collision
+	TileEmpty      TileType = iota // Empty space, no collision
 	TileGround                     // Solid ground tile
 	TilePlatform                   // Platform that can be jumped through from below
 	TileWall                       // Solid wall tile
@@ -27,10 +27,10 @@ Provides detailed information about collision detection results,
 including position data and surface type for proper physics response.
 */
 type CollisionInfo struct {
-	HasCollision bool      // Whether a collision was detected
-	CollisionX   int       // X position where collision occurs
-	CollisionY   int       // Y position where collision occurs
-	SurfaceType  TileType  // Type of surface collided with
+	HasCollision bool     // Whether a collision was detected
+	CollisionX   int      // X position where collision occurs
+	CollisionY   int      // Y position where collision occurs
+	SurfaceType  TileType // Type of surface collided with
 }
 
 /*
@@ -39,9 +39,9 @@ Contains all data needed to render and interact with an individual tile,
 including its type, position, and sprite reference.
 */
 type Tile struct {
-	Type   TileType         // Type of tile for collision and logic
-	X, Y   int              // Position coordinates in tile units
-	Sprite *ebiten.Image    // Sprite image for rendering this tile
+	Type   TileType      // Type of tile for collision and logic
+	X, Y   int           // Position coordinates in tile units
+	Sprite *ebiten.Image // Sprite image for rendering this tile
 }
 
 /*
@@ -51,9 +51,9 @@ Uses -1 to represent empty/air tiles. The indices correspond to
 tile types or sprite indices depending on the room implementation.
 */
 type TileMap struct {
-	Width  int       // Width of the tile map in tiles
-	Height int       // Height of the tile map in tiles
-	Tiles  [][]int   // 2D array of tile indices, -1 for empty
+	Width  int     // Width of the tile map in tiles
+	Height int     // Height of the tile map in tiles
+	Tiles  [][]int // 2D array of tile indices, -1 for empty
 }
 
 /*
@@ -91,7 +91,7 @@ Performs bounds checking to prevent invalid array access.
 
 Parameters:
   - x: Horizontal tile coordinate
-  - y: Vertical tile coordinate  
+  - y: Vertical tile coordinate
   - tileIndex: Index of the tile to place (-1 for empty)
 */
 func (tm *TileMap) SetTile(x, y, tileIndex int) {
@@ -161,8 +161,8 @@ Most rooms should embed BaseRoom and override specific methods for
 custom behavior rather than implementing the entire Room interface.
 */
 type BaseRoom struct {
-	zoneID  string    // Unique identifier for this room
-	tileMap *TileMap  // Tile layout for this room
+	zoneID  string   // Unique identifier for this room
+	tileMap *TileMap // Tile layout for this room
 }
 
 /*
@@ -211,7 +211,7 @@ func (br *BaseRoom) GetTiles() []int {
 	if br.tileMap == nil {
 		return []int{}
 	}
-	
+
 	tiles := make([]int, br.tileMap.Width*br.tileMap.Height)
 	for y := 0; y < br.tileMap.Height; y++ {
 		for x := 0; x < br.tileMap.Width; x++ {
@@ -270,7 +270,7 @@ func (br *BaseRoom) HandleCollisions(player *entities.Player) {
 	// Default: basic ground collision using config ground level
 	physicsUnit := engine.GetPhysicsUnit()
 	groundY := engine.GameConfig.GroundLevel * physicsUnit
-	
+
 	x, y := player.GetPosition()
 	if y > groundY {
 		player.SetPosition(x, groundY)
@@ -398,7 +398,7 @@ the appropriate image for each tile index.
 
 Parameters:
   - screen: The target screen/image to render to
-  - spriteProvider: Function that returns sprite for a given tile index  
+  - spriteProvider: Function that returns sprite for a given tile index
   - cameraOffsetX: Horizontal camera offset in pixels
   - cameraOffsetY: Vertical camera offset in pixels
 */
@@ -407,8 +407,10 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 		return
 	}
 
+	engine.LogDebug("DRAW_LAYER: RoomTiles(" + br.zoneID + ")")
+
 	physicsUnit := engine.GetPhysicsUnit()
-	
+
 	for y := 0; y < br.tileMap.Height; y++ {
 		for x := 0; x < br.tileMap.Width; x++ {
 			tileIndex := br.tileMap.Tiles[y][x]
@@ -418,10 +420,10 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 					op := &ebiten.DrawImageOptions{}
 					// Scale tiles using global scale factor
 					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-					renderX := float64(x * physicsUnit) + cameraOffsetX
-					renderY := float64(y * physicsUnit) + cameraOffsetY
+					renderX := float64(x*physicsUnit) + cameraOffsetX
+					renderY := float64(y*physicsUnit) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
-					
+
 					screen.DrawImage(sprite, op)
 				}
 			}
@@ -436,4 +438,3 @@ This is a simple debugging helper that outputs copy-paste ready layouts.
 func (br *BaseRoom) PrintRoomDebug() {
 	PrintRoomLayout(br.zoneID, br.tileMap)
 }
-
