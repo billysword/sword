@@ -344,8 +344,24 @@ Parameters:
 Returns the Y position in physics units where entities should spawn.
 */
 func (br *BaseRoom) FindFloorAtX(x int) int {
-	// Default: use config ground level
 	physicsUnit := engine.GetPhysicsUnit()
+	if br.tileMap != nil && br.tileMap.Width > 0 && br.tileMap.Height > 0 {
+		tileX := (x / physicsUnit)
+		if tileX < 0 {
+			tileX = 0
+		}
+		if tileX >= br.tileMap.Width {
+			tileX = br.tileMap.Width - 1
+		}
+		for tileY := 0; tileY < br.tileMap.Height; tileY++ {
+			tileIndex := br.tileMap.GetTileIndex(tileX, tileY)
+			if IsSolidTile(tileIndex) {
+				return tileY * physicsUnit
+			}
+		}
+		return (br.tileMap.Height - 1) * physicsUnit
+	}
+	// Fallback: use config ground level if no tile map
 	return engine.GameConfig.GroundLevel * physicsUnit
 }
 

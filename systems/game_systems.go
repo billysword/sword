@@ -170,22 +170,23 @@ func (ps *PhysicsSystem) ClearEnemies() {
 
 // Update updates physics for all entities
 func (ps *PhysicsSystem) Update() error {
-	// Update player physics
-	ps.player.Update()
-
+		// Update player physics with tiles when room is present
+	if ps.room != nil {
+		if tileProvider, ok := ps.room.(entities.TileProvider); ok {
+			ps.player.UpdateWithTileCollision(tileProvider)
+		} else {
+			ps.player.Update()
+		}
+	} else {
+		ps.player.Update()
+	}
+	
 	// Update enemies
 	for _, enemy := range ps.enemies {
 		enemy.Update()
 	}
 
-	// Handle collision detection
-	if ps.room != nil {
-		// Update player with tile collision
-		if tileProvider, ok := ps.room.(entities.TileProvider); ok {
-			ps.player.UpdateWithTileCollision(tileProvider)
-		}
-	}
-
+		// Handle collision detection for enemies if needed (player handled above)
 	return nil
 }
 
