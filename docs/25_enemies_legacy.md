@@ -1,6 +1,6 @@
 # Enemies System Implementation (Original)
 
-> **⚠️ Historical Document**: This describes the original enemy implementation that has been superseded. The current system uses an interface-based architecture documented in [enemies_interface_02.md](enemies_interface_02.md).
+> **⚠️ Historical Document**: This describes the original enemy implementation that has been superseded. The current system uses an interface-based architecture documented in [26_enemies_interface.md](26_enemies_interface.md).
 
 This document describes the implementation of the original enemies system added to the game.
 

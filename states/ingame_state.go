@@ -539,6 +539,11 @@ Sets up camera bounds, player positioning, and room state.
 Called when transitioning from menu or resume from pause.
 */
 func (ig *InGameState) OnEnter() {
+	// Initialize room if needed
+	if ig.currentRoom == nil {
+		ig.currentRoom = world.NewSimpleRoom("main")
+	}
+
 	// Reset player position or load level data
 	tileMap := ig.currentRoom.GetTileMap()
 
@@ -562,11 +567,6 @@ func (ig *InGameState) OnEnter() {
 		}
 		
 		ig.player = entities.NewPlayer(playerSpawnX, playerSpawnY)
-	}
-
-	// Initialize room if needed
-	if ig.currentRoom == nil {
-		ig.currentRoom = world.NewSimpleRoom("main")
 	}
 
 	// Set up camera bounds based on room size

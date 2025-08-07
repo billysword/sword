@@ -1,5 +1,7 @@
 # Game Architecture Audit Summary
 
+> **⚠️ IMPORTANT NOTE**: The refactored systems described in this document (GameSystemManager, RefactoredInGameState, etc.) have been implemented but are NOT YET INTEGRATED into the main game. The game currently still uses the original monolithic InGameState. Integration is pending.
+
 ## Executive Summary
 
 This document summarizes the architectural improvements made to clean up room transitions and improve the overall game architecture. The refactoring focused on modularization, dependency injection, and better separation of concerns.
