@@ -1,0 +1,62 @@
+{
+  "rooms": {
+    "main": {
+      "spawn_points": [
+        {"id": "main_spawn", "x": 80, "y": 80}
+      ],
+      "transitions": [
+        {
+          "type": 0,
+          "direction": 2,
+          "trigger_bounds": {"x": 144, "y": 0, "width": 16, "height": 128},
+          "target_room_id": "forest_right",
+          "target_spawn_id": "west",
+          "requires_action": false,
+          "is_enabled": true
+        }
+      ]
+    },
+    "forest_right": {
+      "spawn_points": [
+        {"id": "west", "x": 32, "y": 80},
+        {"id": "east", "x": 128, "y": 80}
+      ],
+      "transitions": [
+        {
+          "type": 0,
+          "direction": 3,
+          "trigger_bounds": {"x": 0, "y": 0, "width": 16, "height": 128},
+          "target_room_id": "main",
+          "target_spawn_id": "main_spawn",
+          "requires_action": false,
+          "is_enabled": true
+        },
+        {
+          "type": 0,
+          "direction": 2,
+          "trigger_bounds": {"x": 144, "y": 0, "width": 16, "height": 128},
+          "target_room_id": "forest_left",
+          "target_spawn_id": "west",
+          "requires_action": false,
+          "is_enabled": true
+        }
+      ]
+    },
+    "forest_left": {
+      "spawn_points": [
+        {"id": "west", "x": 32, "y": 80}
+      ],
+      "transitions": [
+        {
+          "type": 0,
+          "direction": 3,
+          "trigger_bounds": {"x": 0, "y": 0, "width": 16, "height": 128},
+          "target_room_id": "forest_right",
+          "target_spawn_id": "east",
+          "requires_action": false,
+          "is_enabled": true
+        }
+      ]
+    }
+  }
+}

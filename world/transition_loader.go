@@ -31,6 +31,11 @@ func LoadTransitionsFromFile(rtm *RoomTransitionManager, path string) error {
 		return err
 	}
 
+	return LoadTransitionsFromBytes(rtm, data)
+}
+
+// LoadTransitionsFromBytes loads room transitions and spawn points from a JSON byte slice
+func LoadTransitionsFromBytes(rtm *RoomTransitionManager, data []byte) error {
 	var cfg transitionFile
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return err

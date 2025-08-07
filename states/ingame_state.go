@@ -7,6 +7,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"sword/engine"
 	"sword/entities"
+	"sword/room_layouts"
+	roomsres "sword/resources/rooms"
 	"sword/systems"
 	"sword/world"
 )
@@ -51,11 +53,19 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get window size for viewport setup
 	windowWidth, windowHeight := ebiten.WindowSize()
 
-	// Create the initial room
-	room := world.NewSimpleRoom("main")
+	// Create and register three rooms
+	mainRoom := world.NewSimpleRoom("main")
+	forestRight := world.NewSimpleRoom("forest_right")
+	forestLeft := world.NewSimpleRoom("forest_left")
+
+	// Apply layouts to match openings for transitions
+	world.ApplyLayout(mainRoom.BaseRoom, room_layouts.EmptyRoom)
+	world.ApplyLayout(forestRight.BaseRoom, room_layouts.ForestRight)
+	world.ApplyLayout(forestLeft.BaseRoom, room_layouts.ForestLeft)
 
 	// Potentially adjust scale to better frame small rooms
-	if tileMap := room.GetTileMap(); tileMap != nil {
+	// Use main room for initial framing
+	if tileMap := mainRoom.GetTileMap(); tileMap != nil {
 		roomPxW := tileMap.Width * engine.GameConfig.TileSize
 		roomPxH := tileMap.Height * engine.GameConfig.TileSize
 		// Compute scale to fit the smaller dimension, capped
@@ -79,14 +89,14 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Recompute physics unit after potential scale change
 	physicsUnit := engine.GetPhysicsUnit()
 
-	// Calculate spawn position
-	tileMap := room.GetTileMap()
+	// Calculate spawn position based on main room
+	tileMap := mainRoom.GetTileMap()
 	playerSpawnX := (tileMap.Width / 2) * physicsUnit
 	playerSpawnY := (tileMap.Height - 2) * physicsUnit
 
 	// For larger rooms, use floor detection
 	if tileMap.Width > 10 || tileMap.Height > 10 {
-		groundY := room.FindFloorAtX(playerSpawnX)
+		groundY := mainRoom.FindFloorAtX(playerSpawnX)
 		if groundY > 0 {
 			playerSpawnY = groundY
 		}
@@ -100,17 +110,22 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 
 	// Initialize room transition system
 	roomTransitionMgr := world.NewRoomTransitionManager(worldMap)
-	roomTransitionMgr.RegisterRoom(room)
-	roomTransitionMgr.SetCurrentRoom(room.GetZoneID())
+	roomTransitionMgr.RegisterRoom(mainRoom)
+	roomTransitionMgr.RegisterRoom(forestRight)
+	roomTransitionMgr.RegisterRoom(forestLeft)
+	roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
 
-	// Add spawn points to the room
-	roomTransitionMgr.AddSpawnPoint(room.GetZoneID(), world.SpawnPoint{
-		ID: "main_spawn",
-		X:  playerSpawnX,
-		Y:  playerSpawnY,
-	})
+	// Load transitions and spawns from embedded JSON
+	_ = world.LoadTransitionsFromBytes // ensure linked
+	if err := world.LoadTransitionsFromBytes(roomTransitionMgr, roomsres.RoomTransitionsJSON); err != nil {
+		engine.LogInfo("failed to load embedded transitions: " + err.Error())
+	}
+	// Spawn player at configured spawn in main room
+	if err := roomTransitionMgr.SpawnPlayerInRoom(player, "main", "main_spawn"); err != nil {
+		engine.LogInfo("failed to spawn player at main_spawn: " + err.Error())
+	}
 
-	worldMap.SetCurrentRoom(room.GetZoneID())
+	worldMap.SetCurrentRoom(mainRoom.GetZoneID())
 
 	// Create camera and viewport systems
 	camera := engine.NewCamera(windowWidth, windowHeight)
@@ -172,6 +187,12 @@ func (ris *InGameState) initializeSystems() {
 	if currentRoom != nil {
 		physicsSystem.SetCurrentRoom(currentRoom)
 		cameraSystem.SetCurrentRoom(currentRoom)
+	}
+
+	// Wire systems so room changes update physics and camera
+	if roomSystem != nil {
+		roomSystem.SetPhysicsSystem(physicsSystem)
+		roomSystem.SetCameraSystem(cameraSystem)
 	}
 
 	// Register systems with manager
