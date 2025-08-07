@@ -121,7 +121,7 @@ func DefaultConfig() Config {
 		// Rendering settings
 		TileSize:         16,    // Standard 16x16 tiles
 		TileScaleFactor:  1.0,   // No scaling for zoomed-out view
-		CharScaleFactor:  0.7,   // Better proportional match to tiles
+		CharScaleFactor:  1.0,   // Render player at ~32x32 by default
 		
 		// Camera settings
 		CameraSmoothing:    0.05,  // Fast camera for responsiveness
@@ -141,8 +141,8 @@ func DefaultConfig() Config {
 		// Player physics configuration
 		PlayerPhysics: PlayerPhysicsConfig{
 			// Sprite dimensions (32x32 base sprite)
-			SpriteWidth:  16,
-			SpriteHeight: 16,
+			SpriteWidth:  32,
+			SpriteHeight: 32,
 			
 			// Collision box (centered horizontally, bottom-aligned)
 			CollisionBoxOffsetX: 0.25,  // 25% from left = centered for 50% width
@@ -178,9 +178,9 @@ func DefaultConfig() Config {
 		MaxFallSpeed: 12,    // Same as player terminal velocity
 		
 		// Room settings
-		RoomWidthTiles:   80,    // Wide rooms for exploration
-		RoomHeightTiles:  60,    // Tall rooms for vertical gameplay
-		GroundLevel:      45,    // Better vertical layout for platforming
+		RoomWidthTiles:   10,   // Starter rooms ~10 tiles wide
+		RoomHeightTiles:  8,    // Compact starter room height
+		GroundLevel:      7,    // Bottom row for 8-tile tall rooms
 		
 		// Debug settings
 		ShowDebugInfo:    true,  // Enable debug info by default for development

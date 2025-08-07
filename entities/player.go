@@ -264,9 +264,10 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
-	// Convert player position from physics units to pixels
-	renderX := float64(p.x) / float64(engine.GetPhysicsUnit())
-	renderY := float64(p.y) / float64(engine.GetPhysicsUnit())
+	// Convert player position from physics units to pixels and apply camera offset
+	camX, camY := engine.GetActiveCameraOffsets()
+	renderX := float64(p.x)/float64(engine.GetPhysicsUnit()) + camX
+	renderY := float64(p.y)/float64(engine.GetPhysicsUnit()) + camY
 	op.GeoM.Translate(renderX, renderY)
 
 	// Draw the sprite
