@@ -265,14 +265,14 @@ func (ris *InGameState) updateDebugHUD() {
 			}
 			dh.UpdateRoomInfo(roomInfo)
 
-			// Update player position
+				// Update player position
 			playerX, playerY := ris.player.GetPosition()
 			physicsUnit := engine.GetPhysicsUnit()
-			playerPixelX := float64(playerX) / float64(physicsUnit)
-			playerPixelY := float64(playerY) / float64(physicsUnit)
-			playerTileX := int(playerPixelX / float64(engine.GameConfig.TileSize) / engine.GameConfig.TileScaleFactor)
-			playerTileY := int(playerPixelY / float64(engine.GameConfig.TileSize) / engine.GameConfig.TileScaleFactor)
-			playerPos := fmt.Sprintf("Physics: (%d, %d) | Pixels: (%.1f, %.1f) | Tiles: (%d, %d)",
+			playerPixelX := float64(playerX)
+			playerPixelY := float64(playerY)
+			playerTileX := int(playerPixelX) / physicsUnit
+			playerTileY := int(playerPixelY) / physicsUnit
+			playerPos := fmt.Sprintf("Physics(px): (%d, %d) | Pixels: (%.1f, %.1f) | Tiles: (%d, %d)",
 				playerX, playerY, playerPixelX, playerPixelY, playerTileX, playerTileY)
 			dh.UpdatePlayerPos(playerPos)
 
@@ -334,6 +334,9 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 	if ris.player != nil {
 		offsetX, offsetY := ris.camera.GetOffset()
 		ris.player.DrawWithCamera(screen, offsetX, offsetY)
+		if engine.GameConfig.ShowDebugOverlay {
+			ris.player.DrawDebug(screen, offsetX, offsetY)
+		}
 	}
 
 	engine.LogDebug(fmt.Sprintf("DRAW_LAYER: Enemies (%d)", len(ris.enemies)))
@@ -341,6 +344,9 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 	offsetX, offsetY := ris.camera.GetOffset()
 	for _, enemy := range ris.enemies {
 		enemy.DrawWithCamera(screen, offsetX, offsetY)
+		if engine.GameConfig.ShowDebugOverlay {
+			enemy.DrawDebug(screen, offsetX, offsetY)
+		}
 	}
 
 	if engine.GetGridVisible() {

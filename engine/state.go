@@ -10,7 +10,7 @@ import (
 // Global debug rendering settings
 var (
 	showBackground = true
-	showGrid       = false
+	showGrid       = true
 )
 
 /*
