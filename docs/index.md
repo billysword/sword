@@ -34,9 +34,10 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - **[42_gitignore_update_summary.md](42_gitignore_update_summary.md)** - Git ignore patterns for generated files
 - **[43_agents_update_summary.md](43_agents_update_summary.md)** - Summary of agents file updates
 - **[44_cleanup_summary.md](44_cleanup_summary.md)** - Codebase cleanup and stability improvements
+- **[45_migration_complete.md](45_migration_complete.md)** - Migration to modular architecture complete
 
 ### Additional Architecture & Feature Documentation
-- **[architecture_audit_summary.md](architecture_audit_summary.md)** - Comprehensive audit of architectural improvements (Note: Refactored systems not yet integrated)
+- **[architecture_audit_summary.md](architecture_audit_summary.md)** - Comprehensive audit of architectural improvements (✅ Fully integrated)
 - **[debug_features.md](debug_features.md)** - Debug features and tools documentation
 - **[debug_hud_improvements.md](debug_hud_improvements.md)** - Debug HUD system improvements
 - **[placeholder_sprites.md](placeholder_sprites.md)** - Placeholder sprite system documentation
