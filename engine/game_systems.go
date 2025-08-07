@@ -42,17 +42,17 @@ func (bs *BaseSystem) SetEnabled(enabled bool) {
 type InputSystem struct {
 	BaseSystem
 	player           *entities.Player
-	stateManager     *StateManager
 	roomTransitionMgr *world.RoomTransitionManager
 	lastActionPressed bool
+	requestPause     bool
+	requestSettings  bool
 }
 
 // NewInputSystem creates a new input system
-func NewInputSystem(player *entities.Player, stateManager *StateManager, roomTransitionMgr *world.RoomTransitionManager) *InputSystem {
+func NewInputSystem(player *entities.Player, roomTransitionMgr *world.RoomTransitionManager) *InputSystem {
 	return &InputSystem{
 		BaseSystem:       BaseSystem{name: "Input", enabled: true},
 		player:           player,
-		stateManager:     stateManager,
 		roomTransitionMgr: roomTransitionMgr,
 	}
 }
@@ -73,14 +73,12 @@ func (is *InputSystem) Update() error {
 	// State transition inputs
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		LogPlayerInput("Escape (Pause)", playerX, playerY, roomName)
-		// Note: This needs access to the current state, will be handled by InGameState
-		return fmt.Errorf("pause_requested")
+		is.requestPause = true
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyTab) {
 		LogPlayerInput("Tab (Settings)", playerX, playerY, roomName)
-		// Note: This needs access to the current room, will be handled by InGameState
-		return fmt.Errorf("settings_requested")
+		is.requestSettings = true
 	}
 
 	// Debug toggle inputs
@@ -153,6 +151,22 @@ func (is *InputSystem) Update() error {
 	is.player.HandleInputWithLogging(roomName)
 	
 	return nil
+}
+
+// HasPauseRequest returns true if pause was requested
+func (is *InputSystem) HasPauseRequest() bool {
+	return is.requestPause
+}
+
+// HasSettingsRequest returns true if settings was requested
+func (is *InputSystem) HasSettingsRequest() bool {
+	return is.requestSettings
+}
+
+// ClearRequests clears all state transition requests
+func (is *InputSystem) ClearRequests() {
+	is.requestPause = false
+	is.requestSettings = false
 }
 
 // PhysicsSystem handles physics updates

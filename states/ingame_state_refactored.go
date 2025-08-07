@@ -1,7 +1,6 @@
 package states
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -138,7 +137,7 @@ func (ris *RefactoredInGameState) initializeSystems() {
 	ris.systemManager = engine.NewGameSystemManager()
 	
 	// Create and register systems
-	inputSystem := engine.NewInputSystem(ris.player, ris.stateManager, ris.roomTransitionMgr)
+	inputSystem := engine.NewInputSystem(ris.player, ris.roomTransitionMgr)
 	physicsSystem := engine.NewPhysicsSystem(ris.player)
 	cameraSystem := engine.NewCameraSystem(ris.camera, ris.player)
 	roomSystem := engine.NewRoomSystem(ris.roomTransitionMgr, ris.worldMap, ris.player)
@@ -170,19 +169,26 @@ func (ris *RefactoredInGameState) Update() error {
 	// Update all systems
 	err := ris.systemManager.UpdateAll()
 	if err != nil {
-		// Handle special system requests
-		if errors.Is(err, fmt.Errorf("pause_requested")) {
-			pauseState := NewPauseState(ris.stateManager, ris)
-			ris.stateManager.ChangeState(pauseState)
-			return nil
-		}
-		if errors.Is(err, fmt.Errorf("settings_requested")) {
-			currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
-			settingsState := NewSettingsState(ris.stateManager, currentRoom)
-			ris.stateManager.ChangeState(settingsState)
-			return nil
-		}
 		return err
+	}
+	
+	// Handle state transition requests from input system
+	if inputSystem := ris.systemManager.GetSystem("Input"); inputSystem != nil {
+		if is, ok := inputSystem.(*engine.InputSystem); ok {
+			if is.HasPauseRequest() {
+				is.ClearRequests()
+				pauseState := NewPauseState(ris.stateManager, ris)
+				ris.stateManager.ChangeState(pauseState)
+				return nil
+			}
+			if is.HasSettingsRequest() {
+				is.ClearRequests()
+				currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
+				settingsState := NewSettingsState(ris.stateManager, currentRoom)
+				ris.stateManager.ChangeState(settingsState)
+				return nil
+			}
+		}
 	}
 	
 	// Handle room changes - update other systems when room changes

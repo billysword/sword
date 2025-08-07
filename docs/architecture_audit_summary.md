@@ -74,26 +74,24 @@ This document summarizes the architectural improvements made to clean up room tr
 - Rich metadata support for game features
 - Factory pattern ensures consistent room setup
 
-### 4. Dependency Injection System ✅ COMPLETED
+### 4. Simplified System Dependencies ✅ COMPLETED
 
 **Previous Issues:**
 - Heavy reliance on global variables and singletons
 - Tight coupling between components
-- Difficult to test and mock dependencies
-- No clear dependency management
+- Complex dependency chains
 
 **Solutions Implemented:**
-- **Service Container** (`engine/dependency_injection.go`)
-  - `ServiceContainer` for dependency registration and resolution
-  - `GameContext` as the main dependency holder
-  - Migration helpers for transitional global state removal
-  - DI-enabled system variants for gradual migration
+- **Direct Constructor Injection**
+  - Systems receive dependencies directly in constructors
+  - Clear, explicit parameter lists
+  - Simplified system initialization
 
 **Benefits:**
-- Explicit dependency management
-- Easier unit testing and mocking
-- Reduced global state pollution
-- Clear service lifecycles (singleton, factory, instance)
+- Simpler, more readable code
+- Easier debugging and understanding
+- Reduced complexity overhead
+- Still maintains separation of concerns
 
 ### 5. State Architecture Improvements 🔄 IN PROGRESS
 
@@ -145,11 +143,7 @@ Game Architecture (After Refactoring)
 │   ├── RoomFactory
 │   └── WorldMap
 │
-├── Dependency Injection
-│   ├── ServiceContainer
-│   ├── GameContext
-│   └── SystemContextManager
-│
+
 └── Core Engine
     ├── Camera
     ├── SpriteManager
@@ -161,9 +155,9 @@ Game Architecture (After Refactoring)
 
 ### Design Patterns Applied
 
-1. **Dependency Injection Pattern**
-   - Service container for dependency management
-   - Constructor injection for explicit dependencies
+1. **Constructor Injection Pattern**
+   - Direct dependency passing via constructors
+   - Clear parameter requirements
 
 2. **Factory Pattern**
    - RoomFactory for standardized room creation
@@ -231,18 +225,17 @@ The new architecture enables comprehensive unit testing:
 // Example test structure
 func TestInputSystem(t *testing.T) {
     // Arrange
-    container := engine.NewServiceContainer()
-    mockLogger := &MockLogger{}
-    container.Register("logger", mockLogger)
+    mockPlayer := &MockPlayer{}
+    mockTransitionMgr := &MockRoomTransitionManager{}
     
-    system := engine.NewDIInputSystem(container)
+    system := engine.NewInputSystem(mockPlayer, mockTransitionMgr)
     
     // Act
     err := system.Update()
     
     // Assert
     assert.NoError(t, err)
-    assert.True(t, mockLogger.WasCalled())
+    assert.False(t, system.HasPauseRequest())
 }
 ```
 
@@ -257,27 +250,35 @@ func TestInputSystem(t *testing.T) {
 ### For Existing Code
 
 1. **Gradual Migration**
-   - Use `MigrateGlobalState()` to transition existing global variables
-   - Replace direct global access with DI container lookups
-   - Update systems one at a time
+   - Replace monolithic update methods with system-based approach
+   - Move logic from states to dedicated systems
+   - Use system manager for orchestrated updates
 
 2. **New Development**
    - Use `RefactoredInGameState` as the template
-   - Implement `DIGameSystem` interface for new systems
-   - Follow dependency injection patterns
+   - Implement `GameSystem` interface for new systems
+   - Pass dependencies through constructors
 
 ### Example Migration
 
 ```go
-// Before (global access)
-sprite := engine.GetLeftSprite()
-
-// After (dependency injection)
-sprite, err := context.Get("left_sprite")
-if err != nil {
-    return err
+// Before (monolithic update)
+func (ig *InGameState) Update() error {
+    // Handle input
+    if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+        // ... transition logic
+    }
+    // Handle physics
+    ig.player.Update()
+    // Handle camera
+    ig.camera.Update(playerX, playerY)
+    // ... etc
 }
-leftSprite := sprite.(*ebiten.Image)
+
+// After (system-based)
+func (ris *RefactoredInGameState) Update() error {
+    return ris.systemManager.UpdateAll()
+}
 ```
 
 ## Future Recommendations
@@ -332,7 +333,7 @@ The architectural refactoring successfully addresses the main issues identified:
 - Room transition system with proper state management
 - Modular update loop with clear separation of concerns  
 - Enhanced room interface with rich feature support
-- Dependency injection system reducing global state
+- Simplified system dependencies with constructor injection
 
 🔄 **In Progress:**
 - State architecture audit and improvements
