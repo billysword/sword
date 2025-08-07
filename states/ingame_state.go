@@ -152,10 +152,10 @@ func (ris *InGameState) initializeSystems() {
 	}
 
 	// Register systems with manager
-	ris.systemManager.AddSystem("input", inputSystem)
-	ris.systemManager.AddSystem("physics", physicsSystem)
-	ris.systemManager.AddSystem("camera", cameraSystem)
-	ris.systemManager.AddSystem("room", roomSystem)
+	ris.systemManager.AddSystem("Input", inputSystem)
+	ris.systemManager.AddSystem("Physics", physicsSystem)
+	ris.systemManager.AddSystem("Camera", cameraSystem)
+	ris.systemManager.AddSystem("Room", roomSystem)
 
 	// Set update order: Input -> Room -> Physics -> Camera
 	ris.systemManager.SetUpdateOrder([]string{"Input", "Room", "Physics", "Camera"})
