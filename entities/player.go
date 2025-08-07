@@ -82,9 +82,11 @@ func (p *Player) ProcessInput() {
 
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 		p.vx = -moveSpeed * physicsUnit
+		p.facingRight = false
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		p.vx = moveSpeed * physicsUnit
+		p.facingRight = true
 	}
 
 	// Jump input handling
@@ -250,7 +252,15 @@ Parameters:
   - screen: The target screen/image to render the player to
 */
 func (p *Player) Draw(screen *ebiten.Image) {
-	// Choose sprite based on movement direction
+	// Backwards-compatible draw without camera offset
+	p.DrawWithCamera(screen, 0, 0)
+}
+
+/*
+DrawWithCamera renders the player with a camera offset applied.
+*/
+func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
+	// Choose sprite based on movement direction (placeholder enforced in engine)
 	var sprite *ebiten.Image
 	switch {
 	case p.vx > 0:
@@ -263,11 +273,24 @@ func (p *Player) Draw(screen *ebiten.Image) {
 
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
-	// Convert player position from physics units to pixels
-	renderX := float64(p.x) / float64(engine.GetPhysicsUnit())
-	renderY := float64(p.y) / float64(engine.GetPhysicsUnit())
-	op.GeoM.Translate(renderX, renderY)
+	// Flip horizontally based on facing direction
+	if p.facingRight {
+		op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
+	} else {
+		// Negative X scale to flip sprite
+		op.GeoM.Scale(-engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
+	}
+	// Convert player position from physics units to pixels and apply camera offset
+	renderX := float64(p.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
+	renderY := float64(p.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
+	// When flipped, translate by sprite width to correct position
+	if !p.facingRight {
+		// Assume placeholder/player width of 32 before scaling
+		w := float64(engine.GameConfig.PlayerPhysics.SpriteWidth) * engine.GameConfig.CharScaleFactor
+		op.GeoM.Translate(renderX+w, renderY)
+	} else {
+		op.GeoM.Translate(renderX, renderY)
+	}
 
 	// Draw the sprite
 	screen.DrawImage(sprite, op)

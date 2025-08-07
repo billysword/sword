@@ -9,26 +9,8 @@ GetPlayerSprite returns the appropriate player sprite based on config.
 If UsePlaceholderSprites is true, returns a placeholder sprite.
 */
 func GetPlayerSprite(facing string) *ebiten.Image {
-	if GameConfig.UsePlaceholderSprites {
-		return GeneratePlayerPlaceholder()
-	}
-
-	sm := GetSpriteManager()
-	var sheetName string
-	switch facing {
-	case "left":
-		sheetName = "player_left"
-	case "right":
-		sheetName = "player_right"
-	default:
-		sheetName = "player_idle"
-	}
-
-	sprite := sm.GetTileByIndex(sheetName, 0)
-	if sprite == nil {
-		return GeneratePlayerPlaceholder()
-	}
-	return sprite
+	// Always use a placeholder for the player to avoid oversized original sprite
+	return GeneratePlayerPlaceholder()
 }
 
 /*
