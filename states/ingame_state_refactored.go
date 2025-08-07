@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"sword/engine"
 	"sword/entities"
+	"sword/systems"
 	"sword/world"
 )
 
@@ -29,7 +30,7 @@ type RefactoredInGameState struct {
 	enemies []entities.Enemy
 	
 	// Modular systems
-	systemManager     *engine.GameSystemManager
+	systemManager     *systems.GameSystemManager
 	roomTransitionMgr *world.RoomTransitionManager
 	worldMap          *world.WorldMap
 	
@@ -134,13 +135,13 @@ func NewRefactoredInGameState(sm *engine.StateManager) *RefactoredInGameState {
 initializeSystems sets up the modular game systems.
 */
 func (ris *RefactoredInGameState) initializeSystems() {
-	ris.systemManager = engine.NewGameSystemManager()
+	ris.systemManager = systems.NewGameSystemManager()
 	
 	// Create and register systems
-	inputSystem := engine.NewInputSystem(ris.player, ris.roomTransitionMgr)
-	physicsSystem := engine.NewPhysicsSystem(ris.player)
-	cameraSystem := engine.NewCameraSystem(ris.camera, ris.player)
-	roomSystem := engine.NewRoomSystem(ris.roomTransitionMgr, ris.worldMap, ris.player)
+	inputSystem := systems.NewInputSystem(ris.player, ris.roomTransitionMgr)
+	physicsSystem := systems.NewPhysicsSystem(ris.player)
+	cameraSystem := systems.NewCameraSystem(ris.camera, ris.player)
+	roomSystem := systems.NewRoomSystem(ris.roomTransitionMgr, ris.worldMap, ris.player)
 	
 	// Set initial room for systems
 	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
@@ -174,7 +175,7 @@ func (ris *RefactoredInGameState) Update() error {
 	
 	// Handle state transition requests from input system
 	if inputSystem := ris.systemManager.GetSystem("Input"); inputSystem != nil {
-		if is, ok := inputSystem.(*engine.InputSystem); ok {
+		if is, ok := inputSystem.(*systems.InputSystem); ok {
 			if is.HasPauseRequest() {
 				is.ClearRequests()
 				pauseState := NewPauseState(ris.stateManager, ris)
@@ -193,19 +194,19 @@ func (ris *RefactoredInGameState) Update() error {
 	
 	// Handle room changes - update other systems when room changes
 	if roomSystem := ris.systemManager.GetSystem("Room"); roomSystem != nil {
-		if rs, ok := roomSystem.(*engine.RoomSystem); ok {
+		if rs, ok := roomSystem.(*systems.RoomSystem); ok {
 			currentRoom := rs.GetCurrentRoom()
 			if currentRoom != nil {
 				// Update physics system with new room
 				if physicsSystem := ris.systemManager.GetSystem("Physics"); physicsSystem != nil {
-					if ps, ok := physicsSystem.(*engine.PhysicsSystem); ok {
+					if ps, ok := physicsSystem.(*systems.PhysicsSystem); ok {
 						ps.SetCurrentRoom(currentRoom)
 					}
 				}
 				
 				// Update camera system with new room
 				if cameraSystem := ris.systemManager.GetSystem("Camera"); cameraSystem != nil {
-					if cs, ok := cameraSystem.(*engine.CameraSystem); ok {
+					if cs, ok := cameraSystem.(*systems.CameraSystem); ok {
 						cs.SetCurrentRoom(currentRoom)
 					}
 				}
@@ -378,7 +379,7 @@ func (ris *RefactoredInGameState) AddEnemy(enemy entities.Enemy) {
 	
 	// Add to physics system
 	if physicsSystem := ris.systemManager.GetSystem("Physics"); physicsSystem != nil {
-		if ps, ok := physicsSystem.(*engine.PhysicsSystem); ok {
+		if ps, ok := physicsSystem.(*systems.PhysicsSystem); ok {
 			ps.AddEnemy(enemy)
 		}
 	}
@@ -392,7 +393,7 @@ func (ris *RefactoredInGameState) ClearEnemies() {
 	
 	// Clear from physics system
 	if physicsSystem := ris.systemManager.GetSystem("Physics"); physicsSystem != nil {
-		if ps, ok := physicsSystem.(*engine.PhysicsSystem); ok {
+		if ps, ok := physicsSystem.(*systems.PhysicsSystem); ok {
 			ps.ClearEnemies()
 		}
 	}
@@ -430,7 +431,7 @@ func (ris *RefactoredInGameState) updateCameraViewport() {
 				
 				// Update camera system
 				if cameraSystem := ris.systemManager.GetSystem("Camera"); cameraSystem != nil {
-					if cs, ok := cameraSystem.(*engine.CameraSystem); ok {
+					if cs, ok := cameraSystem.(*systems.CameraSystem); ok {
 						cs.SetCurrentRoom(currentRoom)
 					}
 				}

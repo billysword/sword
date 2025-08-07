@@ -1,8 +1,12 @@
 package entities
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
+	"fmt"
+	"image/color"
 	"sword/engine"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 /*
@@ -114,15 +118,15 @@ Parameters:
   - screen: The target screen/image to render the enemy to
 */
 func (be *BaseEnemy) Draw(screen *ebiten.Image) {
-	// Choose sprite based on movement direction (using player sprites by default)
-	sprite := engine.GetIdleSprite()
+	// Use enemy sprite (placeholder or actual)
+	sprite := engine.GetEnemySprite()
+	
+	// Update scale based on movement direction
 	switch {
 	case be.vx > 0:
-		sprite = engine.GetRightSprite()
 		be.scaleX = engine.GameConfig.CharScaleFactor // Face right
 	case be.vx < 0:
-		sprite = engine.GetLeftSprite()
-		be.scaleX = engine.GameConfig.CharScaleFactor // Face left
+		be.scaleX = -engine.GameConfig.CharScaleFactor // Face left (flip)
 	}
 
 	// Set up drawing options
@@ -145,15 +149,15 @@ Parameters:
   - cameraOffsetY: Vertical camera offset in pixels
 */
 func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Choose sprite based on movement direction
-	sprite := engine.GetIdleSprite()
+	// Use enemy sprite (placeholder or actual)
+	sprite := engine.GetEnemySprite()
+	
+	// Update scale based on movement direction
 	switch {
 	case be.vx > 0:
-		sprite = engine.GetRightSprite()
 		be.scaleX = engine.GameConfig.CharScaleFactor // Face right
 	case be.vx < 0:
-		sprite = engine.GetLeftSprite()
-		be.scaleX = engine.GameConfig.CharScaleFactor // Face left
+		be.scaleX = -engine.GameConfig.CharScaleFactor // Face left (flip)
 	}
 
 	// Set up drawing options with camera offset
@@ -178,11 +182,49 @@ Parameters:
   - cameraOffsetY: Camera Y offset for viewport transformation
 */
 func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// TODO: Implement debug rendering
-	// - Draw bounding box based on sprite dimensions
-	// - Draw center point
-	// - Draw velocity vector
-	// - Show ground state (different colors for airborne vs grounded)
+	// Get physics unit for position conversion
+	physicsUnit := engine.GetPhysicsUnit()
+	
+	// Calculate render position
+	renderX := float64(be.x)/float64(physicsUnit) - cameraOffsetX
+	renderY := float64(be.y)/float64(physicsUnit) - cameraOffsetY
+	
+	// Draw bounding box
+	boxColor := color.RGBA{255, 0, 0, 128} // Red for enemies
+	if be.onGround {
+		boxColor = color.RGBA{0, 255, 0, 128} // Green when on ground
+	}
+	
+	// Use default enemy size for bounding box (can be overridden by specific enemies)
+	// These are reasonable defaults based on typical sprite sizes
+	spriteWidth := 32.0 * be.scaleX
+	spriteHeight := 32.0 * be.scaleY
+	
+	// Draw bounding box
+	ebitenutil.DrawRect(screen, renderX, renderY, spriteWidth, spriteHeight, boxColor)
+	
+	// Draw center point
+	centerX := renderX + spriteWidth/2
+	centerY := renderY + spriteHeight/2
+	ebitenutil.DrawRect(screen, centerX-2, centerY-2, 4, 4, color.RGBA{255, 255, 0, 255})
+	
+	// Draw velocity vector
+	if be.vx != 0 || be.vy != 0 {
+		// Scale velocity for visualization
+		velScale := 0.1
+		endX := centerX + float64(be.vx)*velScale
+		endY := centerY + float64(be.vy)*velScale
+		ebitenutil.DrawLine(screen, centerX, centerY, endX, endY, color.RGBA{0, 255, 255, 255})
+	}
+	
+	// Draw enemy info text
+	debugY := int(renderY - 10)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", be.x/physicsUnit, be.y/physicsUnit), 
+		int(renderX), debugY)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", be.vx, be.vy),
+		int(renderX), debugY+12)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Ground: %v", be.onGround),
+		int(renderX), debugY+24)
 }
 
 /*

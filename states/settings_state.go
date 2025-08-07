@@ -173,6 +173,12 @@ func (s *SettingsState) initializeDeveloperOptions() {
 			OnToggle:    nil,
 		},
 		{
+			Name:        "Use Placeholder Sprites",
+			Description: "Replace all sprites with simple geometric placeholders",
+			Value:       &engine.GameConfig.UsePlaceholderSprites,
+			OnToggle:    nil,
+		},
+		{
 			Name:        "Show Grid",
 			Description: "Display tile grid overlay",
 			Value:       nil, // Will be handled specially since it's in engine.state
