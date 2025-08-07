@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sword/entities"
 	"github.com/hajimehoshi/ebiten/v2"
+	"sword/engine"
 )
 
 // RoomConfig contains configuration for room creation
@@ -306,7 +307,7 @@ func (ebr *EnhancedBaseRoom) Validate() error {
 		// Validate trigger bounds are within room bounds
 		tileMap := ebr.GetTileMap()
 		if tileMap != nil {
-			physicsUnit := 32 // TODO: get from engine config
+			physicsUnit := engine.GetPhysicsUnit()
 			maxX := tileMap.Width * physicsUnit
 			maxY := tileMap.Height * physicsUnit
 			
