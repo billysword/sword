@@ -12,55 +12,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"sword/engine"
-	"sword/resources/images"
-	"sword/resources/images/platformer"
 	"sword/states"
 )
-
-var (
-	leftSprite      *ebiten.Image
-	rightSprite     *ebiten.Image
-	idleSprite      *ebiten.Image
-	backgroundImage *ebiten.Image
-	tileSprite      *ebiten.Image
-	tilesSprite     *ebiten.Image
-)
-
-func init() {
-	// Load background image
-	img, _, err := image.Decode(bytes.NewReader(platformer.Background_png))
-	if err != nil {
-		panic(err)
-	}
-	backgroundImage = ebiten.NewImageFromImage(img)
-
-	// Load character sprites
-	img, _, err = image.Decode(bytes.NewReader(platformer.Left_png))
-	if err != nil {
-		panic(err)
-	}
-	leftSprite = ebiten.NewImageFromImage(img)
-
-	img, _, err = image.Decode(bytes.NewReader(platformer.Right_png))
-	if err != nil {
-		panic(err)
-	}
-	rightSprite = ebiten.NewImageFromImage(img)
-
-	img, _, err = image.Decode(bytes.NewReader(platformer.MainChar_png))
-	if err != nil {
-		panic(err)
-	}
-	idleSprite = ebiten.NewImageFromImage(img)
-
-	// Load forest tile sprites
-	img, _, err = image.Decode(bytes.NewReader(images.ForestTiles_png))
-	if err != nil {
-		panic(err)
-	}
-	tileSprite = ebiten.NewImageFromImage(img)
-	tilesSprite = tileSprite // Use the same forest tilemap for both tile references
-}
 
 /*
 Game represents the main game application.
@@ -111,19 +64,21 @@ func (g *Game) Update() error {
 		g.stateManager = engine.NewStateManager()
 		startState := states.NewStartState(g.stateManager)
 
-		// Initialize sprite manager and load tile sheets
+		// Initialize sprite manager and load sheets from configuration
 		engine.InitSpriteManager()
 		sm := engine.GetSpriteManager()
 
-		// Load the forest tile sheet with proper configuration
-		err := sm.LoadSpriteSheet("forest", tileSprite, 16, 16)
-		if err != nil {
-			panic(err)
+		for _, cfg := range engine.SpriteSheetConfigs {
+			img, _, err := image.Decode(bytes.NewReader(cfg.ImageData))
+			if err != nil {
+				panic(err)
+			}
+			ebImg := ebiten.NewImageFromImage(img)
+			if err := sm.LoadSpriteSheet(cfg.Name, ebImg, cfg.TileWidth, cfg.TileHeight); err != nil {
+				panic(err)
+			}
 		}
 
-		// Pass sprites to the state manager for use by game states
-		engine.SetGlobalSprites(leftSprite, rightSprite, idleSprite, backgroundImage)
-		engine.SetGlobalTileSprites(tileSprite, tilesSprite)
 		g.stateManager.ChangeState(startState)
 	}
 	return g.stateManager.Update()
@@ -211,7 +166,7 @@ func main() {
 	defer func() {
 		engine.LogInfo("Game cleanup starting...")
 		game.Shutdown()
-		
+
 		// Close logger last
 		if err := engine.CloseLogger(); err != nil {
 			// Can't log this since logger is closing, just print to stderr
@@ -224,13 +179,13 @@ func main() {
 
 	// Get config for window settings
 	config := engine.DefaultConfig()
-	
+
 	// Apply command-line flags
 	if *usePlaceholders {
 		config.UsePlaceholderSprites = true
 		engine.LogInfo("Using placeholder sprites")
 	}
-	
+
 	engine.SetConfig(config)
 
 	ebiten.SetWindowSize(config.WindowWidth, config.WindowHeight)
