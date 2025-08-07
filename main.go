@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"flag"
 	"image"
 	_ "image/png"
 	"os"
@@ -183,6 +184,10 @@ The function:
  6. Handles cleanup on exit or error
 */
 func main() {
+	// Parse command-line flags
+	usePlaceholders := flag.Bool("placeholders", false, "Use placeholder sprites instead of actual sprites")
+	flag.Parse()
+
 	// Initialize game logger
 	if err := engine.InitLogger("game.log"); err != nil {
 		panic(err)
@@ -219,6 +224,13 @@ func main() {
 
 	// Get config for window settings
 	config := engine.DefaultConfig()
+	
+	// Apply command-line flags
+	if *usePlaceholders {
+		config.UsePlaceholderSprites = true
+		engine.LogInfo("Using placeholder sprites")
+	}
+	
 	engine.SetConfig(config)
 
 	ebiten.SetWindowSize(config.WindowWidth, config.WindowHeight)

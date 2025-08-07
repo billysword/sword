@@ -159,6 +159,11 @@ func (sr *SimpleRoom) initializeForestTiles() {
 
 // getTileSprite returns the appropriate sprite for a tile type
 func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
+	// Use placeholder system if enabled
+	if engine.GameConfig.UsePlaceholderSprites {
+		return engine.GetTileSpriteByType(tileIndex)
+	}
+	
 	// First try local cache for backwards compatibility
 	if sprite, exists := sr.forestTiles[tileIndex]; exists {
 		return sprite

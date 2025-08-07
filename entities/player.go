@@ -251,12 +251,14 @@ Parameters:
 */
 func (p *Player) Draw(screen *ebiten.Image) {
 	// Choose sprite based on movement direction
-	sprite := engine.GetIdleSprite()
+	var sprite *ebiten.Image
 	switch {
 	case p.vx > 0:
-		sprite = engine.GetRightSprite()
+		sprite = engine.GetPlayerSprite("right")
 	case p.vx < 0:
-		sprite = engine.GetLeftSprite()
+		sprite = engine.GetPlayerSprite("left")
+	default:
+		sprite = engine.GetPlayerSprite("idle")
 	}
 
 	// Set up drawing options
