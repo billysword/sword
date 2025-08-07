@@ -150,7 +150,7 @@ func (ps *PhysicsSystem) ClearEnemies() {
 func (ps *PhysicsSystem) Update() error {
 		// Update player physics with tiles when room is present
 	if ps.room != nil {
-		if tileProvider, ok := ps.room.(entities.TileProvider); ok {
+				if tileProvider, ok := ps.room.(entities.TileProvider); ok {
 			ps.player.UpdateWithTileCollision(tileProvider)
 		} else {
 			ps.player.Update()
@@ -163,8 +163,8 @@ func (ps *PhysicsSystem) Update() error {
 	for _, enemy := range ps.enemies {
 		enemy.Update()
 	}
-
-		// Handle collision detection for enemies if needed (player handled above)
+	
+	// Handle collision detection for enemies if needed (player handled above)
 	return nil
 }
 
@@ -196,8 +196,8 @@ func (cs *CameraSystem) SetRoom(room world.Room) {
 	// Update camera bounds when room changes
 	if cs.camera != nil && room != nil {
 		if tileMap := room.GetTileMap(); tileMap != nil {
-			physicsUnit := engine.GetPhysicsUnit()
-			cs.camera.SetWorldBounds(tileMap.Width*physicsUnit, tileMap.Height*physicsUnit)
+			u := engine.GetPhysicsUnit()
+			cs.camera.SetWorldBounds(tileMap.Width*u, tileMap.Height*u)
 		}
 	}
 }

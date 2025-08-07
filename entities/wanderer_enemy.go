@@ -60,9 +60,7 @@ frequently and randomly, without respect to spawn point or boundaries.
 This demonstrates a completely different AI pattern from the SlimeEnemy.
 */
 func (w *WandererEnemy) HandleAI() {
-	physicsUnit := engine.GetPhysicsUnit()
-	
-	// Decrease move timer
+		// Decrease move timer
 	w.moveTimer--
 	
 	// Change direction when timer expires
@@ -82,7 +80,7 @@ func (w *WandererEnemy) HandleAI() {
 	
 	// Apply movement based on direction
 	if w.moveDirection != 0 {
-		w.vx = w.moveDirection * w.GetMoveSpeed() * physicsUnit
+		w.vx = w.moveDirection * w.GetMoveSpeed()
 	}
 }
 

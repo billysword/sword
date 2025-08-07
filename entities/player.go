@@ -64,7 +64,6 @@ Uses engine.GameConfig.PlayerPhysics values for movement speeds and physics calc
 Implements advanced jump mechanics including coyote time and jump buffering.
 */
 func (p *Player) ProcessInput() {
-	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
 
 	// Update jump buffer timer
@@ -81,11 +80,11 @@ func (p *Player) ProcessInput() {
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-		p.vx = -moveSpeed * physicsUnit
+		p.vx = -moveSpeed
 		p.facingRight = false
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-		p.vx = moveSpeed * physicsUnit
+		p.vx = moveSpeed
 		p.facingRight = true
 	}
 
@@ -109,7 +108,7 @@ func (p *Player) ProcessInput() {
 	// Variable jump height - reduce upward velocity if jump released early
 	if config.VariableJumpHeight && p.isJumping && !jumpPressed && p.vy < 0 {
 		// Calculate how much to reduce jump
-		minVelocity := int(float64(-config.JumpPower*physicsUnit) * config.MinJumpHeight)
+		minVelocity := int(float64(-config.JumpPower) * config.MinJumpHeight)
 		if p.vy < minVelocity {
 			p.vy = minVelocity
 		}
@@ -129,10 +128,9 @@ Jump makes the player jump if they are on the ground.
 Sets the vertical velocity to the configured jump power.
 */
 func (p *Player) Jump() {
-	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
 
-	p.vy = -config.JumpPower * physicsUnit
+	p.vy = -config.JumpPower
 	p.onGround = false
 	p.isJumping = true
 	p.jumpHeldFrames = 0
@@ -171,7 +169,6 @@ Uses values from engine.GameConfig.PlayerPhysics for all physics calculations in
 gravity, and ground level. Also updates jump mechanics timers.
 */
 func (p *Player) Update() {
-	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
 
 	// Update position
@@ -186,7 +183,7 @@ func (p *Player) Update() {
 	}
 
 	// Ground collision - using config ground level
-	groundY := engine.GameConfig.GroundLevel * physicsUnit
+	groundY := engine.GameConfig.GroundLevel * engine.GetPhysicsUnit()
 	if p.y > groundY {
 		p.y = groundY
 		p.vy = 0
@@ -232,7 +229,7 @@ func (p *Player) Update() {
 	}
 
 	// Apply gravity
-	if p.vy < config.MaxFallSpeed*physicsUnit {
+	if p.vy < config.MaxFallSpeed {
 		p.vy += config.Gravity
 	}
 
@@ -309,7 +306,6 @@ Parameters:
 */
 func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Convert player position (already in pixels) to render position
-	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
 	renderX := float64(p.x) + cameraOffsetX
 	renderY := float64(p.y) + cameraOffsetY
@@ -359,15 +355,16 @@ func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY fl
 	// Draw velocity vector
 	if p.vx != 0 || p.vy != 0 {
 		velScale := 0.5 // Scale factor for velocity visualization
-		endX := centerX + float64(p.vx)*velScale/float64(physicsUnit)
-		endY := centerY + float64(p.vy)*velScale/float64(physicsUnit)
+		endX := centerX + float64(p.vx)*velScale
+		endY := centerY + float64(p.vy)*velScale
 		vector.StrokeLine(screen, float32(centerX), float32(centerY),
 			float32(endX), float32(endY), 2, color.RGBA{255, 0, 0, 255}, false)
 	}
 
 	// Draw debug text
 	debugY := int(renderY - 20)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", p.x/physicsUnit, p.y/physicsUnit),
+	u := engine.GetPhysicsUnit()
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos tiles: %d,%d", p.x/u, p.y/u),
 		int(renderX), debugY)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", p.vx, p.vy),
 		int(renderX), debugY+12)

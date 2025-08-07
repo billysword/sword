@@ -138,11 +138,11 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	// Physics section
 	ebitenutil.DebugPrintAt(ebitenScreen, "=== PHYSICS ===", 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Physics Unit: %d px", physicsUnit), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Physics Unit (base px/tile): %d", physicsUnit), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed: %d | Jump: %d", GameConfig.PlayerPhysics.MoveSpeed, GameConfig.PlayerPhysics.JumpPower), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed (px/f): %d | Jump (px): %d", GameConfig.PlayerPhysics.MoveSpeed, GameConfig.PlayerPhysics.JumpPower), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity: %d | Friction: %d", GameConfig.Gravity, GameConfig.PlayerPhysics.Friction), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity (px/f^2): %d | Friction: %d", GameConfig.Gravity, GameConfig.PlayerPhysics.Friction), 10, y)
 	y += lineHeight * 2
 	
 	// Rendering section
@@ -183,9 +183,9 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	y += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Collision Box: %.0f%%x%.0f%%", config.CollisionBoxWidth*100, config.CollisionBoxHeight*100), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed: %d | Jump: %d", config.MoveSpeed, config.JumpPower), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Move Speed (px/f): %d | Jump (px): %d", config.MoveSpeed, config.JumpPower), 10, y)
 	y += lineHeight
-	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity: %d | Max Fall: %d", config.Gravity, config.MaxFallSpeed), 10, y)
+	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Gravity (px/f^2): %d | Max Fall (px/f): %d", config.Gravity, config.MaxFallSpeed), 10, y)
 	y += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, fmt.Sprintf("Coyote: %df | Jump Buf: %df", config.CoyoteTime, config.JumpBufferTime), 10, y)
 	y += lineHeight * 2

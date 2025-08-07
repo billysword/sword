@@ -307,9 +307,9 @@ func (ebr *EnhancedBaseRoom) Validate() error {
 		// Validate trigger bounds are within room bounds
 		tileMap := ebr.GetTileMap()
 		if tileMap != nil {
-			physicsUnit := engine.GetPhysicsUnit()
-			maxX := tileMap.Width * physicsUnit
-			maxY := tileMap.Height * physicsUnit
+			u := engine.GetPhysicsUnit()
+			maxX := tileMap.Width * u
+			maxY := tileMap.Height * u
 			
 			if point.TriggerBounds.X < 0 || point.TriggerBounds.Y < 0 ||
 			   point.TriggerBounds.X + point.TriggerBounds.Width > maxX ||

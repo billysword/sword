@@ -72,7 +72,6 @@ handled its AI logic and set velocity values.
 Uses values from engine.GameConfig for physics calculations.
 */
 func (be *BaseEnemy) Update() {
-	physicsUnit := engine.GetPhysicsUnit()
 
 	// NOTE: AI logic should be handled by the concrete enemy type
 	// before calling this Update() method
@@ -82,7 +81,7 @@ func (be *BaseEnemy) Update() {
 	be.y += be.vy
 
 	// Ground collision - using same ground level as player
-	groundY := engine.GameConfig.GroundLevel * physicsUnit
+	groundY := engine.GameConfig.GroundLevel * engine.GetPhysicsUnit()
 	if be.y > groundY {
 		be.y = groundY
 		be.onGround = true
@@ -104,7 +103,7 @@ func (be *BaseEnemy) Update() {
 	}
 
 	// Apply gravity
-	if be.vy < engine.GameConfig.MaxFallSpeed*physicsUnit {
+	if be.vy < engine.GameConfig.MaxFallSpeed {
 		be.vy += engine.GameConfig.Gravity
 	}
 }
@@ -132,7 +131,7 @@ func (be *BaseEnemy) Draw(screen *ebiten.Image) {
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(be.scaleX, be.scaleY)
-	op.GeoM.Translate(float64(be.x)/float64(engine.GetPhysicsUnit()), float64(be.y)/float64(engine.GetPhysicsUnit()))
+	op.GeoM.Translate(float64(be.x), float64(be.y))
 
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
@@ -163,9 +162,9 @@ func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraO
 	// Set up drawing options with camera offset
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(be.scaleX, be.scaleY)
-	// Convert enemy position from physics units to pixels and apply camera offset
-	renderX := float64(be.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
-	renderY := float64(be.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
+	// Convert enemy position (already pixels) and apply camera offset
+	renderX := float64(be.x) + cameraOffsetX
+	renderY := float64(be.y) + cameraOffsetY
 	op.GeoM.Translate(renderX, renderY)
 
 	// Draw the sprite
@@ -183,12 +182,9 @@ Parameters:
   - cameraOffsetY: Camera Y offset for viewport transformation
 */
 func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Get physics unit for position conversion
-	physicsUnit := engine.GetPhysicsUnit()
-
 	// Calculate render position
-	renderX := float64(be.x)/float64(physicsUnit) + cameraOffsetX
-	renderY := float64(be.y)/float64(physicsUnit) + cameraOffsetY
+	renderX := float64(be.x) + cameraOffsetX
+	renderY := float64(be.y) + cameraOffsetY
 
 	// Draw bounding box
 	boxColor := color.RGBA{255, 0, 0, 128} // Red for enemies
@@ -220,7 +216,7 @@ func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffset
 
 	// Draw enemy info text
 	debugY := int(renderY - 10)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", be.x/physicsUnit, be.y/physicsUnit),
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", be.x, be.y),
 		int(renderX), debugY)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", be.vx, be.vy),
 		int(renderX), debugY+12)
