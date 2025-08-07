@@ -27,6 +27,7 @@ type InputSystem struct {
 	keysPressed      map[ebiten.Key]bool
 	roomTransitionMgr *world.RoomTransitionManager
 	pauseRequested   bool
+	settingsRequested bool  // Add settings request flag
 }
 
 /*
@@ -40,6 +41,8 @@ func NewInputSystem(player *entities.Player, roomTransitionMgr *world.RoomTransi
 		player:           player,
 		keysPressed:      make(map[ebiten.Key]bool),
 		roomTransitionMgr: roomTransitionMgr,
+		pauseRequested:    false,
+		settingsRequested: false,  // Initialize settings request flag
 	}
 }
 
@@ -50,26 +53,12 @@ func (is *InputSystem) GetName() string {
 func (is *InputSystem) Update() error {
 	// Handle room transitions first
 	if is.roomTransitionMgr != nil {
-		is.roomTransitionMgr.Update()
+		// Check for room transitions
+		is.roomTransitionMgr.CheckTransitions(is.player, ebiten.IsKeyPressed(ebiten.KeyE))
 	}
 	
-	// Handle movement inputs
-	config := engine.GameConfig.PlayerPhysics
-	physicsUnit := engine.GetPhysicsUnit()
-	
-	// Left/Right movement
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-		is.player.MoveLeft(config.MoveSpeed * physicsUnit)
-	} else if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-		is.player.MoveRight(config.MoveSpeed * physicsUnit)
-	}
-	
-	// Jump input
-	if ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp) {
-		is.player.Jump()
-	} else {
-		is.player.ReleaseJump()
-	}
+	// Handle movement inputs - Player handles its own input
+	is.player.ProcessInput()
 	
 	// Debug toggle inputs
 	if ebiten.IsKeyPressed(ebiten.KeyF3) {
@@ -102,54 +91,8 @@ func (is *InputSystem) Update() error {
 	
 	// Room transition debug keys
 	if is.roomTransitionMgr != nil {
-		// Quick room transitions for testing
-		if ebiten.IsKeyPressed(ebiten.Key1) {
-			if !is.keysPressed[ebiten.Key1] {
-				is.roomTransitionMgr.StartTransition(world.DirectionNorth, 500)
-				is.keysPressed[ebiten.Key1] = true
-			}
-		} else {
-			is.keysPressed[ebiten.Key1] = false
-		}
-		
-		if ebiten.IsKeyPressed(ebiten.Key2) {
-			if !is.keysPressed[ebiten.Key2] {
-				is.roomTransitionMgr.StartTransition(world.DirectionEast, 500)
-				is.keysPressed[ebiten.Key2] = true
-			}
-		} else {
-			is.keysPressed[ebiten.Key2] = false
-		}
-		
-		if ebiten.IsKeyPressed(ebiten.Key3) {
-			if !is.keysPressed[ebiten.Key3] {
-				is.roomTransitionMgr.StartTransition(world.DirectionSouth, 500)
-				is.keysPressed[ebiten.Key3] = true
-			}
-		} else {
-			is.keysPressed[ebiten.Key3] = false
-		}
-		
-		if ebiten.IsKeyPressed(ebiten.Key4) {
-			if !is.keysPressed[ebiten.Key4] {
-				is.roomTransitionMgr.StartTransition(world.DirectionWest, 500)
-				is.keysPressed[ebiten.Key4] = true
-			}
-		} else {
-			is.keysPressed[ebiten.Key4] = false
-		}
-		
-		// R key to reload current room
-		if ebiten.IsKeyPressed(ebiten.KeyR) {
-			if !is.keysPressed[ebiten.KeyR] {
-				if currentRoom := is.roomTransitionMgr.GetCurrentRoom(); currentRoom != nil {
-					is.roomTransitionMgr.ReloadCurrentRoom()
-				}
-				is.keysPressed[ebiten.KeyR] = true
-			}
-		} else {
-			is.keysPressed[ebiten.KeyR] = false
-		}
+		// Quick room transitions for testing - removed as the new API doesn't support this
+		// The room transition manager now uses transition points instead of manual triggers
 	}
 	
 	// Pause request handling
@@ -162,6 +105,16 @@ func (is *InputSystem) Update() error {
 		is.keysPressed[ebiten.KeyEscape] = false
 	}
 	
+	// Settings request handling
+	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		if !is.keysPressed[ebiten.KeyS] {
+			is.settingsRequested = true
+			is.keysPressed[ebiten.KeyS] = true
+		}
+	} else {
+		is.keysPressed[ebiten.KeyS] = false
+	}
+	
 	return nil
 }
 
@@ -169,8 +122,13 @@ func (is *InputSystem) HasPauseRequest() bool {
 	return is.pauseRequested
 }
 
+func (is *InputSystem) HasSettingsRequest() bool {
+	return is.settingsRequested
+}
+
 func (is *InputSystem) ClearRequests() {
 	is.pauseRequested = false
+	is.settingsRequested = false
 }
 
 /*
@@ -213,27 +171,21 @@ func (ps *PhysicsSystem) ClearEnemies() {
 	ps.enemies = ps.enemies[:0]
 }
 
+// Update updates physics for all entities
 func (ps *PhysicsSystem) Update() error {
 	// Update player physics
-	ps.player.UpdatePhysics()
+	ps.player.Update()
 	
-	// Update enemy physics
+	// Update enemies
 	for _, enemy := range ps.enemies {
-		if err := enemy.Update(); err != nil {
-			return fmt.Errorf("enemy update failed: %w", err)
-		}
+		enemy.Update()
 	}
 	
-	// Handle collisions if room is set
+	// Handle collision detection
 	if ps.room != nil {
-		// Player collision with room
-		ps.room.CheckCollision(ps.player)
-		
-		// Enemy collision with room
-		for _, enemy := range ps.enemies {
-			if collisionEntity, ok := enemy.(entities.CollisionHandler); ok {
-				ps.room.CheckCollision(collisionEntity)
-			}
+		// Update player with tile collision
+		if tileProvider, ok := ps.room.(entities.TileProvider); ok {
+			ps.player.UpdateWithTileCollision(tileProvider)
 		}
 	}
 	
@@ -279,15 +231,13 @@ func (cs *CameraSystem) SetCurrentRoom(room world.Room) {
 	cs.SetRoom(room)
 }
 
+// Update updates the camera to follow the player
 func (cs *CameraSystem) Update() error {
-	if !cs.enabled || cs.camera == nil || cs.player == nil {
-		return nil
-	}
-	
-	// Update camera to follow player
+	// Get player position for camera tracking
 	playerX, playerY := cs.player.GetPosition()
-	cs.camera.FollowTarget(float64(playerX), float64(playerY))
-	cs.camera.Update()
+	
+	// Update camera position
+	cs.camera.Update(playerX, playerY)
 	
 	return nil
 }
@@ -303,6 +253,9 @@ type RoomSystem struct {
 	transitionManager *world.RoomTransitionManager
 	worldMap          *world.WorldMap
 	player            *entities.Player
+	physicsSystem     *PhysicsSystem
+	cameraSystem      *CameraSystem
+	currentRoom       world.Room
 }
 
 func NewRoomSystem(transitionManager *world.RoomTransitionManager, worldMap *world.WorldMap, player *entities.Player) *RoomSystem {
@@ -310,6 +263,9 @@ func NewRoomSystem(transitionManager *world.RoomTransitionManager, worldMap *wor
 		transitionManager: transitionManager,
 		worldMap:          worldMap,
 		player:            player,
+		physicsSystem:     nil, // Will be initialized later
+		cameraSystem:      nil, // Will be initialized later
+		currentRoom:       nil, // Will be initialized later
 	}
 }
 
@@ -317,27 +273,38 @@ func (rs *RoomSystem) GetName() string {
 	return "Room"
 }
 
+// SetPhysicsSystem sets the physics system reference
+func (rs *RoomSystem) SetPhysicsSystem(ps *PhysicsSystem) {
+	rs.physicsSystem = ps
+}
+
+// SetCameraSystem sets the camera system reference
+func (rs *RoomSystem) SetCameraSystem(cs *CameraSystem) {
+	rs.cameraSystem = cs
+}
+
+// Update checks for room transitions
 func (rs *RoomSystem) Update() error {
-	// Update current room
-	currentRoom := rs.transitionManager.GetCurrentRoom()
-	if currentRoom == nil {
-		return nil
-	}
-	
-	// Update room logic
-	if err := currentRoom.Update(rs.player); err != nil {
-		return fmt.Errorf("room update failed: %w", err)
-	}
-	
-	// Check for room transitions
-	if transition := currentRoom.CheckTransition(rs.player); transition != nil {
-		if err := rs.transitionManager.StartTransitionToRoom(transition.Direction, transition.TargetRoomID, transition.Duration); err != nil {
-			return fmt.Errorf("room transition failed: %w", err)
-		}
-		
-		// Position player in new room
-		if newRoom := rs.transitionManager.GetCurrentRoom(); newRoom != nil {
-			newRoom.PositionPlayerAtEntrance(rs.player, transition.Direction.Opposite())
+	if rs.transitionManager != nil && rs.player != nil {
+		// Process any pending transitions
+		if rs.transitionManager.HasPendingTransition() {
+			newRoom, err := rs.transitionManager.ProcessPendingTransition(rs.player)
+			if err != nil {
+				return fmt.Errorf("failed to process room transition: %w", err)
+			}
+			
+			if newRoom != nil {
+				// Update the current room
+				rs.currentRoom = newRoom
+				
+				// Notify other systems about the room change
+				if rs.physicsSystem != nil {
+					rs.physicsSystem.SetRoom(newRoom)
+				}
+				if rs.cameraSystem != nil {
+					rs.cameraSystem.SetRoom(newRoom)
+				}
+			}
 		}
 	}
 	

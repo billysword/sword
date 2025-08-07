@@ -271,7 +271,6 @@ func (pg *PlaceholderGenerator) drawSpikeTile(img *image.RGBA) {
 	
 	for i := 0; i < spikes; i++ {
 		baseX := i * spikeWidth
-		tipX := baseX + spikeWidth/2
 		
 		// Draw triangle
 		for y := 0; y < height; y++ {

@@ -107,11 +107,11 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	
 	// Set up debug HUD
 	debugHUD := engine.NewDebugHUD()
-	hudManager.RegisterComponent("debug_hud", debugHUD)
+	hudManager.AddComponent(debugHUD)
 	
-	// Set up minimap
-	minimapRenderer := world.NewMinimapRenderer(worldMap)
-	hudManager.RegisterComponent("minimap", minimapRenderer)
+	// Set up minimap - using proper constructor with required parameters
+	minimapRenderer := world.NewMiniMapRenderer(worldMap, 200, windowWidth-220, 20)
+	hudManager.AddComponent(minimapRenderer)
 	
 	// Create the refactored state
 	state := &InGameState{
@@ -152,10 +152,10 @@ func (ris *InGameState) initializeSystems() {
 	}
 	
 	// Register systems with manager
-	ris.systemManager.RegisterSystem(inputSystem)
-	ris.systemManager.RegisterSystem(physicsSystem)
-	ris.systemManager.RegisterSystem(cameraSystem)
-	ris.systemManager.RegisterSystem(roomSystem)
+	ris.systemManager.AddSystem("input", inputSystem)
+	ris.systemManager.AddSystem("physics", physicsSystem)
+	ris.systemManager.AddSystem("camera", cameraSystem)
+	ris.systemManager.AddSystem("room", roomSystem)
 	
 	// Set update order: Input -> Room -> Physics -> Camera
 	ris.systemManager.SetUpdateOrder([]string{"Input", "Room", "Physics", "Camera"})
@@ -309,9 +309,8 @@ func (ris *InGameState) updateDebugHUD() {
 Draw renders the game using the modular rendering systems.
 */
 func (ris *InGameState) Draw(screen *ebiten.Image) {
-	// Create world surface for camera-based rendering
-	worldSurface := ris.viewportRenderer.GetWorldSurface()
-	worldSurface.Clear()
+	// Clear screen
+	screen.Clear()
 	
 	// Draw background if enabled
 	if engine.GetBackgroundVisible() {
@@ -319,37 +318,34 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 			// Scale and draw background
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-			worldSurface.DrawImage(backgroundImage, op)
+			screen.DrawImage(backgroundImage, op)
 		}
 	}
 	
-	// Draw current room
+	// Draw current room with camera offset
 	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
 	if currentRoom != nil {
 		cameraX, cameraY := ris.camera.GetPosition()
-		currentRoom.DrawWithCamera(worldSurface, cameraX, cameraY)
+		currentRoom.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
 	
-	// Draw player
+	// Draw player - Player uses its own Draw method without camera offset
+	// The camera offset is handled internally by the player
 	if ris.player != nil {
-		cameraX, cameraY := ris.camera.GetPosition()
-		ris.player.DrawWithCamera(worldSurface, cameraX, cameraY)
+		ris.player.Draw(screen)
 	}
 	
-	// Draw enemies
+	// Draw enemies with camera offset
+	cameraX, cameraY := ris.camera.GetPosition()
 	for _, enemy := range ris.enemies {
-		cameraX, cameraY := ris.camera.GetPosition()
-		enemy.DrawWithCamera(worldSurface, cameraX, cameraY)
+		enemy.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
 	
 	// Draw debug grid if enabled
 	if engine.GetGridVisible() {
 		cameraX, cameraY := ris.camera.GetPosition()
-		engine.DrawGridWithCamera(worldSurface, cameraX, cameraY)
+		engine.DrawGridWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
-	
-	// Render world surface to screen through viewport
-	ris.viewportRenderer.RenderToScreen(screen, worldSurface)
 	
 	// Draw HUD elements on top
 	ris.hudManager.Draw(screen)
@@ -462,8 +458,7 @@ func (ris *InGameState) GetEnemies() []entities.Enemy {
 toggleDepthOfField toggles the depth of field effect.
 */
 func (ris *InGameState) toggleDepthOfField() {
-	config := engine.GetConfig()
-	config.EnableDepthOfField = !config.EnableDepthOfField
+	engine.GameConfig.EnableDepthOfField = !engine.GameConfig.EnableDepthOfField
 	
 	// Update debug HUD to reflect the change
 	ris.updateDebugHUD()
@@ -477,27 +472,27 @@ func (ris *InGameState) cycleParallaxLayers() {
 	layerConfigs := [][]engine.ParallaxLayer{
 		// Config 0: Full layers (default)
 		{
-			{ScrollSpeed: 0.1, YOffset: 0},    // Far background
-			{ScrollSpeed: 0.3, YOffset: 50},   // Mid background
-			{ScrollSpeed: 0.5, YOffset: 100},  // Near background
-			{ScrollSpeed: 0.7, YOffset: 150},  // Foreground
+			{Speed: 0.1, OffsetY: 0},    // Far background
+			{Speed: 0.3, OffsetY: 50},   // Mid background
+			{Speed: 0.5, OffsetY: 100},  // Near background
+			{Speed: 0.7, OffsetY: 150},  // Foreground
 		},
 		// Config 1: Simple two-layer
 		{
-			{ScrollSpeed: 0.2, YOffset: 0},    // Background
-			{ScrollSpeed: 0.6, YOffset: 100},  // Foreground
+			{Speed: 0.2, OffsetY: 0},    // Background
+			{Speed: 0.6, OffsetY: 100},  // Foreground
 		},
 		// Config 2: Single static background
 		{
-			{ScrollSpeed: 0.0, YOffset: 0},    // Static
+			{Speed: 0.0, OffsetY: 0},    // Static
 		},
 		// Config 3: Extreme depth
 		{
-			{ScrollSpeed: 0.05, YOffset: 0},   // Very far
-			{ScrollSpeed: 0.2, YOffset: 30},   // Far
-			{ScrollSpeed: 0.4, YOffset: 60},   // Mid
-			{ScrollSpeed: 0.6, YOffset: 90},   // Near
-			{ScrollSpeed: 0.8, YOffset: 120},  // Very near
+			{Speed: 0.05, OffsetY: 0},   // Very far
+			{Speed: 0.2, OffsetY: 30},   // Far
+			{Speed: 0.4, OffsetY: 60},   // Mid
+			{Speed: 0.6, OffsetY: 90},   // Near
+			{Speed: 0.8, OffsetY: 120},  // Very near
 		},
 	}
 	
@@ -505,10 +500,13 @@ func (ris *InGameState) cycleParallaxLayers() {
 	ris.parallaxConfigIndex = (ris.parallaxConfigIndex + 1) % len(layerConfigs)
 	
 	// Apply new configuration
-	if ris.viewportRenderer != nil {
-		renderer := ris.viewportRenderer.GetParallaxRenderer()
-		if renderer != nil {
-			renderer.SetLayers(layerConfigs[ris.parallaxConfigIndex])
+	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
+	if currentRoom != nil {
+		if simpleRoom, ok := currentRoom.(*world.SimpleRoom); ok {
+			renderer := simpleRoom.GetParallaxRenderer()
+			if renderer != nil {
+				renderer.SetLayers(layerConfigs[ris.parallaxConfigIndex])
+			}
 		}
 	}
 }

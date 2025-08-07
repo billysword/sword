@@ -22,6 +22,17 @@ graph TB
         HUDManager[HUDManager<br/>UI Components]
         DebugHUD[DebugHUD<br/>Debug Interface]
         ParallaxRenderer[ParallaxRenderer<br/>Background Layers]
+        ViewportRenderer[ViewportRenderer<br/>Viewport Frame]
+        PlaceholderSprites[PlaceholderSprites<br/>Dev Sprites]
+    end
+
+    %% Game Systems (ECS-like)
+    subgraph "Game Systems"
+        GameSystemManager[GameSystemManager<br/>System Orchestration]
+        InputSystem[InputSystem<br/>Input Handling]
+        PhysicsSystem[PhysicsSystem<br/>Physics & Collision]
+        CameraSystem[CameraSystem<br/>Camera Control]
+        RoomSystem[RoomSystem<br/>Room Management]
     end
 
     %% Game States
@@ -39,7 +50,8 @@ graph TB
         Room[Room Interface<br/>Level Abstraction]
         SimpleRoom[SimpleRoom<br/>Tile-based Levels]
         TileMap[TileMap<br/>2D Tile Grid]
-        Minimap[Minimap<br/>Navigation Aid]
+        RoomTransitionManager[RoomTransitionManager<br/>Room Transitions]
+        Minimap[MiniMapRenderer<br/>Navigation Aid]
     end
 
     %% Entity System
@@ -50,6 +62,7 @@ graph TB
         SlimeEnemy[SlimeEnemy<br/>Slime Enemy Type]
         WandererEnemy[WandererEnemy<br/>Wanderer Enemy Type]
         EnemyInterface[Enemy Interface<br/>Common Enemy Behavior]
+        TileProvider[TileProvider Interface<br/>Collision Detection]
     end
 
     %% Resource Management
@@ -80,21 +93,40 @@ graph TB
     Game --> Logger
     InGameState --> Camera
     InGameState --> HUDManager
-    InGameState --> DebugHUD
-    InGameState --> ParallaxRenderer
+    InGameState --> ViewportRenderer
+    HUDManager --> DebugHUD
+    HUDManager --> Minimap
+    SimpleRoom --> ParallaxRenderer
     StateManager --> SpriteManager
+    SpriteManager --> PlaceholderSprites
+
+    %% Game System connections
+    InGameState --> GameSystemManager
+    GameSystemManager --> InputSystem
+    GameSystemManager --> PhysicsSystem
+    GameSystemManager --> CameraSystem
+    GameSystemManager --> RoomSystem
+    InputSystem --> Player
+    PhysicsSystem --> Player
+    PhysicsSystem --> Room
+    CameraSystem --> Camera
+    CameraSystem --> Player
+    RoomSystem --> RoomTransitionManager
 
     %% World system connections
     InGameState --> WorldMap
-    InGameState --> Room
+    InGameState --> RoomTransitionManager
+    RoomTransitionManager --> Room
     Room --> SimpleRoom
     SimpleRoom --> TileMap
+    SimpleRoom --> TileProvider
     WorldMap --> Minimap
 
     %% Entity system connections
     InGameState --> Player
     InGameState --> BaseEnemy
     Player --> PlayerCollision
+    PlayerCollision --> TileProvider
     BaseEnemy --> EnemyInterface
     SlimeEnemy --> EnemyInterface
     WandererEnemy --> EnemyInterface
@@ -118,13 +150,15 @@ graph TB
     classDef entity fill:#fff3e0
     classDef resource fill:#fce4ec
     classDef external fill:#f5f5f5
+    classDef systems fill:#fff9c4
 
-    class StateManager,Config,Logger,Camera,SpriteManager,HUDManager,DebugHUD,ParallaxRenderer core
+    class StateManager,Config,Logger,Camera,SpriteManager,HUDManager,DebugHUD,ParallaxRenderer,ViewportRenderer,PlaceholderSprites core
     class StartState,InGameState,PauseState,SettingsState,TileDebugState state
-    class WorldMap,Room,SimpleRoom,TileMap,Minimap world
-    class Player,PlayerCollision,BaseEnemy,SlimeEnemy,WandererEnemy,EnemyInterface entity
+    class WorldMap,Room,SimpleRoom,TileMap,RoomTransitionManager,Minimap world
+    class Player,PlayerCollision,BaseEnemy,SlimeEnemy,WandererEnemy,EnemyInterface,TileProvider entity
     class Images,Platformer,ForestTiles,RoomLayouts resource
     class Ebiten,Go external
+    class GameSystemManager,InputSystem,PhysicsSystem,CameraSystem,RoomSystem systems
 ```
 
 ## Component Descriptions
@@ -136,65 +170,64 @@ graph TB
 ### Engine Core
 - **StateManager**: Manages game state transitions and delegates update/draw calls to current state
 - **Config System**: Handles game configuration, window settings, and player physics parameters
-- **Logger**: Provides structured logging with file output and different log levels
+- **Logger**: Provides structured logging with file output, log levels, and validation warnings
 - **Camera**: Manages viewport positioning, following player movement, and world-to-screen transformations
 - **SpriteManager**: Loads and manages sprite sheets with tile extraction capabilities
 - **HUDManager**: Coordinates all UI components and delegates rendering
 - **DebugHUD**: Provides real-time debugging information overlay
 - **ParallaxRenderer**: Handles multi-layer background rendering with parallax scrolling
+- **ViewportRenderer**: Manages viewport frame rendering and black borders
+- **PlaceholderSprites**: Generates placeholder sprites for development and testing
+
+### Game Systems
+- **GameSystemManager**: Orchestrates all game systems and manages their update order
+- **InputSystem**: Handles player input, pause/settings requests, and debug key bindings
+- **PhysicsSystem**: Updates physics for all entities and handles collision detection
+- **CameraSystem**: Controls camera following and viewport updates
+- **RoomSystem**: Manages room transitions and notifies other systems of room changes
 
 ### Game States
 - **StartState**: Main menu and initial game state
 - **InGameState**: Core gameplay loop with player movement, physics, and world interaction
 - **PauseState**: Paused game state with resume/quit options
-- **SettingsState**: Configuration menu for game settings
-- **TileDebugState**: Level editor for designing rooms and testing tile layouts
+- **SettingsState**: Configuration menu for game settings with tabbed interface
+- **TileDebugState**: Tile viewer and debugging tool for level design
 
 ### World System
-- **WorldMap**: Tracks discovered rooms, manages connections, and provides navigation
-- **Room Interface**: Abstraction for different types of levels/rooms
-- **SimpleRoom**: Tile-based room implementation with collision detection
-- **TileMap**: 2D grid of tile indices representing level layout
-- **Minimap**: Visual navigation aid showing discovered areas
+- **WorldMap**: Manages room discovery, connectivity, and minimap data
+- **Room Interface**: Abstract interface for different room implementations
+- **SimpleRoom**: Concrete room implementation using tile-based levels
+- **TileMap**: 2D grid of tiles with collision and rendering data
+- **RoomTransitionManager**: Handles room transitions, spawn points, and player positioning
+- **MiniMapRenderer**: HUD component that displays discovered rooms and player location
 
 ### Entity System
-- **Player**: Main character with movement, physics, animation, and collision
-- **PlayerCollision**: Dedicated collision detection and physics resolution for player
+- **Player**: Main character with movement, jumping, and physics
+- **PlayerCollision**: Handles player-specific collision detection and response
+- **BaseEnemy**: Base class for all enemy types with common behavior
+- **SlimeEnemy**: Slime enemy with patrol behavior
+- **WandererEnemy**: Wandering enemy with random movement
 - **Enemy Interface**: Common interface for all enemy types
-- **BaseEnemy**: Shared enemy functionality (AI, collision, rendering)
-- **SlimeEnemy**: Specific slime enemy implementation
-- **WandererEnemy**: Specific wandering enemy implementation
+- **TileProvider Interface**: Interface for entities that need tile collision detection
 
-### Resources
-- **Image Resources**: Asset management for all game sprites and textures
-- **Platformer Assets**: Character sprites (idle, left, right, background)
-- **Forest Tiles**: Environment tileset for world building
-- **Room Layouts**: Predefined level layouts and tile arrangements
+### Resource Management
+- **Image Resources**: Central repository for all game sprites and textures
+- **Platformer Assets**: Character sprites and animations
+- **Forest Tiles**: Environment tileset for forest-themed levels
+- **Room Layouts**: JSON definitions for room layouts and configurations
 
-## Key Design Patterns
+### External Dependencies
+- **Ebitengine**: 2D game engine providing rendering, input, and audio
+- **Go Runtime**: Language runtime and standard library
 
-1. **State Pattern**: Used for game state management (menu, gameplay, pause, etc.)
-2. **Entity-Component**: Player and enemies use component-based architecture
-3. **Interface Segregation**: Enemy interface allows for different enemy types
-4. **Observer Pattern**: State manager coordinates between different systems
-5. **Factory Pattern**: StateFactory for creating and managing different states
-6. **Singleton Pattern**: Global sprite management and configuration systems
+## Key Architectural Patterns
 
-## Data Flow
-
-1. **Initialization**: main.go → Game struct → StateManager → Initial state
-2. **Game Loop**: Game.Update() → StateManager.Update() → Current State
-3. **Rendering**: Game.Draw() → StateManager.Draw() → State-specific rendering
-4. **Input**: States handle input → Update entities → Update world state
-5. **State Transitions**: States request transitions → StateManager handles changes
-
-## Architecture Benefits
-
-- **Modular Design**: Clear separation between engine, game logic, and content
-- **Extensible**: Easy to add new states, enemies, and room types
-- **Maintainable**: Well-defined interfaces and responsibilities
-- **Debuggable**: Comprehensive logging and debug visualization systems
-- **Scalable**: Resource management and state systems support growth
+1. **State Pattern**: Game states manage different modes of gameplay
+2. **System Architecture**: Game systems handle specific aspects of game logic
+3. **Interface-based Design**: Rooms, enemies, and HUD components use interfaces for flexibility
+4. **Component Separation**: Clear separation between rendering, physics, and game logic
+5. **Resource Management**: Centralized sprite and asset management
+6. **Logging Infrastructure**: Comprehensive logging with multiple categories and validation
 
 ---
 
