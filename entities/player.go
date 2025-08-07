@@ -280,9 +280,9 @@ func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffse
 		// Negative X scale to flip sprite
 		op.GeoM.Scale(-engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
 	}
-	// Convert player position from physics units to pixels and apply camera offset
-	renderX := float64(p.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
-	renderY := float64(p.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
+	// Convert player position (already in pixels) and apply camera offset
+	renderX := float64(p.x) + cameraOffsetX
+	renderY := float64(p.y) + cameraOffsetY
 	// When flipped, translate by sprite width to correct position
 	if !p.facingRight {
 		// Assume placeholder/player width of 32 before scaling
@@ -308,11 +308,11 @@ Parameters:
   - cameraOffsetY: Camera Y offset for viewport transformation
 */
 func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Convert player position from physics units to render position
+	// Convert player position (already in pixels) to render position
 	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
-	renderX := float64(p.x)/float64(physicsUnit) + cameraOffsetX
-	renderY := float64(p.y)/float64(physicsUnit) + cameraOffsetY
+	renderX := float64(p.x) + cameraOffsetX
+	renderY := float64(p.y) + cameraOffsetY
 
 	// Calculate sprite bounds with scaling
 	spriteWidth := float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor
