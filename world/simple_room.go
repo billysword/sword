@@ -10,30 +10,30 @@ import (
 
 // Forest tile indices based on the actual tilemap layout
 const (
-	TILE_DIRT = 0
-	TILE_TOP_LEFT_CORNER = 1
-	TILE_RIGHT_WALL_1 = 2
-	TILE_RIGHT_WALL_2 = 3
-	TILE_BOTTOM_LEFT_CORNER = 4
-	TILE_TOP_RIGHT_CORNER = 5
-	TILE_LEFT_WALL_1 = 6
-	TILE_CEILING_1 = 7
-	TILE_CEILING_2 = 8
-	TILE_SINGLE_TOP = 9
-	TILE_SINGLE_BOTTOM = 10
-	TILE_SINGLE_LEFT = 11
-	TILE_SINGLE_RIGHT = 12
-	TILE_FLOATING = 13
-	TILE_SINGLE_HORIZONTAL = 14
-	TILE_SINGLE_VERTICAL = 15
-	TILE_INNER_CORNER_TOP_LEFT = 16
-	TILE_INNER_CORNER_TOP_RIGHT = 17
+	TILE_DIRT                      = 0
+	TILE_TOP_LEFT_CORNER           = 1
+	TILE_RIGHT_WALL_1              = 2
+	TILE_RIGHT_WALL_2              = 3
+	TILE_BOTTOM_LEFT_CORNER        = 4
+	TILE_TOP_RIGHT_CORNER          = 5
+	TILE_LEFT_WALL_1               = 6
+	TILE_CEILING_1                 = 7
+	TILE_CEILING_2                 = 8
+	TILE_SINGLE_TOP                = 9
+	TILE_SINGLE_BOTTOM             = 10
+	TILE_SINGLE_LEFT               = 11
+	TILE_SINGLE_RIGHT              = 12
+	TILE_FLOATING                  = 13
+	TILE_SINGLE_HORIZONTAL         = 14
+	TILE_SINGLE_VERTICAL           = 15
+	TILE_INNER_CORNER_TOP_LEFT     = 16
+	TILE_INNER_CORNER_TOP_RIGHT    = 17
 	TILE_INNER_CORNER_BOTTOM_RIGHT = 18
-	TILE_INNER_CORNER_BOTTOM_LEFT = 19
-	TILE_FLOOR_1 = 20
-	TILE_FLOOR_2 = 21
-	TILE_LEFT_WALL_2 = 22
-	TILE_BOTTOM_RIGHT_CORNER = 23
+	TILE_INNER_CORNER_BOTTOM_LEFT  = 19
+	TILE_FLOOR_1                   = 20
+	TILE_FLOOR_2                   = 21
+	TILE_LEFT_WALL_2               = 22
+	TILE_BOTTOM_RIGHT_CORNER       = 23
 )
 
 // Predefined room layout for 10x10 (0 = TILE_DIRT, -1 = empty)
@@ -53,9 +53,9 @@ var room10x10Layout = [][]int{
 // SimpleRoom is a basic room implementation with a forest theme
 type SimpleRoom struct {
 	*BaseRoom
-	tileSize int
-	tilesPerRow int
-	forestTiles map[int]*ebiten.Image
+	tileSize         int
+	tilesPerRow      int
+	forestTiles      map[int]*ebiten.Image
 	parallaxRenderer *engine.ParallaxRenderer
 }
 
@@ -63,8 +63,8 @@ type SimpleRoom struct {
 func NewSimpleRoom(zoneID string) *SimpleRoom {
 	// Create room based on config settings
 	room := &SimpleRoom{
-		BaseRoom: NewBaseRoom(zoneID, engine.GameConfig.RoomWidthTiles, engine.GameConfig.RoomHeightTiles),
-		tileSize: engine.GameConfig.TileSize,
+		BaseRoom:    NewBaseRoom(zoneID, engine.GameConfig.RoomWidthTiles, engine.GameConfig.RoomHeightTiles),
+		tileSize:    engine.GameConfig.TileSize,
 		tilesPerRow: 8, // Forest tilemap has 8 tiles per row
 		forestTiles: make(map[int]*ebiten.Image),
 	}
@@ -131,7 +131,7 @@ func (sr *SimpleRoom) initializeParallaxLayers() {
 			},
 		}
 	}
-	
+
 	// Always create the parallax renderer - no fallback mechanism
 	sr.parallaxRenderer = engine.NewParallaxRenderer(
 		layers,
@@ -150,7 +150,7 @@ func (sr *SimpleRoom) initializeForestTiles() {
 	for i := 0; i <= 23; i++ {
 		x := (i % sr.tilesPerRow) * sr.tileSize
 		y := (i / sr.tilesPerRow) * sr.tileSize
-		
+
 		// Use SubImage to extract the tile from the tilemap
 		subImg := engine.GetTileSprite().SubImage(image.Rect(x, y, x+sr.tileSize, y+sr.tileSize)).(*ebiten.Image)
 		sr.forestTiles[i] = subImg
@@ -163,18 +163,18 @@ func (sr *SimpleRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	if engine.GameConfig.UsePlaceholderSprites {
 		return engine.GetTileSpriteByType(tileIndex)
 	}
-	
+
 	// First try local cache for backwards compatibility
 	if sprite, exists := sr.forestTiles[tileIndex]; exists {
 		return sprite
 	}
-	
+
 	// Try sprite manager
 	sprite := engine.LoadSpriteByHex(tileIndex)
 	if sprite != nil {
 		return sprite
 	}
-	
+
 	// Fallback to dirt if not found
 	if sprite, exists := sr.forestTiles[TILE_DIRT]; exists {
 		return sprite
@@ -204,12 +204,12 @@ func (sr *SimpleRoom) buildRoom() {
 				if x == 0 || x == sr.tileMap.Width-1 || y == 0 || y == sr.tileMap.Height-1 {
 					sr.tileMap.Tiles[y][x] = TILE_DIRT
 				} else {
-					sr.tileMap.Tiles[y][x] = -1  // Empty
+					sr.tileMap.Tiles[y][x] = -1 // Empty
 				}
 			}
 		}
 	}
-	
+
 	// Simple debug: Print layout to console for easy copying
 	PrintRoomLayout(sr.GetZoneID(), sr.tileMap)
 }
@@ -219,15 +219,15 @@ func (sr *SimpleRoom) createPlatform(x, y, width int) {
 	if width < 2 {
 		return
 	}
-	
+
 	// Left edge
 	sr.tileMap.SetTile(x, y, TILE_SINGLE_LEFT)
-	
+
 	// Middle tiles
 	for i := 1; i < width-1; i++ {
 		sr.tileMap.SetTile(x+i, y, TILE_SINGLE_HORIZONTAL)
 	}
-	
+
 	// Right edge
 	sr.tileMap.SetTile(x+width-1, y, TILE_SINGLE_RIGHT)
 }
@@ -677,7 +677,7 @@ func (sr *SimpleRoom) initializeLayout() {
 
 	// Apply the layout to the tile map
 	sr.loadFromLayout(levelLayout)
-	
+
 	// Simple debug: Print layout to console for easy copying
 	PrintRoomLayout(sr.GetZoneID(), sr.tileMap)
 }
@@ -710,7 +710,7 @@ func (sr *SimpleRoom) HandleCollisions(player *entities.Player) {
 	// Get player position
 	playerX, playerY := player.GetPosition()
 	physicsUnit := engine.GetPhysicsUnit()
-	
+
 	// Convert player position to tile coordinates
 	charTileX := playerX / physicsUnit
 	charTileY := playerY / physicsUnit
@@ -747,7 +747,7 @@ func (sr *SimpleRoom) GetParallaxRenderer() *engine.ParallaxRenderer {
 func (sr *SimpleRoom) FindFloorAtX(x int) int {
 	physicsUnit := engine.GetPhysicsUnit()
 	tileX := x / physicsUnit
-	
+
 	// Clamp to valid tile coordinates
 	if tileX < 0 {
 		tileX = 0
@@ -755,7 +755,7 @@ func (sr *SimpleRoom) FindFloorAtX(x int) int {
 	if tileX >= sr.tileMap.Width {
 		tileX = sr.tileMap.Width - 1
 	}
-	
+
 	// Scan down from the top to find the first solid tile
 	for tileY := 0; tileY < sr.tileMap.Height; tileY++ {
 		tileIndex := sr.tileMap.GetTileIndex(tileX, tileY)
@@ -764,7 +764,7 @@ func (sr *SimpleRoom) FindFloorAtX(x int) int {
 			return tileY * physicsUnit
 		}
 	}
-	
+
 	// If no solid tile found, use the bottom of the map
 	return (sr.tileMap.Height - 1) * physicsUnit
 }
@@ -778,23 +778,25 @@ func (sr *SimpleRoom) Draw(screen *ebiten.Image) {
 
 	// Draw tiles using sprite provider function
 	sr.DrawTiles(screen, sr.getTileSprite)
-	
+
 	// Draw debug grid overlay (if enabled)
 	engine.DrawGrid(screen)
 }
 
 // DrawWithCamera renders the room with camera offset
 func (sr *SimpleRoom) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
+	engine.LogDebug("DRAW_LAYER: ParallaxBackground")
 	// Layer 2: Parallax background
 	if sr.parallaxRenderer != nil {
 		sr.parallaxRenderer.DrawParallaxLayers(screen, cameraOffsetX, cameraOffsetY)
 	}
 
+	engine.LogDebug("DRAW_LAYER: RoomTiles")
 	// Layer 3: Room tiles
 	sr.DrawTilesWithCamera(screen, sr.getTileSprite, cameraOffsetX, cameraOffsetY)
-	
+
 	// Layer 5: Foreground (could be implemented here if needed)
-	
+
 	// Debug grid overlay (if enabled) - grid moves with camera
 	if engine.GetGridVisible() {
 		engine.DrawGridWithCamera(screen, cameraOffsetX, cameraOffsetY)

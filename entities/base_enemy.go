@@ -22,12 +22,12 @@ type BaseEnemy struct {
 	vx       int
 	vy       int
 	onGround bool
-	
+
 	// Common properties that can be overridden by specific enemy types
-	moveSpeed     int    // Movement speed in physics units
-	friction      int    // Friction applied each frame
-	scaleX        float64 // Horizontal scale factor (can be negative for flipping)
-	scaleY        float64 // Vertical scale factor
+	moveSpeed int     // Movement speed in physics units
+	friction  int     // Friction applied each frame
+	scaleX    float64 // Horizontal scale factor (can be negative for flipping)
+	scaleY    float64 // Vertical scale factor
 }
 
 /*
@@ -48,7 +48,7 @@ func NewBaseEnemy(x, y int) *BaseEnemy {
 		vx:       0,
 		vy:       0,
 		onGround: false,
-		
+
 		// Default properties
 		moveSpeed: engine.GameConfig.PlayerPhysics.MoveSpeed / 2, // Half player speed by default
 		friction:  engine.GameConfig.PlayerPhysics.Friction,
@@ -73,10 +73,10 @@ Uses values from engine.GameConfig for physics calculations.
 */
 func (be *BaseEnemy) Update() {
 	physicsUnit := engine.GetPhysicsUnit()
-	
+
 	// NOTE: AI logic should be handled by the concrete enemy type
 	// before calling this Update() method
-	
+
 	// Apply movement
 	be.x += be.vx
 	be.y += be.vy
@@ -120,7 +120,7 @@ Parameters:
 func (be *BaseEnemy) Draw(screen *ebiten.Image) {
 	// Use enemy sprite (placeholder or actual)
 	sprite := engine.GetEnemySprite()
-	
+
 	// Update scale based on movement direction
 	switch {
 	case be.vx > 0:
@@ -133,7 +133,7 @@ func (be *BaseEnemy) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(be.scaleX, be.scaleY)
 	op.GeoM.Translate(float64(be.x)/float64(engine.GetPhysicsUnit()), float64(be.y)/float64(engine.GetPhysicsUnit()))
-	
+
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
 }
@@ -151,7 +151,7 @@ Parameters:
 func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Use enemy sprite (placeholder or actual)
 	sprite := engine.GetEnemySprite()
-	
+
 	// Update scale based on movement direction
 	switch {
 	case be.vx > 0:
@@ -167,9 +167,10 @@ func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraO
 	renderX := float64(be.x)/float64(engine.GetPhysicsUnit()) + cameraOffsetX
 	renderY := float64(be.y)/float64(engine.GetPhysicsUnit()) + cameraOffsetY
 	op.GeoM.Translate(renderX, renderY)
-	
+
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
+	engine.LogDebug(fmt.Sprintf("DRAW_OBJECT: Enemy(%d,%d)", be.x, be.y))
 }
 
 /*
@@ -184,30 +185,30 @@ Parameters:
 func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
 	// Get physics unit for position conversion
 	physicsUnit := engine.GetPhysicsUnit()
-	
+
 	// Calculate render position
 	renderX := float64(be.x)/float64(physicsUnit) - cameraOffsetX
 	renderY := float64(be.y)/float64(physicsUnit) - cameraOffsetY
-	
+
 	// Draw bounding box
 	boxColor := color.RGBA{255, 0, 0, 128} // Red for enemies
 	if be.onGround {
 		boxColor = color.RGBA{0, 255, 0, 128} // Green when on ground
 	}
-	
+
 	// Use default enemy size for bounding box (can be overridden by specific enemies)
 	// These are reasonable defaults based on typical sprite sizes
 	spriteWidth := 32.0 * be.scaleX
 	spriteHeight := 32.0 * be.scaleY
-	
+
 	// Draw bounding box
 	ebitenutil.DrawRect(screen, renderX, renderY, spriteWidth, spriteHeight, boxColor)
-	
+
 	// Draw center point
 	centerX := renderX + spriteWidth/2
 	centerY := renderY + spriteHeight/2
 	ebitenutil.DrawRect(screen, centerX-2, centerY-2, 4, 4, color.RGBA{255, 255, 0, 255})
-	
+
 	// Draw velocity vector
 	if be.vx != 0 || be.vy != 0 {
 		// Scale velocity for visualization
@@ -216,10 +217,10 @@ func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffset
 		endY := centerY + float64(be.vy)*velScale
 		ebitenutil.DrawLine(screen, centerX, centerY, endX, endY, color.RGBA{0, 255, 255, 255})
 	}
-	
+
 	// Draw enemy info text
 	debugY := int(renderY - 10)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", be.x/physicsUnit, be.y/physicsUnit), 
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", be.x/physicsUnit, be.y/physicsUnit),
 		int(renderX), debugY)
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", be.vx, be.vy),
 		int(renderX), debugY+12)

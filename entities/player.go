@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"sword/engine"
-	"image/color"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+	"image/color"
+	"sword/engine"
 )
 
 /*
@@ -19,16 +19,16 @@ Position and velocity are stored in physics units (see engine.GetPhysicsUnit()).
 The player's collision box can be configured through engine.GameConfig.PlayerPhysics.
 */
 type Player struct {
-	x, y   int  // Position in physics units
-	vx, vy int  // Velocity in physics units per frame
+	x, y     int  // Position in physics units
+	vx, vy   int  // Velocity in physics units per frame
 	onGround bool // Whether the player is currently on the ground
-	
+
 	// Jump mechanics state
 	coyoteTimer     int  // Frames since leaving ground
 	jumpBufferTimer int  // Frames since jump was pressed
 	isJumping       bool // Currently in a jump (for variable height)
 	jumpHeldFrames  int  // How long jump has been held
-	
+
 	// Direction state
 	facingRight bool // Whether the player is facing right
 }
@@ -46,11 +46,11 @@ Returns a pointer to the new Player instance.
 */
 func NewPlayer(x, y int) *Player {
 	return &Player{
-		x:          x,
-		y:          y,
-		vx:         0,
-		vy:         0,
-		onGround:   false,
+		x:           x,
+		y:           y,
+		vx:          0,
+		vy:          0,
+		onGround:    false,
 		facingRight: true, // Default to facing right
 	}
 }
@@ -66,12 +66,12 @@ Implements advanced jump mechanics including coyote time and jump buffering.
 func (p *Player) ProcessInput() {
 	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
-	
+
 	// Update jump buffer timer
 	if p.jumpBufferTimer > 0 {
 		p.jumpBufferTimer--
 	}
-	
+
 	// Horizontal movement
 	p.vx = 0
 	moveSpeed := config.MoveSpeed
@@ -79,31 +79,31 @@ func (p *Player) ProcessInput() {
 		// Apply air control
 		moveSpeed = int(float64(moveSpeed) * config.AirControl)
 	}
-	
+
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 		p.vx = -moveSpeed * physicsUnit
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		p.vx = moveSpeed * physicsUnit
 	}
-	
+
 	// Jump input handling
 	jumpPressed := ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyW)
-	
+
 	if jumpPressed {
 		p.jumpBufferTimer = config.JumpBufferTime
 	}
-	
+
 	// Check if we can jump (on ground or within coyote time)
 	canJump := p.onGround || (p.coyoteTimer > 0 && p.vy >= 0)
-	
+
 	// Execute jump if buffered and able
 	if p.jumpBufferTimer > 0 && canJump {
 		p.Jump()
 		p.jumpBufferTimer = 0
 		p.coyoteTimer = 0
 	}
-	
+
 	// Variable jump height - reduce upward velocity if jump released early
 	if config.VariableJumpHeight && p.isJumping && !jumpPressed && p.vy < 0 {
 		// Calculate how much to reduce jump
@@ -113,7 +113,7 @@ func (p *Player) ProcessInput() {
 		}
 		p.isJumping = false
 	}
-	
+
 	// Fast fall when holding down
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		if p.vy > 0 {
@@ -129,7 +129,7 @@ Sets the vertical velocity to the configured jump power.
 func (p *Player) Jump() {
 	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
-	
+
 	p.vy = -config.JumpPower * physicsUnit
 	p.onGround = false
 	p.isJumping = true
@@ -171,18 +171,18 @@ gravity, and ground level. Also updates jump mechanics timers.
 func (p *Player) Update() {
 	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
-	
+
 	// Update position
 	p.x += p.vx
 	p.y += p.vy
-	
+
 	// Update coyote time
 	if p.onGround {
 		p.coyoteTimer = config.CoyoteTime
 	} else if p.coyoteTimer > 0 {
 		p.coyoteTimer--
 	}
-	
+
 	// Ground collision - using config ground level
 	groundY := engine.GameConfig.GroundLevel * physicsUnit
 	if p.y > groundY {
@@ -191,7 +191,7 @@ func (p *Player) Update() {
 		wasInAir := !p.onGround
 		p.onGround = true
 		p.isJumping = false
-		
+
 		// Reset coyote timer when landing
 		if wasInAir {
 			p.coyoteTimer = config.CoyoteTime
@@ -199,7 +199,7 @@ func (p *Player) Update() {
 	} else {
 		p.onGround = false
 	}
-	
+
 	// Apply friction
 	if p.onGround {
 		// Ground friction
@@ -228,12 +228,12 @@ func (p *Player) Update() {
 			}
 		}
 	}
-	
+
 	// Apply gravity
 	if p.vy < config.MaxFallSpeed*physicsUnit {
 		p.vy += config.Gravity
 	}
-	
+
 	// Update jump held frames
 	if p.isJumping && p.vy < 0 {
 		p.jumpHeldFrames++
@@ -271,6 +271,7 @@ func (p *Player) Draw(screen *ebiten.Image) {
 
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
+	engine.LogDebug(fmt.Sprintf("DRAW_OBJECT: Player(%d,%d)", p.x, p.y))
 }
 
 /*
@@ -289,17 +290,17 @@ func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY fl
 	config := &engine.GameConfig.PlayerPhysics
 	renderX := float64(p.x)/float64(physicsUnit) + cameraOffsetX
 	renderY := float64(p.y)/float64(physicsUnit) + cameraOffsetY
-	
+
 	// Calculate sprite bounds with scaling
 	spriteWidth := float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor
 	spriteHeight := float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor
-	
+
 	// Calculate collision box based on configuration
 	collisionX := renderX + (spriteWidth * config.CollisionBoxOffsetX)
 	collisionY := renderY + (spriteHeight * config.CollisionBoxOffsetY)
 	collisionWidth := spriteWidth * config.CollisionBoxWidth
 	collisionHeight := spriteHeight * config.CollisionBoxHeight
-	
+
 	// Draw collision box
 	boxColor := color.RGBA{0, 255, 0, 128} // Green for player
 	if !p.onGround {
@@ -308,53 +309,53 @@ func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY fl
 	if p.isJumping {
 		boxColor = color.RGBA{0, 255, 255, 128} // Cyan when jumping
 	}
-	
-	vector.StrokeRect(screen, float32(collisionX), float32(collisionY), 
+
+	vector.StrokeRect(screen, float32(collisionX), float32(collisionY),
 		float32(collisionWidth), float32(collisionHeight), 2, boxColor, false)
-	
+
 	// Draw ground check area
 	groundCheckX := collisionX + (collisionWidth * (1.0 - config.GroundCheckWidth) / 2.0)
 	groundCheckY := collisionY + collisionHeight
 	groundCheckWidth := collisionWidth * config.GroundCheckWidth
 	groundCheckHeight := float64(config.GroundCheckOffset)
-	
+
 	groundCheckColor := color.RGBA{255, 0, 255, 64} // Magenta for ground check
 	vector.DrawFilledRect(screen, float32(groundCheckX), float32(groundCheckY),
 		float32(groundCheckWidth), float32(groundCheckHeight), groundCheckColor, false)
-	
+
 	// Draw sprite bounds (for reference)
 	spriteColor := color.RGBA{128, 128, 128, 64} // Gray for sprite bounds
-	vector.StrokeRect(screen, float32(renderX), float32(renderY), 
+	vector.StrokeRect(screen, float32(renderX), float32(renderY),
 		float32(spriteWidth), float32(spriteHeight), 1, spriteColor, false)
-	
+
 	// Draw center point of collision box
 	centerX := collisionX + collisionWidth/2
 	centerY := collisionY + collisionHeight/2
 	vector.DrawFilledCircle(screen, float32(centerX), float32(centerY), 3, color.RGBA{255, 0, 0, 255}, false)
-	
+
 	// Draw velocity vector
 	if p.vx != 0 || p.vy != 0 {
 		velScale := 0.5 // Scale factor for velocity visualization
 		endX := centerX + float64(p.vx)*velScale/float64(physicsUnit)
 		endY := centerY + float64(p.vy)*velScale/float64(physicsUnit)
-		vector.StrokeLine(screen, float32(centerX), float32(centerY), 
+		vector.StrokeLine(screen, float32(centerX), float32(centerY),
 			float32(endX), float32(endY), 2, color.RGBA{255, 0, 0, 255}, false)
 	}
-	
+
 	// Draw debug text
 	debugY := int(renderY - 20)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", p.x/physicsUnit, p.y/physicsUnit), 
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Pos: %d,%d", p.x/physicsUnit, p.y/physicsUnit),
 		int(renderX), debugY)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", p.vx, p.vy), 
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Vel: %d,%d", p.vx, p.vy),
 		int(renderX), debugY+12)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Ground: %v", p.onGround), 
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Ground: %v", p.onGround),
 		int(renderX), debugY+24)
 	if p.coyoteTimer > 0 {
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Coyote: %d", p.coyoteTimer), 
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Coyote: %d", p.coyoteTimer),
 			int(renderX), debugY+36)
 	}
 	if p.jumpBufferTimer > 0 {
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("JumpBuf: %d", p.jumpBufferTimer), 
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("JumpBuf: %d", p.jumpBufferTimer),
 			int(renderX), debugY+48)
 	}
 }

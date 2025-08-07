@@ -62,6 +62,7 @@ func (hm *HUDManager) Draw(screen interface{}) error {
 
 	for _, component := range hm.components {
 		if component.IsVisible() {
+			LogDebug("DRAW_LAYER: HUDComponent(" + component.GetName() + ")")
 			if err := component.Draw(screen); err != nil {
 				return err
 			}
