@@ -187,8 +187,8 @@ func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffset
 	physicsUnit := engine.GetPhysicsUnit()
 
 	// Calculate render position
-	renderX := float64(be.x)/float64(physicsUnit) - cameraOffsetX
-	renderY := float64(be.y)/float64(physicsUnit) - cameraOffsetY
+	renderX := float64(be.x)/float64(physicsUnit) + cameraOffsetX
+	renderY := float64(be.y)/float64(physicsUnit) + cameraOffsetY
 
 	// Draw bounding box
 	boxColor := color.RGBA{255, 0, 0, 128} // Red for enemies
