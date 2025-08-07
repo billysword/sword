@@ -12,15 +12,23 @@ func GetPlayerSprite(facing string) *ebiten.Image {
 	if GameConfig.UsePlaceholderSprites {
 		return GeneratePlayerPlaceholder()
 	}
-	
+
+	sm := GetSpriteManager()
+	var sheetName string
 	switch facing {
 	case "left":
-		return globalLeftSprite
+		sheetName = "player_left"
 	case "right":
-		return globalRightSprite
+		sheetName = "player_right"
 	default:
-		return globalIdleSprite
+		sheetName = "player_idle"
 	}
+
+	sprite := sm.GetTileByIndex(sheetName, 0)
+	if sprite == nil {
+		return GeneratePlayerPlaceholder()
+	}
+	return sprite
 }
 
 /*
@@ -31,10 +39,13 @@ func GetEnemySprite() *ebiten.Image {
 	if GameConfig.UsePlaceholderSprites {
 		return GenerateEnemyPlaceholder()
 	}
-	
-	// Return default enemy sprite (for now, use idle sprite)
-	// This should be replaced with actual enemy sprites when available
-	return globalIdleSprite
+
+	sm := GetSpriteManager()
+	sprite := sm.GetTileByIndex("enemy", 0)
+	if sprite == nil {
+		return GenerateEnemyPlaceholder()
+	}
+	return sprite
 }
 
 /*
@@ -42,9 +53,9 @@ GetTileSpriteByType returns the appropriate tile sprite based on config.
 If UsePlaceholderSprites is true, returns a placeholder sprite.
 */
 func GetTileSpriteByType(tileType int) *ebiten.Image {
-	if GameConfig.UsePlaceholderSprites {
-		// Map tile types to placeholder types
-		switch tileType {
+	// Map tile types to placeholder types for fallback
+	placeholderForType := func(t int) *ebiten.Image {
+		switch t {
 		case 0x01, 0x02, 0x03: // Ground tiles
 			return GenerateTilePlaceholder(PlaceholderTileGround)
 		case 0x10, 0x11, 0x12: // Wall tiles
@@ -59,7 +70,15 @@ func GetTileSpriteByType(tileType int) *ebiten.Image {
 			return GenerateTilePlaceholder(PlaceholderTileGround)
 		}
 	}
-	
-	// Use existing tile sprite system
-	return GetTileSprite()
+
+	if GameConfig.UsePlaceholderSprites {
+		return placeholderForType(tileType)
+	}
+
+	sm := GetSpriteManager()
+	sprite := sm.GetTileByHex("forest", tileType)
+	if sprite == nil {
+		return placeholderForType(tileType)
+	}
+	return sprite
 }

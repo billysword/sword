@@ -7,100 +7,39 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-// Global sprite storage
-var (
-	globalLeftSprite      *ebiten.Image
-	globalRightSprite     *ebiten.Image
-	globalIdleSprite      *ebiten.Image
-	globalBackgroundImage *ebiten.Image
-	globalTileSprite      *ebiten.Image
-	globalTilesSprite     *ebiten.Image
-)
-
 // Global debug rendering settings
 var (
 	showBackground = true
-	showGrid      = false
+	showGrid       = false
 )
 
 /*
-SetGlobalSprites sets the global sprite references for use by all states.
-This function should be called once during initialization to provide 
-all game states with access to the core character and background sprites.
-
-Parameters:
-  - left: Sprite image for left-facing character animation
-  - right: Sprite image for right-facing character animation  
-  - idle: Sprite image for idle/standing character state
-  - background: Background image for rendering behind game elements
-*/
-func SetGlobalSprites(left, right, idle, background *ebiten.Image) {
-	globalLeftSprite = left
-	globalRightSprite = right
-	globalIdleSprite = idle
-	globalBackgroundImage = background
-}
-
-/*
-SetGlobalTileSprites sets the global tile sprite references.
-Used to provide tile rendering capabilities across all game states.
-
-Parameters:
-  - tile: Individual tile sprite image
-  - tiles: Tileset sprite image containing multiple tiles
-*/
-func SetGlobalTileSprites(tile, tiles *ebiten.Image) {
-	globalTileSprite = tile
-	globalTilesSprite = tiles
-}
-
-/*
-GetLeftSprite returns the global left-facing sprite.
-*/
-func GetLeftSprite() *ebiten.Image {
-	return globalLeftSprite
-}
-
-/*
-GetRightSprite returns the global right-facing sprite.
-*/
-func GetRightSprite() *ebiten.Image {
-	return globalRightSprite
-}
-
-/*
-GetIdleSprite returns the global idle sprite.
-*/
-func GetIdleSprite() *ebiten.Image {
-	return globalIdleSprite
-}
-
-/*
-GetBackgroundImage returns the global background image.
+GetBackgroundImage retrieves the background image from the sprite manager.
+Returns nil if the background sheet is not loaded.
 */
 func GetBackgroundImage() *ebiten.Image {
-	return globalBackgroundImage
+	sm := GetSpriteManager()
+	if sheet, ok := sm.sheets["background"]; ok {
+		return sheet.Image
+	}
+	return nil
 }
 
 /*
-GetTileSprite returns the global tile sprite.
+GetTileSprite retrieves the main tile sprite sheet from the sprite manager.
+Returns nil if the sheet is not loaded.
 */
 func GetTileSprite() *ebiten.Image {
-	return globalTileSprite
-}
-
-
-
-/*
-GetTilesSprite returns the global tiles sprite.
-*/
-func GetTilesSprite() *ebiten.Image {
-	return globalTilesSprite
+	sm := GetSpriteManager()
+	if sheet, ok := sm.sheets["forest"]; ok {
+		return sheet.Image
+	}
+	return nil
 }
 
 /*
 ToggleBackground toggles background rendering on/off.
-Useful for debugging and performance testing by removing 
+Useful for debugging and performance testing by removing
 background rendering overhead.
 */
 func ToggleBackground() {
@@ -169,19 +108,19 @@ func DrawGrid(screen *ebiten.Image) {
 
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 	gridColor := color.RGBA{
-		GameConfig.GridColor[0], 
-		GameConfig.GridColor[1], 
-		GameConfig.GridColor[2], 
+		GameConfig.GridColor[0],
+		GameConfig.GridColor[1],
+		GameConfig.GridColor[2],
 		GameConfig.GridColor[3],
 	}
-	
+
 	physicsUnit := GetPhysicsUnit()
-	
+
 	// Draw vertical lines
 	for x := 0; x < screenWidth; x += physicsUnit {
 		vector.StrokeLine(screen, float32(x), 0, float32(x), float32(screenHeight), 1, gridColor, false)
 	}
-	
+
 	// Draw horizontal lines
 	for y := 0; y < screenHeight; y += physicsUnit {
 		vector.StrokeLine(screen, 0, float32(y), float32(screenWidth), float32(y), 1, gridColor, false)
@@ -205,25 +144,25 @@ func DrawGridWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float
 
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 	gridColor := color.RGBA{
-		GameConfig.GridColor[0], 
-		GameConfig.GridColor[1], 
-		GameConfig.GridColor[2], 
+		GameConfig.GridColor[0],
+		GameConfig.GridColor[1],
+		GameConfig.GridColor[2],
 		GameConfig.GridColor[3],
 	}
-	
+
 	physicsUnit := GetPhysicsUnit()
-	
+
 	// Calculate grid offset to ensure grid lines align with tiles
 	gridOffsetX := int(cameraOffsetX) % physicsUnit
 	gridOffsetY := int(cameraOffsetY) % physicsUnit
-	
+
 	// Draw vertical lines
 	for x := gridOffsetX; x < screenWidth+physicsUnit; x += physicsUnit {
 		if x >= 0 {
 			vector.StrokeLine(screen, float32(x), 0, float32(x), float32(screenHeight), 1, gridColor, false)
 		}
 	}
-	
+
 	// Draw horizontal lines
 	for y := gridOffsetY; y < screenHeight+physicsUnit; y += physicsUnit {
 		if y >= 0 {
