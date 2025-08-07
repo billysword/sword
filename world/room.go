@@ -268,8 +268,8 @@ Parameters:
 */
 func (br *BaseRoom) HandleCollisions(player *entities.Player) {
 	// Default: basic ground collision using config ground level
-	physicsUnit := engine.GetPhysicsUnit()
-	groundY := engine.GameConfig.GroundLevel * physicsUnit
+	u := engine.GetPhysicsUnit()
+	groundY := engine.GameConfig.GroundLevel * u
 
 	x, y := player.GetPosition()
 	if y > groundY {
@@ -344,9 +344,9 @@ Parameters:
 Returns the Y position in physics units where entities should spawn.
 */
 func (br *BaseRoom) FindFloorAtX(x int) int {
-	physicsUnit := engine.GetPhysicsUnit()
+	u := engine.GetPhysicsUnit()
 	if br.tileMap != nil && br.tileMap.Width > 0 && br.tileMap.Height > 0 {
-		tileX := (x / physicsUnit)
+		tileX := (x / u)
 		if tileX < 0 {
 			tileX = 0
 		}
@@ -356,13 +356,13 @@ func (br *BaseRoom) FindFloorAtX(x int) int {
 		for tileY := 0; tileY < br.tileMap.Height; tileY++ {
 			tileIndex := br.tileMap.GetTileIndex(tileX, tileY)
 			if IsSolidTile(tileIndex) {
-				return tileY * physicsUnit
+				return tileY * u
 			}
 		}
-		return (br.tileMap.Height - 1) * physicsUnit
+		return (br.tileMap.Height - 1) * u
 	}
 	// Fallback: use config ground level if no tile map
-	return engine.GameConfig.GroundLevel * physicsUnit
+	return engine.GameConfig.GroundLevel * u
 }
 
 /*
@@ -425,7 +425,7 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 
 	engine.LogDebug("DRAW_LAYER: RoomTiles(" + br.zoneID + ")")
 
-	physicsUnit := engine.GetPhysicsUnit()
+	u := engine.GetPhysicsUnit()
 
 	for y := 0; y < br.tileMap.Height; y++ {
 		for x := 0; x < br.tileMap.Width; x++ {
@@ -436,8 +436,8 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 					op := &ebiten.DrawImageOptions{}
 					// Scale tiles using global scale factor
 					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-					renderX := float64(x*physicsUnit) + cameraOffsetX
-					renderY := float64(y*physicsUnit) + cameraOffsetY
+					renderX := float64(x*u) + cameraOffsetX
+					renderY := float64(y*u) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
 
 					screen.DrawImage(sprite, op)

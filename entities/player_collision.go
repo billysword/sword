@@ -20,9 +20,8 @@ collision box configuration in PlayerPhysicsConfig.
 */
 func (p *Player) GetCollisionBox() CollisionBox {
 	config := &engine.GameConfig.PlayerPhysics
-	physicsUnit := engine.GetPhysicsUnit()
 	
-	// Calculate sprite dimensions in physics units
+	// Calculate sprite dimensions in pixels (physics units now equal base pixels)
 	spriteWidth := int(float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor)
 	spriteHeight := int(float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor)
 	
@@ -32,12 +31,12 @@ func (p *Player) GetCollisionBox() CollisionBox {
 	width := int(float64(spriteWidth) * config.CollisionBoxWidth)
 	height := int(float64(spriteHeight) * config.CollisionBoxHeight)
 	
-	// Convert to physics units
+	// Already in pixels; use directly
 	return CollisionBox{
-		X:      p.x + offsetX*physicsUnit/spriteWidth,
-		Y:      p.y + offsetY*physicsUnit/spriteHeight,
-		Width:  width * physicsUnit / spriteWidth,
-		Height: height * physicsUnit / spriteHeight,
+		X:      p.x + offsetX,
+		Y:      p.y + offsetY,
+		Width:  width,
+		Height: height,
 	}
 }
 
@@ -61,13 +60,11 @@ func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int)
 	p.x, p.y = oldX, oldY
 	
 	// Get physics unit for conversion
-	physicsUnit := engine.GetPhysicsUnit()
-	
 	// Convert collision box to tile coordinates (physics units -> tile indices)
-	leftTile := box.X / physicsUnit
-	rightTile := (box.X + box.Width) / physicsUnit
-	topTile := box.Y / physicsUnit
-	bottomTile := (box.Y + box.Height) / physicsUnit
+	leftTile := box.X / engine.GetPhysicsUnit()
+	rightTile := (box.X + box.Width) / engine.GetPhysicsUnit()
+	topTile := box.Y / engine.GetPhysicsUnit()
+	bottomTile := (box.Y + box.Height) / engine.GetPhysicsUnit()
 	
 	// Check all tiles the collision box overlaps
 	tiles := tileProvider.GetTiles()
@@ -102,7 +99,6 @@ Parameters:
   - tileProvider: The tile provider (room) for collision detection
 */
 func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
-	physicsUnit := engine.GetPhysicsUnit()
 	config := &engine.GameConfig.PlayerPhysics
 	
 	// Update coyote time
@@ -113,7 +109,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 	}
 	
 	// Helper for stepped axis movement to prevent tunneling
-	stepUnit := physicsUnit / 4
+	stepUnit := engine.GetPhysicsUnit() / 4
 	if stepUnit < 1 {
 		stepUnit = 1
 	}
@@ -230,7 +226,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 	}
 	
 	// Apply gravity
-	if !p.onGround && p.vy < config.MaxFallSpeed*physicsUnit {
+	if !p.onGround && p.vy < config.MaxFallSpeed {
 		p.vy += config.Gravity
 	}
 	
@@ -244,7 +240,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 		p.x = 0
 		p.vx = 0
 	}
-	maxX := tileProvider.GetWidth() * physicsUnit
+	maxX := tileProvider.GetWidth() * engine.GetPhysicsUnit()
 	if p.x > maxX {
 		p.x = maxX
 		p.vx = 0
@@ -254,7 +250,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 		p.y = 0
 		p.vy = 0
 	}
-	maxY := tileProvider.GetHeight() * physicsUnit
+	maxY := tileProvider.GetHeight() * engine.GetPhysicsUnit()
 	if p.y > maxY {
 		p.y = maxY
 		p.vy = 0

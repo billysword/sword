@@ -86,13 +86,13 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		}
 	}
 
-	// Recompute physics unit after potential scale change
-	physicsUnit := engine.GetPhysicsUnit()
+	// Recompute physics unit after potential scale change (physics unit is base tile size)
+	u := engine.GetPhysicsUnit()
 
 	// Calculate spawn position based on main room
 	tileMap := mainRoom.GetTileMap()
-	playerSpawnX := (tileMap.Width / 2) * physicsUnit
-	playerSpawnY := (tileMap.Height - 2) * physicsUnit
+	playerSpawnX := (tileMap.Width / 2) * u
+	playerSpawnY := (tileMap.Height - 2) * u
 
 	// For larger rooms, use floor detection
 	if tileMap.Width > 10 || tileMap.Height > 10 {
@@ -130,14 +130,14 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Create camera and viewport systems
 	camera := engine.NewCamera(windowWidth, windowHeight)
 	if tileMap != nil {
-		worldWidth := tileMap.Width * physicsUnit
-		worldHeight := tileMap.Height * physicsUnit
+		worldWidth := tileMap.Width * u
+		worldHeight := tileMap.Height * u
 		camera.SetWorldBounds(worldWidth, worldHeight)
 	}
 
 	viewportRenderer := engine.NewViewportRenderer(windowWidth, windowHeight)
 	if tileMap != nil {
-		viewportRenderer.SetWorldBounds(tileMap.Width*physicsUnit, tileMap.Height*physicsUnit)
+		viewportRenderer.SetWorldBounds(tileMap.Width*u, tileMap.Height*u)
 	}
 
 	// Initialize HUD system
@@ -267,21 +267,16 @@ func (ris *InGameState) updateDebugHUD() {
 
 				// Update player position
 			playerX, playerY := ris.player.GetPosition()
-			physicsUnit := engine.GetPhysicsUnit()
-			playerPixelX := float64(playerX)
-			playerPixelY := float64(playerY)
-			playerTileX := int(playerPixelX) / physicsUnit
-			playerTileY := int(playerPixelY) / physicsUnit
-			playerPos := fmt.Sprintf("Physics(px): (%d, %d) | Pixels: (%.1f, %.1f) | Tiles: (%d, %d)",
-				playerX, playerY, playerPixelX, playerPixelY, playerTileX, playerTileY)
-			dh.UpdatePlayerPos(playerPos)
+					u := engine.GetPhysicsUnit()
+		playerTileX := playerX / u
+		playerTileY := playerY / u
+		playerPos := fmt.Sprintf("World(px): (%d, %d) | Tiles: (%d, %d)",
+			playerX, playerY, playerTileX, playerTileY)
+		dh.UpdatePlayerPos(playerPos)
 
 			// Update player velocity
 			vx, vy := ris.player.GetVelocity()
-			velocityPixelX := float64(vx) / float64(physicsUnit)
-			velocityPixelY := float64(vy) / float64(physicsUnit)
-			playerVelocity := fmt.Sprintf("Velocity: Physics: (%d, %d) | Pixels/frame: (%.1f, %.1f)",
-				vx, vy, velocityPixelX, velocityPixelY)
+			playerVelocity := fmt.Sprintf("Velocity (px/frame): (%d, %d)", vx, vy)
 			dh.UpdatePlayerVelocity(playerVelocity)
 
 			// Update player status
@@ -552,11 +547,11 @@ func (ris *InGameState) updateCameraViewport() {
 		if currentRoom != nil {
 			tileMap := currentRoom.GetTileMap()
 			if tileMap != nil {
-				physicsUnit := engine.GetPhysicsUnit()
-				worldWidth := tileMap.Width * physicsUnit
-				worldHeight := tileMap.Height * physicsUnit
-				ris.camera.SetWorldBounds(worldWidth, worldHeight)
-				ris.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
+							u := engine.GetPhysicsUnit()
+			worldWidth := tileMap.Width * u
+			worldHeight := tileMap.Height * u
+			ris.camera.SetWorldBounds(worldWidth, worldHeight)
+			ris.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
 
 				// Update camera system
 				if cameraSystem := ris.systemManager.GetSystem("Camera"); cameraSystem != nil {

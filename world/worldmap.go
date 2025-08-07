@@ -79,11 +79,11 @@ type DiscoveredRoom struct {
 // NewDiscoveredRoom creates a new discovered room from a Room interface
 func NewDiscoveredRoom(room Room) *DiscoveredRoom {
 	tileMap := room.GetTileMap()
-	physicsUnit := engine.GetPhysicsUnit()
+	u := engine.GetPhysicsUnit()
 	
 	bounds := image.Rectangle{
 		Min: image.Point{X: 0, Y: 0},
-		Max: image.Point{X: tileMap.Width * physicsUnit, Y: tileMap.Height * physicsUnit},
+		Max: image.Point{X: tileMap.Width * u, Y: tileMap.Height * u},
 	}
 	
 	return &DiscoveredRoom{

@@ -36,7 +36,6 @@ Parameters:
 Returns a pointer to the new SlimeEnemy instance that implements the Enemy interface.
 */
 func NewSlimeEnemy(x, y int) *SlimeEnemy {
-	physicsUnit := engine.GetPhysicsUnit()
 	
 	slime := &SlimeEnemy{
 		BaseEnemy: NewBaseEnemy(x, y),
@@ -44,10 +43,10 @@ func NewSlimeEnemy(x, y int) *SlimeEnemy {
 		// Slime-specific AI properties
 		moveDirection: []int{-1, 1}[rand.Intn(2)], // Random starting direction
 		moveTimer:     60 + rand.Intn(120),        // 1-3 seconds at 60fps
-		patrolRange:   200 * physicsUnit,          // 200 physics units patrol range
+		patrolRange:   200,                        // 200 px patrol range
 		spawnX:        x,                          // Remember spawn position
 	}
-	
+
 	// Configure slime-specific properties
 	slime.SetMoveSpeed(engine.GameConfig.PlayerPhysics.MoveSpeed / 2) // Half player speed
 	slime.SetScale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
@@ -64,9 +63,7 @@ reaching patrol boundaries or after a random time interval.
 This is the core AI logic specific to slime enemies.
 */
 func (s *SlimeEnemy) HandleAI() {
-	physicsUnit := engine.GetPhysicsUnit()
-	
-	// Decrease move timer
+		// Decrease move timer
 	s.moveTimer--
 	
 	// Check if we've moved too far from spawn point
@@ -91,7 +88,7 @@ func (s *SlimeEnemy) HandleAI() {
 	
 	// Apply movement based on direction
 	if s.moveDirection != 0 {
-		s.vx = s.moveDirection * s.GetMoveSpeed() * physicsUnit
+		s.vx = s.moveDirection * s.GetMoveSpeed()
 	}
 }
 

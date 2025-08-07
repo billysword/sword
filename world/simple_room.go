@@ -709,11 +709,11 @@ func (sr *SimpleRoom) Update(player *entities.Player) error {
 func (sr *SimpleRoom) HandleCollisions(player *entities.Player) {
 	// Get player position
 	playerX, playerY := player.GetPosition()
-	physicsUnit := engine.GetPhysicsUnit()
+	u := engine.GetPhysicsUnit()
 
 	// Convert player position to tile coordinates
-	charTileX := playerX / physicsUnit
-	charTileY := playerY / physicsUnit
+	charTileX := playerX / u
+	charTileY := playerY / u
 
 	// Check collision with ground tiles
 	if charTileY >= 0 && charTileY < sr.tileMap.Height {
@@ -722,8 +722,8 @@ func (sr *SimpleRoom) HandleCollisions(player *entities.Player) {
 				tileIndex := sr.tileMap.GetTileIndex(charTileX, checkY)
 				if IsSolidTile(tileIndex) {
 					// Found solid ground, stop falling
-					if playerY > checkY*physicsUnit {
-						player.SetPosition(playerX, checkY*physicsUnit)
+					if playerY > checkY*u {
+						player.SetPosition(playerX, checkY*u)
 						vx, _ := player.GetVelocity()
 						player.SetVelocity(vx, 0)
 					}
@@ -745,8 +745,8 @@ func (sr *SimpleRoom) GetParallaxRenderer() *engine.ParallaxRenderer {
 // FindFloorAtX finds the Y position of the floor at the given X coordinate
 // Returns the Y position in physics units where the character should stand
 func (sr *SimpleRoom) FindFloorAtX(x int) int {
-	physicsUnit := engine.GetPhysicsUnit()
-	tileX := x / physicsUnit
+	u := engine.GetPhysicsUnit()
+	tileX := x / u
 
 	// Clamp to valid tile coordinates
 	if tileX < 0 {
@@ -761,12 +761,12 @@ func (sr *SimpleRoom) FindFloorAtX(x int) int {
 		tileIndex := sr.tileMap.GetTileIndex(tileX, tileY)
 		if IsSolidTile(tileIndex) {
 			// Return the Y position on top of this tile
-			return tileY * physicsUnit
+			return tileY * u
 		}
 	}
 
 	// If no solid tile found, use the bottom of the map
-	return (sr.tileMap.Height - 1) * physicsUnit
+	return (sr.tileMap.Height - 1) * u
 }
 
 // Draw renders the room and its tiles

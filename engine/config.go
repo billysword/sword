@@ -199,14 +199,14 @@ var GameConfig = DefaultConfig()
 // Legacy constants removed - use GameConfig and GetPhysicsUnit() instead
 
 /*
-GetPhysicsUnit returns the current physics unit size in pixels.
-This is the fundamental unit for all physics calculations, derived from
-the tile size and scale factor.
+GetPhysicsUnit returns the base physics unit size in pixels.
+This is the fundamental unit for physics and tile math and is independent
+of the render scale. It is equal to the base TileSize.
 
 Returns the physics unit size as an integer number of pixels.
 */
 func GetPhysicsUnit() int {
-	return int(float64(GameConfig.TileSize) * GameConfig.TileScaleFactor)
+	return GameConfig.TileSize
 }
 
 /*

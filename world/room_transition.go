@@ -257,9 +257,9 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	// Ultimate fallback: center of room
 	if room, exists := rtm.rooms[roomID]; exists {
 		if tileMap := room.GetTileMap(); tileMap != nil {
-			physicsUnit := engine.GetPhysicsUnit()
-			centerX := (tileMap.Width / 2) * physicsUnit
-			centerY := (tileMap.Height / 2) * physicsUnit
+			u := engine.GetPhysicsUnit()
+			centerX := (tileMap.Width / 2) * u
+			centerY := (tileMap.Height / 2) * u
 			player.SetPosition(centerX, centerY)
 			engine.LogInfo(fmt.Sprintf("Spawned player at room center (%d, %d) in %s", centerX, centerY, roomID))
 			return nil
