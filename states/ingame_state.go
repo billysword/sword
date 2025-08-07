@@ -5,7 +5,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"sword/engine"
 	"sword/entities"
 	"sword/systems"
@@ -51,10 +50,34 @@ Initializes all systems and sets up the modular architecture.
 func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get window size for viewport setup
 	windowWidth, windowHeight := ebiten.WindowSize()
-	physicsUnit := engine.GetPhysicsUnit()
 
 	// Create the initial room
 	room := world.NewSimpleRoom("main")
+
+	// Potentially adjust scale to better frame small rooms
+	if tileMap := room.GetTileMap(); tileMap != nil {
+		roomPxW := tileMap.Width * engine.GameConfig.TileSize
+		roomPxH := tileMap.Height * engine.GameConfig.TileSize
+		// Compute scale to fit the smaller dimension, capped
+		fitScaleW := float64(windowWidth) / float64(roomPxW)
+		fitScaleH := float64(windowHeight) / float64(roomPxH)
+		fitScale := fitScaleW
+		if fitScaleH < fitScale {
+			fitScale = fitScaleH
+		}
+		// Clamp: never go below 1.0, cap to a reasonable max to avoid extreme zoom
+		if fitScale > 1.0 {
+			maxScale := 4.0
+			if fitScale > maxScale {
+				engine.GameConfig.TileScaleFactor = maxScale
+			} else {
+				engine.GameConfig.TileScaleFactor = fitScale
+			}
+		}
+	}
+
+	// Recompute physics unit after potential scale change
+	physicsUnit := engine.GetPhysicsUnit()
 
 	// Calculate spawn position
 	tileMap := room.GetTileMap()
@@ -193,49 +216,6 @@ func (ris *InGameState) Update() error {
 		}
 	}
 
-	// Handle room changes - update other systems when room changes
-	if roomSystem := ris.systemManager.GetSystem("Room"); roomSystem != nil {
-		if rs, ok := roomSystem.(*systems.RoomSystem); ok {
-			currentRoom := rs.GetCurrentRoom()
-			if currentRoom != nil {
-				// Update physics system with new room
-				if physicsSystem := ris.systemManager.GetSystem("Physics"); physicsSystem != nil {
-					if ps, ok := physicsSystem.(*systems.PhysicsSystem); ok {
-						ps.SetCurrentRoom(currentRoom)
-					}
-				}
-
-				// Update camera system with new room
-				if cameraSystem := ris.systemManager.GetSystem("Camera"); cameraSystem != nil {
-					if cs, ok := cameraSystem.(*systems.CameraSystem); ok {
-						cs.SetCurrentRoom(currentRoom)
-					}
-				}
-			}
-		}
-	}
-
-	// Handle additional input that's not part of the input system
-	// Enhanced parallax controls
-	if inpututil.IsKeyJustPressed(ebiten.KeyD) {
-		playerX, playerY := ris.player.GetPosition()
-		roomName := ""
-		if currentRoom := ris.roomTransitionMgr.GetCurrentRoom(); currentRoom != nil {
-			roomName = currentRoom.GetZoneID()
-		}
-		engine.LogPlayerInput("D (Toggle Depth of Field)", playerX, playerY, roomName)
-		ris.toggleDepthOfField()
-	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyL) {
-		playerX, playerY := ris.player.GetPosition()
-		roomName := ""
-		if currentRoom := ris.roomTransitionMgr.GetCurrentRoom(); currentRoom != nil {
-			roomName = currentRoom.GetZoneID()
-		}
-		engine.LogPlayerInput("L (Cycle Parallax Layers)", playerX, playerY, roomName)
-		ris.cycleParallaxLayers()
-	}
-
 	// Update debug HUD with current state
 	ris.updateDebugHUD()
 
@@ -330,10 +310,9 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 	}
 
 	engine.LogDebug("DRAW_LAYER: Player")
-	// Draw player - Player uses its own Draw method without camera offset
-	// The camera offset is handled internally by the player
 	if ris.player != nil {
-		ris.player.Draw(screen)
+		cameraX, cameraY := ris.camera.GetPosition()
+		ris.player.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
 	}
 
 	engine.LogDebug(fmt.Sprintf("DRAW_LAYER: Enemies (%d)", len(ris.enemies)))
@@ -347,6 +326,13 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 		engine.LogDebug("DRAW_LAYER: Grid")
 		cameraX, cameraY := ris.camera.GetPosition()
 		engine.DrawGridWithCamera(screen, float64(cameraX), float64(cameraY))
+	}
+
+	// Draw viewport frame/borders for small rooms
+	if ris.viewportRenderer != nil {
+		camX, camY := ris.camera.GetPosition()
+		ris.viewportRenderer.SetOffset(float64(camX), float64(camY))
+		ris.viewportRenderer.DrawFrame(screen)
 	}
 
 	engine.LogDebug("DRAW_LAYER: HUD")

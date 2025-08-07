@@ -62,32 +62,10 @@ func (is *InputSystem) Update() error {
 	// Handle movement inputs - Player handles its own input
 	is.player.ProcessInput()
 
-	// Debug toggle inputs
-	if inpututil.IsKeyJustPressed(ebiten.KeyF3) {
-		engine.GameConfig.ShowDebugInfo = !engine.GameConfig.ShowDebugInfo
-		is.logKeyPress("F3 (Toggle Debug Info)")
-	}
-	if inpututil.IsKeyJustPressed(ebiten.KeyF4) {
-		engine.GameConfig.ShowDebugOverlay = !engine.GameConfig.ShowDebugOverlay
-		is.logKeyPress("F4 (Toggle Debug Overlay)")
-	}
-
-	// Grid toggle with G key
-	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
-		engine.ToggleGrid()
-		is.logKeyPress("G (Toggle Grid)")
-	}
-
 	// Pause request handling
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		is.pauseRequested = true
 		is.logKeyPress("Escape (Pause)")
-	}
-
-	// Settings request handling
-	if inpututil.IsKeyJustPressed(ebiten.KeyS) {
-		is.settingsRequested = true
-		is.logKeyPress("S (Settings)")
 	}
 
 	// Log movement and action keys
@@ -218,9 +196,8 @@ func (cs *CameraSystem) SetRoom(room world.Room) {
 	// Update camera bounds when room changes
 	if cs.camera != nil && room != nil {
 		if tileMap := room.GetTileMap(); tileMap != nil {
-			worldWidth := tileMap.Width * engine.GetPhysicsUnit()
-			worldHeight := tileMap.Height * engine.GetPhysicsUnit()
-			cs.camera.SetWorldBounds(worldWidth, worldHeight)
+			physicsUnit := engine.GetPhysicsUnit()
+			cs.camera.SetWorldBounds(tileMap.Width*physicsUnit, tileMap.Height*physicsUnit)
 		}
 	}
 }
@@ -245,7 +222,9 @@ func (cs *CameraSystem) SetEnabled(enabled bool) {
 }
 
 /*
-RoomSystem manages room transitions and current room state.
+RoomSystem manages room transitions and world state changes.
+Handles checking for and processing room transitions and updates
+other systems when the room changes.
 */
 type RoomSystem struct {
 	transitionManager *world.RoomTransitionManager
@@ -253,7 +232,6 @@ type RoomSystem struct {
 	player            *entities.Player
 	physicsSystem     *PhysicsSystem
 	cameraSystem      *CameraSystem
-	currentRoom       world.Room
 }
 
 func NewRoomSystem(transitionManager *world.RoomTransitionManager, worldMap *world.WorldMap, player *entities.Player) *RoomSystem {
@@ -263,7 +241,6 @@ func NewRoomSystem(transitionManager *world.RoomTransitionManager, worldMap *wor
 		player:            player,
 		physicsSystem:     nil, // Will be initialized later
 		cameraSystem:      nil, // Will be initialized later
-		currentRoom:       nil, // Will be initialized later
 	}
 }
 
@@ -292,10 +269,7 @@ func (rs *RoomSystem) Update() error {
 			}
 
 			if newRoom != nil {
-				// Update the current room
-				rs.currentRoom = newRoom
-
-				// Notify other systems about the room change
+								// Notify other systems about the room change
 				if rs.physicsSystem != nil {
 					rs.physicsSystem.SetRoom(newRoom)
 				}
