@@ -326,33 +326,33 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 	engine.LogDebug("DRAW_LAYER: Room")
 	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
 	if currentRoom != nil {
-		cameraX, cameraY := ris.camera.GetPosition()
-		currentRoom.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
+		offsetX, offsetY := ris.camera.GetOffset()
+		currentRoom.DrawWithCamera(screen, offsetX, offsetY)
 	}
 
 	engine.LogDebug("DRAW_LAYER: Player")
 	if ris.player != nil {
-		cameraX, cameraY := ris.camera.GetPosition()
-		ris.player.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
+		offsetX, offsetY := ris.camera.GetOffset()
+		ris.player.DrawWithCamera(screen, offsetX, offsetY)
 	}
 
 	engine.LogDebug(fmt.Sprintf("DRAW_LAYER: Enemies (%d)", len(ris.enemies)))
 	// Draw enemies with camera offset
-	cameraX, cameraY := ris.camera.GetPosition()
+	offsetX, offsetY := ris.camera.GetOffset()
 	for _, enemy := range ris.enemies {
-		enemy.DrawWithCamera(screen, float64(cameraX), float64(cameraY))
+		enemy.DrawWithCamera(screen, offsetX, offsetY)
 	}
 
 	if engine.GetGridVisible() {
 		engine.LogDebug("DRAW_LAYER: Grid")
-		cameraX, cameraY := ris.camera.GetPosition()
-		engine.DrawGridWithCamera(screen, float64(cameraX), float64(cameraY))
+		offsetX, offsetY := ris.camera.GetOffset()
+		engine.DrawGridWithCamera(screen, offsetX, offsetY)
 	}
 
 	// Draw viewport frame/borders for small rooms
 	if ris.viewportRenderer != nil {
-		camX, camY := ris.camera.GetPosition()
-		ris.viewportRenderer.SetOffset(float64(camX), float64(camY))
+		offsetX, offsetY := ris.camera.GetOffset()
+		ris.viewportRenderer.SetOffset(offsetX, offsetY)
 		ris.viewportRenderer.DrawFrame(screen)
 	}
 
