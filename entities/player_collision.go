@@ -112,39 +112,91 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 		p.coyoteTimer--
 	}
 	
-	// Try horizontal movement first
-	targetX := p.x + p.vx
-	if !p.CheckTileCollision(tileProvider, targetX, p.y) {
-		p.x = targetX
-	} else {
-		// Hit a wall, stop horizontal movement
-		p.vx = 0
+	// Helper for stepped axis movement to prevent tunneling
+	stepUnit := physicsUnit / 4
+	if stepUnit < 1 {
+		stepUnit = 1
 	}
 	
-	// Try vertical movement
-	targetY := p.y + p.vy
-	wasOnGround := p.onGround
-	
-	if !p.CheckTileCollision(tileProvider, p.x, targetY) {
-		p.y = targetY
-		p.onGround = false
-	} else {
-		// Hit something vertically
-		if p.vy > 0 {
-			// Falling - hit ground
-			p.onGround = true
-			p.isJumping = false
-			
-			// Reset coyote timer when landing
-			if !wasOnGround {
-				p.coyoteTimer = config.CoyoteTime
+	// Horizontal movement (stepped)
+	if p.vx != 0 {
+		remaining := p.vx
+		step := stepUnit
+		if remaining < 0 {
+			step = -stepUnit
+		}
+		for remaining != 0 {
+			// Clamp step to remaining distance
+			if remaining > 0 && step > remaining {
+				step = remaining
+			}
+			if remaining < 0 && step < remaining {
+				step = remaining
+			}
+			nextX := p.x + step
+			if !p.CheckTileCollision(tileProvider, nextX, p.y) {
+				p.x = nextX
+				remaining -= step
+				// Reset step sign in case we clamped above
+				if remaining > 0 {
+					step = stepUnit
+				} else if remaining < 0 {
+					step = -stepUnit
+				}
+			} else {
+				// Hit a wall
+				p.vx = 0
+				break
 			}
 		}
-		p.vy = 0
+	}
+	
+	// Vertical movement (stepped)
+	wasOnGround := p.onGround
+	p.onGround = false
+	if p.vy != 0 {
+		remaining := p.vy
+		step := stepUnit
+		if remaining < 0 {
+			step = -stepUnit
+		}
+		for remaining != 0 {
+			// Clamp step to remaining distance
+			if remaining > 0 && step > remaining {
+				step = remaining
+			}
+			if remaining < 0 && step < remaining {
+				step = remaining
+			}
+			nextY := p.y + step
+			if !p.CheckTileCollision(tileProvider, p.x, nextY) {
+				p.y = nextY
+				remaining -= step
+				// Reset step sign in case we clamped above
+				if remaining > 0 {
+					step = stepUnit
+				} else if remaining < 0 {
+					step = -stepUnit
+				}
+			} else {
+				// Vertical collision
+				if p.vy > 0 {
+					// Landed on ground
+					p.onGround = true
+					p.isJumping = false
+					if !wasOnGround {
+						p.coyoteTimer = config.CoyoteTime
+					}
+				}
+				p.vy = 0
+				break
+			}
+		}
 	}
 	
 	// Ground check - look slightly below collision box
-	if p.CheckTileCollision(tileProvider, p.x, p.y+config.GroundCheckOffset*physicsUnit/engine.GameConfig.TileSize) {
+	offset := int(float64(config.GroundCheckOffset) * engine.GameConfig.CharScaleFactor)
+	if p.CheckTileCollision(tileProvider, p.x, p.y+offset) {
 		p.onGround = true
 	}
 	
@@ -187,12 +239,12 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 		p.jumpHeldFrames++
 	}
 	
-	// Keep player in room bounds
+	// Keep player in room bounds (one physicsUnit per tile)
 	if p.x < 0 {
 		p.x = 0
 		p.vx = 0
 	}
-	maxX := tileProvider.GetWidth() * int(float64(engine.GameConfig.TileSize)*engine.GameConfig.TileScaleFactor) * physicsUnit
+	maxX := tileProvider.GetWidth() * physicsUnit
 	if p.x > maxX {
 		p.x = maxX
 		p.vx = 0
@@ -202,7 +254,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 		p.y = 0
 		p.vy = 0
 	}
-	maxY := tileProvider.GetHeight() * int(float64(engine.GameConfig.TileSize)*engine.GameConfig.TileScaleFactor) * physicsUnit
+	maxY := tileProvider.GetHeight() * physicsUnit
 	if p.y > maxY {
 		p.y = maxY
 		p.vy = 0
