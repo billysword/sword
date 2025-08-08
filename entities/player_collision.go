@@ -62,9 +62,9 @@ func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int)
 	// Get physics unit for conversion
 	// Convert collision box to tile coordinates (physics units -> tile indices)
 	leftTile := box.X / engine.GetPhysicsUnit()
-	rightTile := (box.X + box.Width) / engine.GetPhysicsUnit()
+	rightTile := (box.X + box.Width - 1) / engine.GetPhysicsUnit()
 	topTile := box.Y / engine.GetPhysicsUnit()
-	bottomTile := (box.Y + box.Height) / engine.GetPhysicsUnit()
+	bottomTile := (box.Y + box.Height - 1) / engine.GetPhysicsUnit()
 	
 	// Check all tiles the collision box overlaps
 	tiles := tileProvider.GetTiles()
