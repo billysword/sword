@@ -39,8 +39,8 @@ func TestRoomTransitionDemo(t *testing.T) {
 		t.Fatalf("failed to spawn player: %v", err)
 	}
 
-	// Transition from main -> forest_right
-	player.SetPosition(150, 80)
+	// Transition from main -> forest_right (trigger at x>=240 for 16x10 rooms)
+	player.SetPosition(248, 112)
 	if !rtm.CheckTransitions(player, false) {
 		t.Fatal("expected transition to forest_right")
 	}
@@ -51,8 +51,8 @@ func TestRoomTransitionDemo(t *testing.T) {
 		t.Fatalf("expected forest_right, got %s", rtm.GetCurrentRoomID())
 	}
 
-	// Transition from forest_right -> forest_left
-	player.SetPosition(150, 80)
+	// Transition from forest_right -> forest_left (trigger at x>=240)
+	player.SetPosition(248, 112)
 	if !rtm.CheckTransitions(player, false) {
 		t.Fatal("expected transition to forest_left")
 	}
@@ -63,8 +63,8 @@ func TestRoomTransitionDemo(t *testing.T) {
 		t.Fatalf("expected forest_left, got %s", rtm.GetCurrentRoomID())
 	}
 
-	// Transition back to forest_right
-	player.SetPosition(10, 80)
+	// Transition back to forest_right (left edge trigger at x<=16)
+	player.SetPosition(8, 112)
 	if !rtm.CheckTransitions(player, false) {
 		t.Fatal("expected transition back to forest_right")
 	}
