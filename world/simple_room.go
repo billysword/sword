@@ -76,6 +76,24 @@ func NewSimpleRoom(zoneID string) *SimpleRoom {
 	return room
 }
 
+// NewSimpleRoomFromLayout creates a new simple room sized to fit the provided
+// layout, then applies that layout.
+func NewSimpleRoomFromLayout(zoneID string, layout [][]int) *SimpleRoom {
+	width, height := GetLayoutDimensions(layout)
+	room := &SimpleRoom{
+		BaseRoom:    NewBaseRoom(zoneID, width, height),
+		tileSize:    engine.GameConfig.TileSize,
+		tilesPerRow: 8,
+		forestTiles: make(map[int]*ebiten.Image),
+	}
+
+	room.initializeParallaxLayers()
+	room.initializeForestTiles()
+	room.buildRoom()
+	ApplyLayout(room.BaseRoom, layout)
+	return room
+}
+
 // initializeParallaxLayers sets up the enhanced multi-layer parallax system
 func (sr *SimpleRoom) initializeParallaxLayers() {
 	// Always create parallax layers - use config if available, otherwise use defaults

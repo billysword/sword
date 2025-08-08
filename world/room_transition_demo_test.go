@@ -14,12 +14,9 @@ func TestRoomTransitionDemo(t *testing.T) {
 	rtm := NewRoomTransitionManager(worldMap)
 
 	// Create and register rooms
-	mainRoom := NewSimpleRoom("main")
-	ApplyLayout(mainRoom.BaseRoom, room_layouts.EmptyRoom)
-	forestRight := NewSimpleRoom("forest_right")
-	ApplyLayout(forestRight.BaseRoom, room_layouts.ForestRight)
-	forestLeft := NewSimpleRoom("forest_left")
-	ApplyLayout(forestLeft.BaseRoom, room_layouts.ForestLeft)
+	mainRoom := NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
+	forestRight := NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
+	forestLeft := NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
 
 	rtm.RegisterRoom(mainRoom)
 	rtm.RegisterRoom(forestRight)

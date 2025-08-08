@@ -16,3 +16,16 @@ func ApplyLayout(room *BaseRoom, layout [][]int) {
 		}
 	}
 }
+
+// GetLayoutDimensions returns the intended width and height (in tiles)
+// for a given 2D layout array.
+func GetLayoutDimensions(layout [][]int) (width, height int) {
+	height = len(layout)
+	width = 0
+	for _, row := range layout {
+		if len(row) > width {
+			width = len(row)
+		}
+	}
+	return
+}

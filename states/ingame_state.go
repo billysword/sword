@@ -54,14 +54,11 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	windowWidth, windowHeight := ebiten.WindowSize()
 
 	// Create and register three rooms
-	mainRoom := world.NewSimpleRoom("main")
-	forestRight := world.NewSimpleRoom("forest_right")
-	forestLeft := world.NewSimpleRoom("forest_left")
+	mainRoom := world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
+	forestRight := world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
+	forestLeft := world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
 
-	// Apply layouts to match openings for transitions
-	world.ApplyLayout(mainRoom.BaseRoom, room_layouts.EmptyRoom)
-	world.ApplyLayout(forestRight.BaseRoom, room_layouts.ForestRight)
-	world.ApplyLayout(forestLeft.BaseRoom, room_layouts.ForestLeft)
+	// Layouts already applied by constructor
 
 	// Potentially adjust scale to better frame small rooms
 	// Use main room for initial framing
