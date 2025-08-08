@@ -48,7 +48,8 @@ func (zmo *ZoneMapOverlay) Draw(screen interface{}) error {
 	}
 
 	// Darken background
-	w, h := ebiten.WindowSize()
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
 	vector.DrawFilledRect(img, 0, 0, float32(w), float32(h), color.RGBA{0, 0, 0, 180}, false)
 
 	// Map drawing area (padding)
@@ -112,6 +113,7 @@ func (zmo *ZoneMapOverlay) Draw(screen interface{}) error {
 
 	// Connections
 	connColor := color.RGBA{255, 255, 255, 180}
+	drawn := make(map[string]struct{})
 	for fromID, fromRoom := range mapData.DiscoveredRooms {
 		conns := zmo.worldMap.GetRoomConnections(fromID)
 		for _, toID := range conns {
@@ -119,9 +121,19 @@ func (zmo *ZoneMapOverlay) Draw(screen interface{}) error {
 			if !ok {
 				continue
 			}
+			// Avoid drawing both directions
+			a, b := fromID, toID
+			if a > b {
+				a, b = b, a
+			}
+			key := a + "|" + b
+			if _, exists := drawn[key]; exists {
+				continue
+			}
 			x1, y1 := toMini(fromRoom.WorldPos.X, fromRoom.WorldPos.Y)
 			x2, y2 := toMini(toRoom.WorldPos.X, toRoom.WorldPos.Y)
 			vector.StrokeLine(img, x1, y1, x2, y2, 2, connColor, false)
+			drawn[key] = struct{}{}
 		}
 	}
 

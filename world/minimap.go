@@ -60,6 +60,12 @@ func (mmr *MiniMapRenderer) Update() error {
 	return nil
 }
 
+// SetPosition updates the minimap's top-left corner
+func (mmr *MiniMapRenderer) SetPosition(x, y int) {
+	mmr.x = x
+	mmr.y = y
+}
+
 // Draw renders the mini-map (required by HUDComponent interface)
 func (mmr *MiniMapRenderer) Draw(screen interface{}) error {
 	if !mmr.visible {
@@ -132,8 +138,9 @@ func (mmr *MiniMapRenderer) Draw(screen interface{}) error {
 		vector.StrokeRect(ebScreen, x1, y1, w, h, 1, borderColor, false)
 	}
 
-	// Draw connections (simple lines between room centers)
+	// Draw connections (simple lines between room centers), avoiding duplicates
 	connColor := color.RGBA{200, 200, 200, 200}
+	drawn := make(map[string]struct{})
 	for fromID, fromRoom := range mapData.DiscoveredRooms {
 		conns := mmr.worldMap.GetRoomConnections(fromID)
 		for _, toID := range conns {
@@ -141,9 +148,20 @@ func (mmr *MiniMapRenderer) Draw(screen interface{}) error {
 			if !ok {
 				continue
 			}
+			// Ensure each undirected edge is drawn once
+			a := fromID
+			b := toID
+			if a > b {
+				a, b = b, a
+			}
+			key := a + "|" + b
+			if _, exists := drawn[key]; exists {
+				continue
+			}
 			x1, y1 := toMini(fromRoom.WorldPos.X, fromRoom.WorldPos.Y)
 			x2, y2 := toMini(toRoom.WorldPos.X, toRoom.WorldPos.Y)
 			vector.StrokeLine(ebScreen, x1, y1, x2, y2, 1, connColor, false)
+			drawn[key] = struct{}{}
 		}
 	}
 
