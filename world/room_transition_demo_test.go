@@ -1,10 +1,10 @@
 package world
 
 import (
-	"path/filepath"
 	"testing"
 
 	"sword/entities"
+	roomsres "sword/resources/rooms"
 	"sword/room_layouts"
 )
 
@@ -29,9 +29,8 @@ func TestRoomTransitionDemo(t *testing.T) {
 		t.Fatalf("failed to set current room: %v", err)
 	}
 
-	// Load transitions from JSON
-	path := filepath.Join("..", "resources", "room_transitions.json")
-	if err := LoadTransitionsFromFile(rtm, path); err != nil {
+	// Load transitions from embedded JSON
+	if err := LoadTransitionsFromBytes(rtm, roomsres.RoomTransitionsJSON); err != nil {
 		t.Fatalf("failed to load transitions: %v", err)
 	}
 

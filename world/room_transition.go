@@ -56,7 +56,8 @@ func (r Rectangle) Contains(x, y int) bool {
 // SpawnPoint represents a place where players can appear in a room
 type SpawnPoint struct {
 	ID       string `json:"id"`        // Unique identifier for this spawn point
-	X, Y     int    `json:"x,y"`       // Position in physics units
+	X        int    `json:"x"`         // Position X in physics units
+	Y        int    `json:"y"`         // Position Y in physics units
 	FacingID string `json:"facing_id"` // Direction player should face when spawning
 }
 

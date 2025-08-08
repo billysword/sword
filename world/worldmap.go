@@ -364,7 +364,7 @@ func (wm *WorldMap) GetMapBounds() image.Rectangle {
 func (wm *WorldMap) ToJSON() ([]byte, error) {
 	wm.mutex.RLock()
 	defer wm.mutex.RUnlock()
-	
+
 	return json.Marshal(wm)
 }
 
@@ -372,6 +372,93 @@ func (wm *WorldMap) ToJSON() ([]byte, error) {
 func (wm *WorldMap) FromJSON(data []byte) error {
 	wm.mutex.Lock()
 	defer wm.mutex.Unlock()
-	
+
 	return json.Unmarshal(data, wm)
+}
+
+// worldMapJSON is an exported representation used for JSON (since WorldMap fields are unexported)
+type worldMapJSON struct {
+	DiscoveredRooms map[string]*DiscoveredRoom   `json:"discovered_rooms"`
+	CurrentRoomID   string                       `json:"current_room_id"`
+	RoomConnections map[string]map[string]string `json:"room_connections"` // direction as string key
+	PlayerTrail     []Point                      `json:"player_trail"`
+}
+
+// MarshalJSON implements custom JSON marshaling for WorldMap
+func (wm *WorldMap) MarshalJSON() ([]byte, error) {
+	wm.mutex.RLock()
+	defer wm.mutex.RUnlock()
+
+	// Convert direction-keyed maps to string-keyed maps for JSON
+	connections := make(map[string]map[string]string, len(wm.roomConnections))
+	for roomID, dirMap := range wm.roomConnections {
+		if dirMap == nil {
+			continue
+		}
+		strMap := make(map[string]string, len(dirMap))
+		for dir, to := range dirMap {
+			strMap[dir.String()] = to
+		}
+		connections[roomID] = strMap
+	}
+
+	payload := worldMapJSON{
+		DiscoveredRooms: wm.discoveredRooms,
+		CurrentRoomID:   wm.currentRoomID,
+		RoomConnections: connections,
+		PlayerTrail:     wm.playerTrail,
+	}
+	return json.Marshal(payload)
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling for WorldMap
+func (wm *WorldMap) UnmarshalJSON(data []byte) error {
+	var payload worldMapJSON
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+
+	// Rebuild maps
+	if wm.discoveredRooms == nil {
+		wm.discoveredRooms = make(map[string]*DiscoveredRoom)
+	}
+	for k, v := range payload.DiscoveredRooms {
+		wm.discoveredRooms[k] = v
+	}
+
+	wm.roomConnections = make(map[string]map[Direction]string)
+	for roomID, strMap := range payload.RoomConnections {
+		if strMap == nil {
+			continue
+		}
+		dirMap := make(map[Direction]string, len(strMap))
+		for dirStr, to := range strMap {
+			dirMap[parseDirection(dirStr)] = to
+		}
+		wm.roomConnections[roomID] = dirMap
+	}
+
+	wm.currentRoomID = payload.CurrentRoomID
+	wm.playerTrail = append([]Point(nil), payload.PlayerTrail...)
+	return nil
+}
+
+// parseDirection converts a direction string to Direction enum
+func parseDirection(s string) Direction {
+	switch s {
+	case "North":
+		return North
+	case "South":
+		return South
+	case "East":
+		return East
+	case "West":
+		return West
+	case "Up":
+		return Up
+	case "Down":
+		return Down
+	default:
+		return East // sensible default
+	}
 }
