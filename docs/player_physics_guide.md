@@ -169,7 +169,7 @@ PlayerPhysics: PlayerPhysicsConfig{
     // Movement
     MoveSpeed:   2,             // Tiles per second (roughly)
     JumpPower:   8,             // Initial jump velocity
-    AirControl:  0.7,           // 70% control in air
+    AirControl:  0.85,          // 85% control in air
     
     // Physics
     Gravity:            1,      // Acceleration per frame
@@ -180,6 +180,6 @@ PlayerPhysics: PlayerPhysicsConfig{
     CoyoteTime:         6,      // Frames of grace period
     JumpBufferTime:     10,     // Frames to remember jump input
     VariableJumpHeight: true,   // Can control jump height
-    MinJumpHeight:      0.4,    // Minimum jump is 40% of full
+    MinJumpHeight:      0.5,    // Minimum jump is 50% of full
 }
 ```

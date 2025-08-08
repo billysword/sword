@@ -472,3 +472,9 @@ Returns true if facing right, false if facing left.
 func (p *Player) IsFacingRight() bool {
 	return p.facingRight
 }
+
+// SetFacingRight sets the player's facing direction.
+// true = face right, false = face left
+func (p *Player) SetFacingRight(faceRight bool) {
+	p.facingRight = faceRight
+}

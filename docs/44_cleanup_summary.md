@@ -42,7 +42,8 @@ This document summarizes the cleanup work performed on the codebase to improve s
 
 ### 1. Unimplemented Features
 - **Minimap System**: `world/minimap.go` has TODO placeholders for Update() and Draw() methods
-- **Room Transitions**: Several TODOs in `world/room_transition.go` for spawn direction handling
+- ~~Room Transitions: Several TODOs in `world/room_transition.go` for spawn direction handling~~
+  - Implemented: player now faces according to `spawn.facing_id` on spawn
 - **World Map**: TODO in `world/worldmap.go` for getting display names from Room interface
 
 ### 2. Refactored Code Not Integrated
