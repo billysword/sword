@@ -125,6 +125,7 @@ type MapDisplayData struct {
 - All Ebiten rendering methods marked with clear TODOs
 - `GetMapData()` provides structured data for rendering systems
 - Clean separation between game logic and display concerns
+- Constructor now accepts size and position and stores them for rendering
 
 ### 📋 Rendering TODOs
 ```go

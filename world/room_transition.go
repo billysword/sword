@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"strings"
 	"sword/engine"
 	"sword/entities"
 )
@@ -242,7 +243,13 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 		if spawn.ID == spawnID {
 			x, y := rtm.findNonSolidPosition(roomID, spawn.X, spawn.Y)
 			player.SetPosition(x, y)
-			// TODO: Set player facing direction based on spawn.FacingID
+			// Set player facing direction based on spawn.FacingID (optional)
+			switch strings.ToLower(spawn.FacingID) {
+			case "east", "right":
+				player.SetFacingRight(true)
+			case "west", "left":
+				player.SetFacingRight(false)
+			}
 			engine.LogInfo(fmt.Sprintf("Spawned player at %s in room %s", spawnID, roomID))
 			return nil
 		}

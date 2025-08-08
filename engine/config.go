@@ -156,21 +156,21 @@ func DefaultConfig() Config {
 			
 			// Movement physics
 			MoveSpeed:   2,             // Moderate movement speed
-			JumpPower:   2,             // Good jump height
-			AirControl:  0.7,           // 70% control in air
+			JumpPower:   8,             // Good jump height (~2 tiles)
+			AirControl:  0.85,          // 85% control in air
 			Friction:    1,             // Quick stopping
 			AirFriction: 0,             // No air friction
 			
 			// Jump mechanics
-			CoyoteTime:         2,      // 6 frames (0.1 seconds at 60fps)
+			CoyoteTime:         6,      // 6 frames (0.1 seconds at 60fps)
 			JumpBufferTime:     10,     // 10 frames buffer
 			VariableJumpHeight: true,   // Can control jump height
-			MinJumpHeight:      0.4,    // 40% minimum jump
+			MinJumpHeight:      0.5,    // 50% minimum jump
 			
 			// Gravity and falling
 			Gravity:            1,      // Moderate gravity
 			MaxFallSpeed:       12,     // Terminal velocity
-			FastFallMultiplier: 1.5,    // 50% faster when holding down
+			FastFallMultiplier: 1.75,   // 75% faster when holding down
 		},
 		
 		// Enemy physics settings (kept separate for now)

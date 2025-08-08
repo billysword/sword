@@ -6,6 +6,9 @@ type MiniMapRenderer struct {
 	worldMap *WorldMap
 	visible  bool
 	name     string
+	size     int
+	x        int
+	y        int
 }
 
 // NewMiniMapRenderer creates a new mini-map renderer
@@ -14,6 +17,9 @@ func NewMiniMapRenderer(worldMap *WorldMap, size int, x, y int) *MiniMapRenderer
 		worldMap: worldMap,
 		visible:  true,
 		name:     "minimap",
+		size:     size,
+		x:        x,
+		y:        y,
 	}
 }
 
