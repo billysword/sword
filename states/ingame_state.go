@@ -57,6 +57,8 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	mainRoom := world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
 	forestRight := world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
 	forestLeft := world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
+	// Safety room: simple empty layout for fallback teleport if player falls out of world
+	safetyRoom := world.NewSimpleRoomFromLayout("safety", room_layouts.EmptyRoom)
 
 	// Layouts already applied by constructor
 
@@ -110,6 +112,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	roomTransitionMgr.RegisterRoom(mainRoom)
 	roomTransitionMgr.RegisterRoom(forestRight)
 	roomTransitionMgr.RegisterRoom(forestLeft)
+	roomTransitionMgr.RegisterRoom(safetyRoom)
 	roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
 
 	// Load transitions and spawns from embedded JSON

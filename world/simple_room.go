@@ -59,22 +59,6 @@ type SimpleRoom struct {
 	parallaxRenderer *engine.ParallaxRenderer
 }
 
-// NewSimpleRoom creates a new simple room with forest tiles
-func NewSimpleRoom(zoneID string) *SimpleRoom {
-	// Create room based on config settings
-	room := &SimpleRoom{
-		BaseRoom:    NewBaseRoom(zoneID, engine.GameConfig.RoomWidthTiles, engine.GameConfig.RoomHeightTiles),
-		tileSize:    engine.GameConfig.TileSize,
-		tilesPerRow: 8, // Forest tilemap has 8 tiles per row
-		forestTiles: make(map[int]*ebiten.Image),
-	}
-
-	// Initialize enhanced parallax system
-	room.initializeParallaxLayers()
-	room.initializeForestTiles()
-	room.buildRoom()
-	return room
-}
 
 // NewSimpleRoomFromLayout creates a new simple room sized to fit the provided
 // layout, then applies that layout.
