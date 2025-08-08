@@ -60,8 +60,8 @@ func (hm *HUDManager) Draw(screen interface{}) error {
 		return nil
 	}
 
-	// If world map overlay is visible, render only it to avoid other HUD elements on top
-	if overlay, exists := hm.components["world_map"]; exists && overlay.IsVisible() {
+	// If zone map overlay is visible, render only it to avoid other HUD elements on top
+	if overlay, exists := hm.components["zone_map"]; exists && overlay.IsVisible() {
 		LogDebug("DRAW_LAYER: HUDComponent(" + overlay.GetName() + ")")
 		return overlay.Draw(screen)
 	}

@@ -10,39 +10,39 @@ import (
 	"sword/entities"
 )
 
-// WorldMapOverlay renders a large overlay of the world map
+// ZoneMapOverlay renders a large overlay of the current zone (room + immediate neighbors)
 // Implements engine.HUDComponent
-type WorldMapOverlay struct {
+type ZoneMapOverlay struct {
 	worldMap *WorldMap
 	player   *entities.Player
 	visible  bool
 	name     string
 }
 
-func NewWorldMapOverlay(worldMap *WorldMap, player *entities.Player) *WorldMapOverlay {
-	return &WorldMapOverlay{
+func NewZoneMapOverlay(worldMap *WorldMap, player *entities.Player) *ZoneMapOverlay {
+	return &ZoneMapOverlay{
 		worldMap: worldMap,
 		player:   player,
 		visible:  false,
-		name:     "world_map",
+		name:     "zone_map",
 	}
 }
 
-func (wmo *WorldMapOverlay) GetName() string { return wmo.name }
-func (wmo *WorldMapOverlay) SetVisible(v bool) { wmo.visible = v }
-func (wmo *WorldMapOverlay) IsVisible() bool { return wmo.visible }
+func (zmo *ZoneMapOverlay) GetName() string { return zmo.name }
+func (zmo *ZoneMapOverlay) SetVisible(v bool) { zmo.visible = v }
+func (zmo *ZoneMapOverlay) IsVisible() bool { return zmo.visible }
 
-func (wmo *WorldMapOverlay) Update() error { return nil }
+func (zmo *ZoneMapOverlay) Update() error { return nil }
 
-func (wmo *WorldMapOverlay) Draw(screen interface{}) error {
-	if !wmo.visible {
+func (zmo *ZoneMapOverlay) Draw(screen interface{}) error {
+	if !zmo.visible {
 		return nil
 	}
 	img, ok := screen.(*ebiten.Image)
 	if !ok {
 		return nil
 	}
-	mapData := wmo.getMapData()
+	mapData := zmo.getZoneData()
 	if mapData == nil || len(mapData.DiscoveredRooms) == 0 {
 		return nil
 	}
@@ -113,7 +113,7 @@ func (wmo *WorldMapOverlay) Draw(screen interface{}) error {
 	// Connections
 	connColor := color.RGBA{255, 255, 255, 180}
 	for fromID, fromRoom := range mapData.DiscoveredRooms {
-		conns := wmo.worldMap.GetRoomConnections(fromID)
+		conns := zmo.worldMap.GetRoomConnections(fromID)
 		for _, toID := range conns {
 			toRoom, ok := mapData.DiscoveredRooms[toID]
 			if !ok {
@@ -126,8 +126,8 @@ func (wmo *WorldMapOverlay) Draw(screen interface{}) error {
 	}
 
 	// Player
-	if wmo.player != nil && mapData.CurrentRoom != nil {
-		px, py := wmo.player.GetPosition()
+	if zmo.player != nil && mapData.CurrentRoom != nil {
+		px, py := zmo.player.GetPosition()
 		room := mapData.CurrentRoom
 		roomLeft := room.WorldPos.X - room.Bounds.Dx()/2
 		roomTop := room.WorldPos.Y - room.Bounds.Dy()/2
@@ -136,7 +136,7 @@ func (wmo *WorldMapOverlay) Draw(screen interface{}) error {
 		x, y := toMini(worldX, worldY)
 		size := float32(6)
 		c := color.RGBA{255, 80, 80, 255}
-		if wmo.player.IsFacingRight() {
+		if zmo.player.IsFacingRight() {
 			vector.DrawFilledTriangle(img, x+size, y, x-size, y-size, x-size, y+size, c, false)
 		} else {
 			vector.DrawFilledTriangle(img, x-size, y, x+size, y-size, x+size, y+size, c, false)
@@ -144,33 +144,74 @@ func (wmo *WorldMapOverlay) Draw(screen interface{}) error {
 	}
 
 	// Help text
-	ebitenutil.DebugPrintAt(img, "World Map (N to close)", int(drawX), int(drawY)-20)
+	ebitenutil.DebugPrintAt(img, "Zone Map (Z to close)", int(drawX), int(drawY)-20)
 
 	return nil
 }
 
-// Internal data provider (copy of minimap with concrete bounds type)
-func (wmo *WorldMapOverlay) getMapData() *struct {
+// Internal data provider: restrict to current room and directly connected rooms only
+func (zmo *ZoneMapOverlay) getZoneData() *struct {
 	CurrentRoom     *DiscoveredRoom
 	DiscoveredRooms map[string]*DiscoveredRoom
 	MapBounds       image.Rectangle
 } {
-	currentRoomID := wmo.worldMap.GetCurrentRoom()
+	currentRoomID := zmo.worldMap.GetCurrentRoom()
 	if currentRoomID == "" {
 		return nil
 	}
-	discoveredRooms := wmo.worldMap.GetDiscoveredRooms()
-	currentRoom, ok := discoveredRooms[currentRoomID]
+	allRooms := zmo.worldMap.GetDiscoveredRooms()
+	currentRoom, ok := allRooms[currentRoomID]
 	if !ok {
 		return nil
 	}
+	// Build filtered set: current + immediate neighbors
+	filtered := make(map[string]*DiscoveredRoom)
+	filtered[currentRoomID] = currentRoom
+	conns := zmo.worldMap.GetRoomConnections(currentRoomID)
+	for _, neighborID := range conns {
+		if r, exists := allRooms[neighborID]; exists {
+			filtered[neighborID] = r
+		}
+	}
+
+	// Compute bounds of filtered rooms
+	if len(filtered) == 0 {
+		return nil
+	}
+	first := true
+	minX, minY, maxX, maxY := 0, 0, 0, 0
+	for _, room := range filtered {
+		left := room.WorldPos.X - room.Bounds.Dx()/2
+		right := room.WorldPos.X + room.Bounds.Dx()/2
+		top := room.WorldPos.Y - room.Bounds.Dy()/2
+		bottom := room.WorldPos.Y + room.Bounds.Dy()/2
+		if first {
+			minX, maxX = left, right
+			minY, maxY = top, bottom
+			first = false
+		} else {
+			if left < minX {
+				minX = left
+			}
+			if right > maxX {
+				maxX = right
+			}
+			if top < minY {
+				minY = top
+			}
+			if bottom > maxY {
+				maxY = bottom
+			}
+		}
+	}
+	bounds := image.Rect(minX, minY, maxX, maxY)
 	return &struct {
 		CurrentRoom     *DiscoveredRoom
 		DiscoveredRooms map[string]*DiscoveredRoom
 		MapBounds       image.Rectangle
 	}{
 		CurrentRoom:     currentRoom,
-		DiscoveredRooms: discoveredRooms,
-		MapBounds:       wmo.worldMap.GetMapBounds(),
+		DiscoveredRooms: filtered,
+		MapBounds:       bounds,
 	}
 }

@@ -155,8 +155,8 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Set up minimap and world map overlay
 	minimapRenderer := world.NewMiniMapRenderer(worldMap, player, 200, windowWidth-220, 20)
 	hudManager.AddComponent(minimapRenderer)
-	worldMapOverlay := world.NewWorldMapOverlay(worldMap, player)
-	hudManager.AddComponent(worldMapOverlay)
+	zoneMapOverlay := world.NewZoneMapOverlay(worldMap, player)
+	hudManager.AddComponent(zoneMapOverlay)
 
 	// Create the refactored state
 	state := &InGameState{
@@ -240,10 +240,10 @@ func (ris *InGameState) Update() error {
 		ris.worldMap.AddPlayerPosition(px, py)
 	}
 
-	// Toggle full-screen world map
-	if inpututil.IsKeyJustPressed(ebiten.KeyN) {
+	// Toggle zone map overlay
+	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
 		if ris.hudManager != nil {
-			ris.hudManager.ToggleComponent("world_map")
+			ris.hudManager.ToggleComponent("zone_map")
 		}
 	}
 
