@@ -7,8 +7,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"sword/engine"
-	"sword/world"
-)
+		"sword/world"
+	"sword/room_layouts"
+ )
 
 /*
 StartState represents the game start/menu screen.
@@ -73,8 +74,8 @@ func (s *StartState) Update() error {
 		case 0: // Continue
 			s.stateManager.ChangeState(NewInGameState(s.stateManager))
 		case 1: // Settings
-			// Create a default room to show tile data
-			defaultRoom := world.NewSimpleRoom("main")
+			// Create a preview room sized from curated layout
+			defaultRoom := world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
 			s.stateManager.ChangeState(NewSettingsState(s.stateManager, defaultRoom))
 		case 2: // Quit
 			return ebiten.Termination

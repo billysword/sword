@@ -261,6 +261,36 @@ func (rs *RoomSystem) SetCameraSystem(cs *CameraSystem) {
 // Update checks for room transitions
 func (rs *RoomSystem) Update() error {
 	if rs.transitionManager != nil && rs.player != nil {
+		// Safety: if player fell below current room bounds, portal to safety room
+		if current := rs.transitionManager.GetCurrentRoom(); current != nil {
+			tm := current.GetTileMap()
+			u := engine.GetPhysicsUnit()
+			_, py := rs.player.GetPosition()
+			if tm != nil {
+				maxY := tm.Height * u
+				if py > maxY+u { // allow small margin
+					// Queue a transition if safety room exists
+					if len(rs.transitionManager.GetSpawnPoints("safety")) > 0 {
+						// Create a pending transition to safety room's default spawn
+						// We use CheckTransitions/ProcessPendingTransition pathway by directly setting pending
+						// Not exposed: fallback to direct spawn after SetCurrentRoom
+						rs.transitionManager.SetCurrentRoom("safety")
+						// Try spawn id "entry" then first spawn
+						if err := rs.transitionManager.SpawnPlayerInRoom(rs.player, "safety", "entry"); err != nil {
+							// ignore error, player may be placed later by fallback
+						}
+						// Update camera/physics to new room immediately
+						if rs.physicsSystem != nil {
+							rs.physicsSystem.SetRoom(rs.transitionManager.GetCurrentRoom())
+						}
+						if rs.cameraSystem != nil {
+							rs.cameraSystem.SetRoom(rs.transitionManager.GetCurrentRoom())
+						}
+					}
+				}
+			}
+		}
+
 		// Process any pending transitions
 		if rs.transitionManager.HasPendingTransition() {
 			newRoom, err := rs.transitionManager.ProcessPendingTransition(rs.player)

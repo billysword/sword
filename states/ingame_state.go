@@ -54,14 +54,13 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	windowWidth, windowHeight := ebiten.WindowSize()
 
 	// Create and register three rooms
-	mainRoom := world.NewSimpleRoom("main")
-	forestRight := world.NewSimpleRoom("forest_right")
-	forestLeft := world.NewSimpleRoom("forest_left")
+	mainRoom := world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
+	forestRight := world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
+	forestLeft := world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
+	// Safety room: simple empty layout for fallback teleport if player falls out of world
+	safetyRoom := world.NewSimpleRoomFromLayout("safety", room_layouts.EmptyRoom)
 
-	// Apply layouts to match openings for transitions
-	world.ApplyLayout(mainRoom.BaseRoom, room_layouts.EmptyRoom)
-	world.ApplyLayout(forestRight.BaseRoom, room_layouts.ForestRight)
-	world.ApplyLayout(forestLeft.BaseRoom, room_layouts.ForestLeft)
+	// Layouts already applied by constructor
 
 	// Potentially adjust scale to better frame small rooms
 	// Use main room for initial framing
@@ -113,6 +112,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	roomTransitionMgr.RegisterRoom(mainRoom)
 	roomTransitionMgr.RegisterRoom(forestRight)
 	roomTransitionMgr.RegisterRoom(forestLeft)
+	roomTransitionMgr.RegisterRoom(safetyRoom)
 	roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
 
 	// Load transitions and spawns from embedded JSON

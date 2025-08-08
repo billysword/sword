@@ -178,9 +178,9 @@ func DefaultConfig() Config {
 		MaxFallSpeed: 12,    // Same as player terminal velocity
 		
 		// Room settings
-		RoomWidthTiles:   10,   // Starter rooms ~10 tiles wide
-		RoomHeightTiles:  8,    // Compact starter room height
-		GroundLevel:      7,    // Bottom row for 8-tile tall rooms
+		RoomWidthTiles:   16,   // Expanded demo rooms: 16 tiles wide
+		RoomHeightTiles:  10,   // Expanded demo rooms: 10 tiles tall
+		GroundLevel:      9,    // Bottom row for 10-tile tall rooms
 		
 		// Debug settings
 		ShowDebugInfo:    true,  // Enable debug info by default for development
