@@ -63,6 +63,7 @@ func DrawFullWorldMap(img *ebiten.Image, wm *WorldMap, player *entities.Player) 
 	}
 
 	connColor := color.RGBA{255, 255, 255, 180}
+	drawn := make(map[string]struct{})
 	for fromID, fromRoom := range rooms {
 		conns := wm.GetRoomConnections(fromID)
 		for _, toID := range conns {
@@ -70,9 +71,19 @@ func DrawFullWorldMap(img *ebiten.Image, wm *WorldMap, player *entities.Player) 
 			if !ok {
 				continue
 			}
+			// Avoid duplicate undirected edges
+			a, b := fromID, toID
+			if a > b {
+				a, b = b, a
+			}
+			key := a + "|" + b
+			if _, exists := drawn[key]; exists {
+				continue
+			}
 			x1, y1 := toMini(fromRoom.WorldPos.X, fromRoom.WorldPos.Y)
 			x2, y2 := toMini(toRoom.WorldPos.X, toRoom.WorldPos.Y)
 			vector.StrokeLine(img, x1, y1, x2, y2, 2, connColor, false)
+			drawn[key] = struct{}{}
 		}
 	}
 

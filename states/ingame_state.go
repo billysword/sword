@@ -576,17 +576,27 @@ func (ris *InGameState) updateCameraViewport() {
 		if currentRoom != nil {
 			tileMap := currentRoom.GetTileMap()
 			if tileMap != nil {
-							u := engine.GetPhysicsUnit()
-			worldWidth := tileMap.Width * u
-			worldHeight := tileMap.Height * u
-			ris.camera.SetWorldBounds(worldWidth, worldHeight)
-			ris.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
+				u := engine.GetPhysicsUnit()
+				worldWidth := tileMap.Width * u
+				worldHeight := tileMap.Height * u
+				ris.camera.SetWorldBounds(worldWidth, worldHeight)
+				ris.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
 
 				// Update camera system
 				if cameraSystem := ris.systemManager.GetSystem("Camera"); cameraSystem != nil {
 					if cs, ok := cameraSystem.(*systems.CameraSystem); ok {
 						cs.SetCurrentRoom(currentRoom)
 					}
+				}
+			}
+		}
+
+		// Re-anchor minimap to top-right with 20px margin
+		if ris.hudManager != nil {
+			if comp := ris.hudManager.GetComponent("minimap"); comp != nil {
+				if mm, ok := comp.(*world.MiniMapRenderer); ok {
+					// Keep default size of 200 used at construction
+					mm.SetPosition(currentWidth-220, 20)
 				}
 			}
 		}
