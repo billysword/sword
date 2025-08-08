@@ -28,6 +28,9 @@ type InputSystem struct {
 	roomTransitionMgr *world.RoomTransitionManager
 	pauseRequested    bool
 	settingsRequested bool // Add settings request flag
+
+	// UI toggle callback to avoid coupling with HUD
+	OnToggleMinimap func()
 }
 
 /*
@@ -68,10 +71,18 @@ func (is *InputSystem) Update() error {
 		is.logKeyPress("Escape (Pause)")
 	}
 
+	// Minimap toggle
+	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
+		is.logKeyPress("M (Toggle Minimap)")
+		if is.OnToggleMinimap != nil {
+			is.OnToggleMinimap()
+		}
+	}
+
 	// Log movement and action keys
 	keys := []ebiten.Key{
-		ebiten.KeyLeft, ebiten.KeyRight, ebiten.KeyUp, ebiten.KeyDown,
-		ebiten.KeyA, ebiten.KeyD, ebiten.KeyW, ebiten.KeySpace,
+			ebiten.KeyLeft, ebiten.KeyRight, ebiten.KeyUp, ebiten.KeyDown,
+			ebiten.KeyA, ebiten.KeyD, ebiten.KeyW, ebiten.KeySpace,
 	}
 	for _, k := range keys {
 		if inpututil.IsKeyJustPressed(k) {
@@ -299,7 +310,7 @@ func (rs *RoomSystem) Update() error {
 			}
 
 			if newRoom != nil {
-								// Notify other systems about the room change
+							// Notify other systems about the room change
 				if rs.physicsSystem != nil {
 					rs.physicsSystem.SetRoom(newRoom)
 				}

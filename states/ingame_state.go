@@ -5,6 +5,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"sword/engine"
 	"sword/entities"
 	"sword/room_layouts"
@@ -127,6 +128,10 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 
 	worldMap.SetCurrentRoom(mainRoom.GetZoneID())
 
+	// Start tracking player position for map/trail
+	px, py := player.GetPosition()
+	worldMap.AddPlayerPosition(px, py)
+
 	// Create camera and viewport systems
 	camera := engine.NewCamera(windowWidth, windowHeight)
 	if tileMap != nil {
@@ -147,9 +152,11 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	debugHUD := engine.NewDebugHUD()
 	hudManager.AddComponent(debugHUD)
 
-	// Set up minimap - using proper constructor with required parameters
-	minimapRenderer := world.NewMiniMapRenderer(worldMap, 200, windowWidth-220, 20)
+	// Set up minimap and world map overlay
+	minimapRenderer := world.NewMiniMapRenderer(worldMap, player, 200, windowWidth-220, 20)
 	hudManager.AddComponent(minimapRenderer)
+	zoneMapOverlay := world.NewZoneMapOverlay(worldMap, player)
+	hudManager.AddComponent(zoneMapOverlay)
 
 	// Create the refactored state
 	state := &InGameState{
@@ -181,6 +188,13 @@ func (ris *InGameState) initializeSystems() {
 	physicsSystem := systems.NewPhysicsSystem(ris.player)
 	cameraSystem := systems.NewCameraSystem(ris.camera, ris.player)
 	roomSystem := systems.NewRoomSystem(ris.roomTransitionMgr, ris.worldMap, ris.player)
+
+	// Wire HUD toggles
+	inputSystem.OnToggleMinimap = func() {
+		if ris.hudManager != nil {
+			ris.hudManager.ToggleComponent("minimap")
+		}
+	}
 
 	// Set initial room for systems
 	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
@@ -216,6 +230,21 @@ func (ris *InGameState) Update() error {
 	err := ris.systemManager.UpdateAll()
 	if err != nil {
 		return err
+	}
+
+	// Feed world map player position for trail/minimap
+	if ris.worldMap != nil && ris.player != nil {
+		px, py := ris.player.GetPosition()
+		// Convert to room-local pixel coords if needed; player coordinates are already in pixels
+		// but trail is drawn relative to current room in minimap renderer
+		ris.worldMap.AddPlayerPosition(px, py)
+	}
+
+	// Toggle zone map overlay
+	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
+		if ris.hudManager != nil {
+			ris.hudManager.ToggleComponent("zone_map")
+		}
 	}
 
 	// Handle state transition requests from input system

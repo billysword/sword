@@ -240,6 +240,8 @@ func (dh *DebugHUD) Draw(screen interface{}) error {
 	helpY += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "M: Toggle Mini-Map", helpX, helpY)
 	helpY += lineHeight
+	ebitenutil.DebugPrintAt(ebitenScreen, "Z: Toggle Zone Map", helpX, helpY)
+	helpY += lineHeight
 	ebitenutil.DebugPrintAt(ebitenScreen, "ESC/P: Pause", helpX, helpY)
 	ebitenutil.DebugPrintAt(ebitenScreen, "F7: Toggle Grid", helpX, helpY)
 	helpY += lineHeight
