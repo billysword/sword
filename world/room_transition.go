@@ -240,7 +240,8 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	// Find the specific spawn point
 	for _, spawn := range spawnPoints {
 		if spawn.ID == spawnID {
-			player.SetPosition(spawn.X, spawn.Y)
+			x, y := rtm.findNonSolidPosition(roomID, spawn.X, spawn.Y)
+			player.SetPosition(x, y)
 			// TODO: Set player facing direction based on spawn.FacingID
 			engine.LogInfo(fmt.Sprintf("Spawned player at %s in room %s", spawnID, roomID))
 			return nil
@@ -250,7 +251,8 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	// Fallback: use first spawn point if specific one not found
 	if len(spawnPoints) > 0 {
 		spawn := spawnPoints[0]
-		player.SetPosition(spawn.X, spawn.Y)
+		x, y := rtm.findNonSolidPosition(roomID, spawn.X, spawn.Y)
+		player.SetPosition(x, y)
 		engine.LogInfo(fmt.Sprintf("Spawned player at fallback spawn %s in room %s", spawn.ID, roomID))
 		return nil
 	}
@@ -261,6 +263,7 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 			u := engine.GetPhysicsUnit()
 			centerX := (tileMap.Width / 2) * u
 			centerY := (tileMap.Height / 2) * u
+			centerX, centerY = rtm.findNonSolidPosition(roomID, centerX, centerY)
 			player.SetPosition(centerX, centerY)
 			engine.LogInfo(fmt.Sprintf("Spawned player at room center (%d, %d) in %s", centerX, centerY, roomID))
 			return nil
@@ -268,6 +271,37 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	}
 
 	return fmt.Errorf("could not determine spawn location for room %s", roomID)
+}
+
+// findNonSolidPosition adjusts a position to a nearby non-solid tile if necessary.
+// It checks the target tile and adjacent tiles to avoid spawning inside solid blocks.
+// Returns the original coordinates if no better position is found.
+func (rtm *RoomTransitionManager) findNonSolidPosition(roomID string, x, y int) (int, int) {
+	room, exists := rtm.rooms[roomID]
+	if !exists {
+		return x, y
+	}
+	tileMap := room.GetTileMap()
+	if tileMap == nil {
+		return x, y
+	}
+
+	u := engine.GetPhysicsUnit()
+	tileX := x / u
+	tileY := y / u
+	if !IsSolidTile(tileMap.GetTileIndex(tileX, tileY)) {
+		return x, y
+	}
+
+	offsets := [][2]int{{1, 0}, {-1, 0}, {0, -1}, {0, 1}}
+	for _, off := range offsets {
+		nx := tileX + off[0]
+		ny := tileY + off[1]
+		if !IsSolidTile(tileMap.GetTileIndex(nx, ny)) {
+			return nx * u, ny * u
+		}
+	}
+	return x, y
 }
 
 // GetTransitionPoints returns all transition points for a room
