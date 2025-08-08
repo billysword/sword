@@ -1,0 +1,26 @@
+{
+  "height": 12,
+  "infinite": false,
+  "layers": [
+    {"data": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,2,2,2,2,2,2,2,2,2,2,2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"height":12,"id":1,"name":"render","opacity":1,"type":"tilelayer","visible":true,"width":16,"x":0,"y":0},
+    {"data": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,2,2,2,2,2,2,2,2,2,2,2,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"height":12,"id":2,"name":"collision","opacity":1,"type":"tilelayer","visible":true,"width":16,"x":0,"y":0},
+    {"draworder":"topdown","id":3,"name":"portals","objects":[
+      {"height":32,"id":1,"name":"left","properties":[{"name":"toZone","type":"string","value":"hollows"},{"name":"toRoom","type":"string","value":"r01"},{"name":"toPortal","type":"string","value":"right"}],"rotation":0,"type":"portal","visible":true,"width":4,"x":0,"y":80},
+      {"height":32,"id":2,"name":"right","properties":[{"name":"toZone","type":"string","value":"hollows"},{"name":"toRoom","type":"string","value":"r03"},{"name":"toPortal","type":"string","value":"left"}],"rotation":0,"type":"portal","visible":true,"width":4,"x":252,"y":80},
+      {"height":4,"id":3,"name":"down","properties":[{"name":"toZone","type":"string","value":"hollows"},{"name":"toRoom","type":"string","value":"r06"},{"name":"toPortal","type":"string","value":"up"}],"rotation":0,"type":"portal","visible":true,"width":32,"x":120,"y":188}
+    ],"opacity":1,"type":"objectgroup","visible":true,"x":0,"y":0}
+  ],
+  "nextlayerid": 4,
+  "nextobjectid": 5,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "tiledversion": "1.10.2",
+  "tileheight": 16,
+  "tilesets": [
+    {"firstgid": 1, "source": "../../tilesets/cavern.tsx"}
+  ],
+  "tilewidth": 16,
+  "type": "map",
+  "version": "1.10",
+  "width": 16
+}
