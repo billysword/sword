@@ -86,11 +86,8 @@ func DrawFullWorldMap(img *ebiten.Image, wm *WorldMap, player *entities.Player) 
 			x, y := toMini(roomLeft+px, roomTop+py)
 			c := color.RGBA{255, 80, 80, 255}
 			size := float32(6)
-			if player.IsFacingRight() {
-				vector.DrawFilledTriangle(img, x+size, y, x-size, y-size, x-size, y+size, c, false)
-			} else {
-				vector.DrawFilledTriangle(img, x-size, y, x+size, y-size, x+size, y+size, c, false)
-			}
+			// Draw square marker for compatibility
+			vector.DrawFilledRect(img, x-size, y-size, size*2, size*2, c, false)
 		}
 	}
 }

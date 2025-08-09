@@ -186,14 +186,10 @@ func (mmr *MiniMapRenderer) Draw(screen interface{}) error {
 		worldX := roomLeft + px
 		worldY := roomTop + py
 		x, y := toMini(worldX, worldY)
-		// Simple triangle pointing to facing direction
+		// Simple square marker for compatibility
 		size := float32(4)
 		c := color.RGBA{255, 80, 80, 255}
-		if mmr.player.IsFacingRight() {
-			vector.DrawFilledTriangle(ebScreen, x+size, y, x-size, y-size, x-size, y+size, c, false)
-		} else {
-			vector.DrawFilledTriangle(ebScreen, x-size, y, x+size, y-size, x+size, y+size, c, false)
-		}
+		vector.DrawFilledRect(ebScreen, x-size, y-size, size*2, size*2, c, false)
 	}
 
 	return nil
