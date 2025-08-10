@@ -136,11 +136,8 @@ func (zmo *ZoneMapOverlay) Draw(screen interface{}) error {
 		x, y := toMini(worldX, worldY)
 		size := float32(6)
 		c := color.RGBA{255, 80, 80, 255}
-		if zmo.player.IsFacingRight() {
-			vector.DrawFilledTriangle(img, x+size, y, x-size, y-size, x-size, y+size, c, false)
-		} else {
-			vector.DrawFilledTriangle(img, x-size, y, x+size, y-size, x+size, y+size, c, false)
-		}
+		// Draw a simple square marker instead of a triangle for compatibility
+		vector.DrawFilledRect(img, x-size, y-size, size*2, size*2, c, false)
 	}
 
 	// Help text
