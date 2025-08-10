@@ -2,6 +2,7 @@ package states
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -54,12 +55,51 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get window size for viewport setup
 	windowWidth, windowHeight := ebiten.WindowSize()
 
-	// Create and register three rooms
-	mainRoom := world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
-	forestRight := world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
-	forestLeft := world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
+	// Create and register rooms either from Tiled data or fallback simple layouts
+	// Attempt to load a starter zone from data (e.g., cradle). If unavailable, use simple rooms.
+	var mainRoom world.Room
+	var forestRight world.Room
+	var forestLeft world.Room
 	// Safety room: simple empty layout for fallback teleport if player falls out of world
 	safetyRoom := world.NewSimpleRoomFromLayout("safety", room_layouts.EmptyRoom)
+
+	// Try loading Tiled maps from data/zones
+	rtmProbe := world.NewRoomTransitionManager(nil)
+	if err := world.LoadZoneRoomsFromData(rtmProbe, "cradle", "."); err == nil {
+		// Choose a deterministic first room id if available
+		for _, id := range rtmProbe.ListRoomIDs() {
+			if strings.HasSuffix(id, "/r01") {
+				mainRoom = rtmProbe.GetRoom(id)
+				break
+			}
+		}
+		if mainRoom == nil {
+			ids := rtmProbe.ListRoomIDs()
+			if len(ids) > 0 {
+				mainRoom = rtmProbe.GetRoom(ids[0])
+			}
+		}
+		// Attempt to find neighbors for demo
+		for _, id := range rtmProbe.ListRoomIDs() {
+			if forestRight == nil && id != mainRoom.GetZoneID() {
+				forestRight = rtmProbe.GetRoom(id)
+				continue
+			}
+			if forestLeft == nil && id != mainRoom.GetZoneID() && rtmProbe.GetRoom(id) != forestRight {
+				forestLeft = rtmProbe.GetRoom(id)
+				break
+			}
+		}
+	}
+	if mainRoom == nil {
+		mainRoom = world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
+	}
+	if forestRight == nil {
+		forestRight = world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
+	}
+	if forestLeft == nil {
+		forestLeft = world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
+	}
 
 	// Layouts already applied by constructor
 
@@ -116,14 +156,21 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	roomTransitionMgr.RegisterRoom(safetyRoom)
 	roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
 
-	// Load transitions and spawns from embedded JSON
+	// If our rooms came from Tiled, also load the whole zone into the active manager
+	_ = world.LoadZoneRoomsFromData // ensure linked
+	if strings.Contains(mainRoom.GetZoneID(), "/") {
+		zoneName := strings.SplitN(mainRoom.GetZoneID(), "/", 2)[0]
+		_ = world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, ".")
+	}
+
+	// Load transitions and spawns from embedded JSON as fallback
 	_ = world.LoadTransitionsFromBytes // ensure linked
 	if err := world.LoadTransitionsFromBytes(roomTransitionMgr, roomsres.RoomTransitionsJSON); err != nil {
 		engine.LogInfo("failed to load embedded transitions: " + err.Error())
 	}
-	// Spawn player at configured spawn in main room
-	if err := roomTransitionMgr.SpawnPlayerInRoom(player, "main", "main_spawn"); err != nil {
-		engine.LogInfo("failed to spawn player at main_spawn: " + err.Error())
+	// Spawn player at configured spawn in main room (fallback id if not defined by Tiled)
+	if err := roomTransitionMgr.SpawnPlayerInRoom(player, mainRoom.GetZoneID(), "main_spawn"); err != nil {
+		engine.LogInfo("spawn fallback: " + err.Error())
 	}
 
 	worldMap.SetCurrentRoom(mainRoom.GetZoneID())
