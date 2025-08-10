@@ -4,6 +4,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"sword/engine"
 	"sword/entities"
+	"math"
 )
 
 /*
@@ -427,19 +428,28 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 
 	u := engine.GetPhysicsUnit()
 
-	for y := 0; y < br.tileMap.Height; y++ {
-		for x := 0; x < br.tileMap.Width; x++ {
+	// Compute visible tile bounds for culling
+	screenW, screenH := screen.Bounds().Dx(), screen.Bounds().Dy()
+	left := int(math.Floor((-cameraOffsetX) / float64(u))) - 1
+	top := int(math.Floor((-cameraOffsetY) / float64(u))) - 1
+	right := int(math.Ceil((float64(screenW)-cameraOffsetX) / float64(u))) + 1
+	bottom := int(math.Ceil((float64(screenH)-cameraOffsetY) / float64(u))) + 1
+	if left < 0 { left = 0 }
+	if top < 0 { top = 0 }
+	if right > br.tileMap.Width { right = br.tileMap.Width }
+	if bottom > br.tileMap.Height { bottom = br.tileMap.Height }
+
+	for y := top; y < bottom; y++ {
+		for x := left; x < right; x++ {
 			tileIndex := br.tileMap.Tiles[y][x]
 			if tileIndex != -1 {
 				sprite := spriteProvider(tileIndex)
 				if sprite != nil {
 					op := &ebiten.DrawImageOptions{}
-					// Scale tiles using global scale factor
 					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
 					renderX := float64(x*u) + cameraOffsetX
 					renderY := float64(y*u) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
-
 					screen.DrawImage(sprite, op)
 				}
 			}

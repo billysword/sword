@@ -152,26 +152,26 @@ func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer,
 		pr.applyDepthEffects(op, layer)
 	}
 
-	// Apply transparency based on depth and layer settings
+	// Build a combined color matrix for alpha and depth effects
+	var cm colorm.ColorM
+	cm.Scale(1, 1, 1, 1)
+	// Carry over op.ColorM scale from applyDepthEffects by multiplying
+	cm = cm.Concat(op.ColorM)
+
 	alpha := layer.Alpha
 	if alpha == 0 {
-		alpha = 0.3 + (layer.Depth * 0.7) // Alpha from 0.3 to 1.0 based on depth
+		alpha = 0.3 + (layer.Depth * 0.7)
 	}
-
 	if alpha < 1.0 {
-		// Use ColorM to apply transparency
-		var cm colorm.ColorM
 		cm.Scale(1, 1, 1, alpha)
-		// Convert to colorm.DrawImageOptions
-		colorOp := &colorm.DrawImageOptions{}
-		colorOp.GeoM = op.GeoM
-		colorOp.Blend = op.Blend
-		colorOp.Filter = op.Filter
-
-		colorm.DrawImage(screen, layerImage, cm, colorOp)
-	} else {
-		screen.DrawImage(layerImage, op)
 	}
+
+	// Always draw via colorm to respect both alpha and depth color shifts
+	colorOp := &colorm.DrawImageOptions{}
+	colorOp.GeoM = op.GeoM
+	colorOp.Blend = op.Blend
+	colorOp.Filter = op.Filter
+	colorm.DrawImage(screen, layerImage, cm, colorOp)
 }
 
 /*

@@ -386,18 +386,19 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 	// Clear screen
 	screen.Clear()
 
-	engine.LogDebug("DRAW_LAYER: Background")
-	if engine.GetBackgroundVisible() {
-		if backgroundImage := engine.GetBackgroundImage(); backgroundImage != nil {
-			// Scale and draw background
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-			screen.DrawImage(backgroundImage, op)
+	// Background is handled via parallax in rooms that support it; only draw the fallback background when no room is active.
+	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
+	if currentRoom == nil {
+		if engine.GetBackgroundVisible() {
+			if backgroundImage := engine.GetBackgroundImage(); backgroundImage != nil {
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
+				screen.DrawImage(backgroundImage, op)
+			}
 		}
 	}
 
 	engine.LogDebug("DRAW_LAYER: Room")
-	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
 	if currentRoom != nil {
 		offsetX, offsetY := ris.camera.GetOffset()
 		currentRoom.DrawWithCamera(screen, offsetX, offsetY)
@@ -422,11 +423,7 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	if engine.GetGridVisible() {
-		engine.LogDebug("DRAW_LAYER: Grid")
-		offsetX, offsetY := ris.camera.GetOffset()
-		engine.DrawGridWithCamera(screen, offsetX, offsetY)
-	}
+	// Grid overlay is rendered by the room implementation (camera-relative).
 
 	// Draw viewport frame/borders for small rooms
 	if ris.viewportRenderer != nil {
