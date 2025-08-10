@@ -218,6 +218,14 @@ func (s *SettingsState) initializeDeveloperOptions() {
 				}
 			},
 		},
+		
+		// Content Loading
+		{
+			Name:        "Use Tiled Maps",
+			Description: "Toggle between Tiled data maps and original demo rooms (takes effect on next start)",
+			Value:       &engine.GameConfig.UseTiledMaps,
+			OnToggle:    nil,
+		},
 	}
 }
 
@@ -446,9 +454,11 @@ func (s *SettingsState) updateDeveloperTab() error {
 				// For options without a direct bool pointer, we need to determine current state
 				// This is a bit hacky but works for our special cases
 				if opt.Name == "Show Grid" {
-					newValue = !engine.IsGridEnabled()
+					newValue = engine.IsGridEnabled()
 				} else if opt.Name == "Smooth Camera" {
-					newValue = engine.GameConfig.CameraSmoothing == 0.0
+					newValue = engine.GameConfig.CameraSmoothing > 0.0
+				} else if opt.Name == "Use Tiled Maps" {
+					newValue = engine.GameConfig.UseTiledMaps
 				}
 			}
 			
@@ -669,6 +679,8 @@ func (s *SettingsState) drawDeveloperTab(screen *ebiten.Image, startY int) {
 				enabled = engine.IsGridEnabled()
 			} else if opt.Name == "Smooth Camera" {
 				enabled = engine.GameConfig.CameraSmoothing > 0.0
+			} else if opt.Name == "Use Tiled Maps" {
+				enabled = engine.GameConfig.UseTiledMaps
 			}
 		}
 		

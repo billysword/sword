@@ -35,6 +35,7 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - **[43_agents_update_summary.md](43_agents_update_summary.md)** - Summary of agents file updates
 - **[44_cleanup_summary.md](44_cleanup_summary.md)** - Codebase cleanup and stability improvements
 - **[45_migration_complete.md](45_migration_complete.md)** - Migration to modular architecture complete
+- **[47_tiled_world_loading.md](47_tiled_world_loading.md)** - Tiled world loading (initial integration)
 
 ### Additional Architecture & Feature Documentation
 - **[architecture_audit_summary.md](architecture_audit_summary.md)** - Comprehensive audit of architectural improvements (✅ Fully integrated)

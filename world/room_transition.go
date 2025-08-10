@@ -336,3 +336,19 @@ func (rtm *RoomTransitionManager) EnableTransition(roomID string, targetRoomID s
 func (rtm *RoomTransitionManager) HasPendingTransition() bool {
 	return rtm.pendingTransition != nil
 }
+
+func (rtm *RoomTransitionManager) GetRoom(roomID string) Room {
+	if r, ok := rtm.rooms[roomID]; ok {
+		return r
+	}
+	return nil
+}
+
+// ListRoomIDs returns all registered room IDs in undefined order
+func (rtm *RoomTransitionManager) ListRoomIDs() []string {
+	ids := make([]string, 0, len(rtm.rooms))
+	for id := range rtm.rooms {
+		ids = append(ids, id)
+	}
+	return ids
+}
