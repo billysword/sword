@@ -23,7 +23,7 @@ const (
 var (
 	// CurrentLogLevel controls what messages are logged
 	// Set to LogLevelOff for production to eliminate all logging overhead
-	CurrentLogLevel = LogLevelDebug
+	CurrentLogLevel = LogLevelInfo
 )
 
 // SetLogLevel sets the global logging level

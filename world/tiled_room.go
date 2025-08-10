@@ -1,6 +1,7 @@
 package world
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 	
@@ -26,6 +27,22 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 		loaded:   lm,
 	}
 
+	// Integration logging: tilesets and mapping
+	u := engine.GetPhysicsUnit()
+	for _, ts := range lm.Tilesets {
+		img := ts.TSX.Image.Source
+		sz := fmt.Sprintf("%dx%d", ts.TSX.TileWidth, ts.TSX.TileHeight)
+		engine.LogSprite("Tileset '" + ts.TSX.Name + "' img='" + img + "' tile=" + sz + 
+			fmt.Sprintf(" cols=%d count=%d firstGID=%d", ts.TSX.Columns, ts.TSX.TileCount, ts.FirstGID))
+		if ts.TSX.TileWidth != u || ts.TSX.TileHeight != u {
+			engine.LogWarn(fmt.Sprintf("Tileset '%s' tile size (%dx%d) differs from physics unit %d; verify sprite indices and scaling.", ts.TSX.Name, ts.TSX.TileWidth, ts.TSX.TileHeight, u))
+		}
+	}
+
+	// Track mapping coverage
+	mapped := 0
+	nonEmpty := 0
+
 	// Populate tiles from render layer data, converting GIDs to 0-based indices
 	if lm.RenderLayer != nil && len(lm.RenderLayer.Data) == width*height {
 		for y := 0; y < height; y++ {
@@ -36,11 +53,17 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 					room.tileMap.Tiles[y][x] = -1
 					continue
 				}
+				nonEmpty++
 				baseIndex := gidToTilesetLocalIndex(lm, gid)
+				if baseIndex >= 0 {
+					mapped++
+				}
 				room.tileMap.Tiles[y][x] = baseIndex
 			}
 		}
 	}
+
+	engine.LogSprite(fmt.Sprintf("Tiled room '%s' tiles mapped: %d/%d (%.1f%%)", zoneID, mapped, nonEmpty, percent(mapped, nonEmpty)))
 
 	return room
 }
@@ -61,6 +84,13 @@ func gidToTilesetLocalIndex(lm *tiled.LoadedMap, gid uint32) int {
 	return bestIdx
 }
 
+func percent(a, b int) float64 {
+	if b <= 0 {
+		return 100
+	}
+	return float64(a) * 100.0 / float64(b)
+}
+
 // Draw overrides to render using our tile-based renderer and sprite provider
 func (tr *TiledRoom) Draw(screen *ebiten.Image) {
 	tr.DrawTiles(screen, tr.getTileSprite)
@@ -77,6 +107,19 @@ func (tr *TiledRoom) getTileSprite(tileIndex int) *ebiten.Image {
 	}
 	if sprite := engine.LoadSpriteByHex(tileIndex); sprite != nil {
 		return sprite
+	}
+	// If default loading fails, attempt tileset-name-based mapping to sheet
+	if tr.loaded != nil && len(tr.loaded.Tilesets) > 0 {
+		// Prefer last tileset by firstGID proximity to indices we used
+		tsName := tr.loaded.Tilesets[len(tr.loaded.Tilesets)-1].TSX.Name
+		sheet := engine.MapTilesetToSheet(tsName)
+		if sheet != "" {
+			if spr := engine.LoadTileFromSheet(sheet, tileIndex); spr != nil {
+				engine.LogSprite(fmt.Sprintf("Mapped Tiled tileset '%s' -> sheet '%s' for index %d", tsName, sheet, tileIndex))
+				return spr
+			}
+		}
+		engine.LogWarn(fmt.Sprintf("No sprite sheet mapping for tileset '%s' index %d; using fallback tile sheet", tsName, tileIndex))
 	}
 	return engine.GetTileSprite()
 }

@@ -139,6 +139,26 @@ func (sm *SpriteManager) GetTileByIndex(sheetName string, index int) *ebiten.Ima
 	return tile
 }
 
+// MapTilesetToSheet attempts to pick a sprite sheet for a Tiled tileset by name convention
+// Example: tileset name 'forest' -> sheet 'forest'
+func MapTilesetToSheet(tilesetName string) string {
+	if tilesetName == "" {
+		return ""
+	}
+	// Direct match
+	if _, ok := GetSpriteManager().sheets[tilesetName]; ok {
+		return tilesetName
+	}
+	// Fallbacks
+	candidates := []string{"forest", "tiles", "default"}
+	for _, name := range candidates {
+		if _, ok := GetSpriteManager().sheets[name]; ok {
+			return name
+		}
+	}
+	return ""
+}
+
 /*
 GetTileByHex returns a tile from a sprite sheet by its hexadecimal index.
 Convenient wrapper for GetTileByIndex that accepts hex values.

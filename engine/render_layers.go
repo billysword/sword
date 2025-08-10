@@ -32,6 +32,7 @@ type ViewportRenderer struct {
 	worldHeight  int
 	offsetX      float64
 	offsetY      float64
+	black        *ebiten.Image
 }
 
 /*
@@ -65,19 +66,23 @@ DrawFrame draws the black viewport frame/borders.
 This should be called after all world rendering but before HUD.
 */
 func (vr *ViewportRenderer) DrawFrame(screen *ebiten.Image) {
+	// Lazily create 1x1 black image for scaling
+	if vr.black == nil {
+		vr.black = ebiten.NewImage(1, 1)
+		vr.black.Fill(color.Black)
+	}
+
 	// Calculate visible world bounds
 	worldLeft := vr.offsetX
 	worldTop := vr.offsetY
 	worldRight := worldLeft + float64(vr.worldWidth)
 	worldBottom := worldTop + float64(vr.worldHeight)
 	
-	// Draw black borders if world is smaller than screen
 	// Left border
 	if worldLeft > 0 {
 		opts := &ebiten.DrawImageOptions{}
-		blackImg := ebiten.NewImage(int(worldLeft), vr.screenHeight)
-		blackImg.Fill(color.Black)
-		screen.DrawImage(blackImg, opts)
+		opts.GeoM.Scale(worldLeft, float64(vr.screenHeight))
+		screen.DrawImage(vr.black, opts)
 	}
 	
 	// Right border
@@ -85,17 +90,15 @@ func (vr *ViewportRenderer) DrawFrame(screen *ebiten.Image) {
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(worldRight, 0)
 		width := float64(vr.screenWidth) - worldRight
-		blackImg := ebiten.NewImage(int(width), vr.screenHeight)
-		blackImg.Fill(color.Black)
-		screen.DrawImage(blackImg, opts)
+		opts.GeoM.Scale(width, float64(vr.screenHeight))
+		screen.DrawImage(vr.black, opts)
 	}
 	
 	// Top border
 	if worldTop > 0 {
 		opts := &ebiten.DrawImageOptions{}
-		blackImg := ebiten.NewImage(vr.screenWidth, int(worldTop))
-		blackImg.Fill(color.Black)
-		screen.DrawImage(blackImg, opts)
+		opts.GeoM.Scale(float64(vr.screenWidth), worldTop)
+		screen.DrawImage(vr.black, opts)
 	}
 	
 	// Bottom border
@@ -103,8 +106,7 @@ func (vr *ViewportRenderer) DrawFrame(screen *ebiten.Image) {
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Translate(0, worldBottom)
 		height := float64(vr.screenHeight) - worldBottom
-		blackImg := ebiten.NewImage(vr.screenWidth, int(height))
-		blackImg.Fill(color.Black)
-		screen.DrawImage(blackImg, opts)
+		opts.GeoM.Scale(float64(vr.screenWidth), height)
+		screen.DrawImage(vr.black, opts)
 	}
 }
