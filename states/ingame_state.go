@@ -63,9 +63,10 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Safety room: simple empty layout for fallback teleport if player falls out of world
 	safetyRoom := world.NewSimpleRoomFromLayout("safety", room_layouts.EmptyRoom)
 
-	// Try loading Tiled maps from data/zones
+	// Try loading Tiled maps from data/zones if enabled
 	rtmProbe := world.NewRoomTransitionManager(nil)
-	if err := world.LoadZoneRoomsFromData(rtmProbe, "cradle", "."); err == nil {
+	if engine.GameConfig.UseTiledMaps {
+		if err := world.LoadZoneRoomsFromData(rtmProbe, "cradle", "."); err == nil {
 		// Choose a deterministic first room id if available
 		for _, id := range rtmProbe.ListRoomIDs() {
 			if strings.HasSuffix(id, "/r01") {
@@ -89,6 +90,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 				forestLeft = rtmProbe.GetRoom(id)
 				break
 			}
+		}
 		}
 	}
 	if mainRoom == nil {
@@ -156,9 +158,9 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	roomTransitionMgr.RegisterRoom(safetyRoom)
 	roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
 
-	// If our rooms came from Tiled, also load the whole zone into the active manager
+	// If our rooms came from Tiled and the toggle is on, also load the whole zone into the active manager
 	_ = world.LoadZoneRoomsFromData // ensure linked
-	if strings.Contains(mainRoom.GetZoneID(), "/") {
+	if engine.GameConfig.UseTiledMaps && strings.Contains(mainRoom.GetZoneID(), "/") {
 		zoneName := strings.SplitN(mainRoom.GetZoneID(), "/", 2)[0]
 		_ = world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, ".")
 	}
