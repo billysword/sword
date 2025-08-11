@@ -48,7 +48,7 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
 				idx := y*width + x
-				gid := lm.RenderLayer.Data[idx]
+				gid := tiled.NormalizeGID(lm.RenderLayer.Data[idx])
 				if gid == 0 {
 					room.tileMap.Tiles[y][x] = -1
 					continue
@@ -71,6 +71,7 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 // gidToTilesetLocalIndex converts a global id to a 0-based tile index relative to its tileset
 // If tileset cannot be determined, returns -1
 func gidToTilesetLocalIndex(lm *tiled.LoadedMap, gid uint32) int {
+	gid = tiled.NormalizeGID(gid)
 	bestFirst := -1
 	bestIdx := -1
 	for _, ts := range lm.Tilesets {

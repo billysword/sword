@@ -207,8 +207,19 @@ func extractPortals(layer *TMJLayer) []Portal {
 	return out
 }
 
+// Tiled stores flip flags in the top 3 bits of the GID. NormalizeGID clears those flags.
+const (
+	gidMask uint32 = 0x1FFFFFFF
+)
+
+// NormalizeGID removes flip flags and returns the raw tile id used for tileset indexing.
+func NormalizeGID(gid uint32) uint32 {
+	return gid & gidMask
+}
+
 // Resolve tile properties from a global id. Zero gid returns zero-value props.
 func (lm *LoadedMap) PropertiesForGID(gid uint32) (TileProperties, bool) {
+	gid = NormalizeGID(gid)
 	if gid == 0 {
 		return TileProperties{}, false
 	}
@@ -251,7 +262,7 @@ func (lm *LoadedMap) IsSolidAt(index int) bool {
 		return lm.CollisionLayer.Data[index] != 0
 	}
 	if lm.RenderLayer != nil && index >= 0 && index < len(lm.RenderLayer.Data) {
-		gid := lm.RenderLayer.Data[index]
+		gid := NormalizeGID(lm.RenderLayer.Data[index])
 		if props, ok := lm.PropertiesForGID(gid); ok {
 			return props.Solid
 		}
