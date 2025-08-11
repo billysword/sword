@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/colorm"
 )
 
 /*
@@ -147,31 +146,22 @@ func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer,
 
 	op.GeoM.Translate(centerOffsetX+parallaxOffsetX, centerOffsetY+parallaxOffsetY)
 
-	// Apply depth-of-field effects if enabled
+	// Apply depth-of-field effects if enabled (modifies op.ColorM and GeoM)
 	if pr.depthOfField {
 		pr.applyDepthEffects(op, layer)
 	}
 
-	// Build a combined color matrix for alpha and depth effects
-	var cm colorm.ColorM
-	cm.Scale(1, 1, 1, 1)
-	// Carry over op.ColorM scale from applyDepthEffects by multiplying
-	cm = cm.Concat(op.ColorM)
-
+	// Apply alpha based on layer settings/depth
 	alpha := layer.Alpha
 	if alpha == 0 {
 		alpha = 0.3 + (layer.Depth * 0.7)
 	}
 	if alpha < 1.0 {
-		cm.Scale(1, 1, 1, alpha)
+		op.ColorM.Scale(1, 1, 1, alpha)
 	}
 
-	// Always draw via colorm to respect both alpha and depth color shifts
-	colorOp := &colorm.DrawImageOptions{}
-	colorOp.GeoM = op.GeoM
-	colorOp.CompositeMode = op.CompositeMode
-	colorOp.Filter = op.Filter
-	colorm.DrawImage(screen, layerImage, cm, colorOp)
+	// Draw with combined transformations and color
+	screen.DrawImage(layerImage, op)
 }
 
 /*
