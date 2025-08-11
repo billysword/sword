@@ -13,3 +13,10 @@ type TileProvider interface {
 type CollisionChecker interface {
 	IsSolidTile(tileIndex int) bool
 }
+
+// TileSolidityProvider is an optional interface a room can implement
+// to provide per-cell solidity independent of render-layer indices.
+// The index is the flattened tile cell index: y*width + x.
+type TileSolidityProvider interface {
+	IsSolidAtFlatIndex(index int) bool
+}

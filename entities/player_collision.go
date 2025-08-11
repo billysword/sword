@@ -71,6 +71,12 @@ func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int)
 	roomWidth := tileProvider.GetWidth()
 	roomHeight := tileProvider.GetHeight()
 	
+	// Optional specialized solidity provider
+	var solidAt func(flatIndex int) bool
+	if sp, ok := any(tileProvider).(TileSolidityProvider); ok {
+		solidAt = sp.IsSolidAtFlatIndex
+	}
+	
 	for y := topTile; y <= bottomTile; y++ {
 		for x := leftTile; x <= rightTile; x++ {
 			// Skip out-of-bounds tiles
@@ -81,8 +87,14 @@ func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int)
 			// Get tile at this position
 			tileIndex := y*roomWidth + x
 			if tileIndex >= 0 && tileIndex < len(tiles) {
-				if IsSolidTile(tiles[tileIndex]) {
-					return true
+				if solidAt != nil {
+					if solidAt(tileIndex) {
+						return true
+					}
+				} else {
+					if IsSolidTile(tiles[tileIndex]) {
+						return true
+					}
 				}
 			}
 		}
@@ -140,120 +152,56 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 					step = -stepUnit
 				}
 			} else {
-				// Hit a wall
+				// Hit wall, stop horizontal movement
 				p.vx = 0
 				break
-			}
-		}
-	}
-	
-	// Vertical movement (stepped)
-	wasOnGround := p.onGround
-	p.onGround = false
-	if p.vy != 0 {
-		remaining := p.vy
-		step := stepUnit
-		if remaining < 0 {
-			step = -stepUnit
-		}
-		for remaining != 0 {
-			// Clamp step to remaining distance
-			if remaining > 0 && step > remaining {
-				step = remaining
-			}
-			if remaining < 0 && step < remaining {
-				step = remaining
-			}
-			nextY := p.y + step
-			if !p.CheckTileCollision(tileProvider, p.x, nextY) {
-				p.y = nextY
-				remaining -= step
-				// Reset step sign in case we clamped above
-				if remaining > 0 {
-					step = stepUnit
-				} else if remaining < 0 {
-					step = -stepUnit
-				}
-			} else {
-				// Vertical collision
-				if p.vy > 0 {
-					// Landed on ground
-					p.onGround = true
-					p.isJumping = false
-					if !wasOnGround {
-						p.coyoteTimer = config.CoyoteTime
-					}
-				}
-				p.vy = 0
-				break
-			}
-		}
-	}
-	
-	// Ground check - look slightly below collision box
-	offset := int(float64(config.GroundCheckOffset) * engine.GameConfig.CharScaleFactor)
-	if p.CheckTileCollision(tileProvider, p.x, p.y+offset) {
-		p.onGround = true
-	}
-	
-	// Apply friction
-	if p.onGround {
-		// Ground friction
-		if p.vx > 0 {
-			p.vx -= config.Friction
-			if p.vx < 0 {
-				p.vx = 0
-			}
-		} else if p.vx < 0 {
-			p.vx += config.Friction
-			if p.vx > 0 {
-				p.vx = 0
-			}
-		}
-	} else if config.AirFriction > 0 {
-		// Air friction (if configured)
-		if p.vx > 0 {
-			p.vx -= config.AirFriction
-			if p.vx < 0 {
-				p.vx = 0
-			}
-		} else if p.vx < 0 {
-			p.vx += config.AirFriction
-			if p.vx > 0 {
-				p.vx = 0
 			}
 		}
 	}
 	
 	// Apply gravity
-	if !p.onGround && p.vy < config.MaxFallSpeed {
-		p.vy += config.Gravity
+	p.vy += config.Gravity
+	if p.vy > config.MaxFallSpeed {
+		p.vy = config.MaxFallSpeed
 	}
 	
-	// Update jump held frames
-	if p.isJumping && p.vy < 0 {
-		p.jumpHeldFrames++
-	}
-	
-	// Keep player in room bounds (one physicsUnit per tile)
-	if p.x < 0 {
-		p.x = 0
-		p.vx = 0
-	}
-	maxX := tileProvider.GetWidth() * engine.GetPhysicsUnit()
-	if p.x > maxX {
-		p.x = maxX
-		p.vx = 0
-	}
-	
-	if p.y < 0 {
-		p.y = 0
-		p.vy = 0
-	}
-	maxY := tileProvider.GetHeight() * engine.GetPhysicsUnit()
-	if p.y > maxY {
-		p.y = maxY
-		p.vy = 0
+	// Vertical movement (stepped)
+	if p.vy != 0 {
+		remaining := p.vy
+		vstep := stepUnit
+		if remaining < 0 {
+			vstep = -stepUnit
+		}
+		for remaining != 0 {
+			if remaining > 0 && vstep > remaining {
+				vstep = remaining
+			}
+			if remaining < 0 && vstep < remaining {
+				vstep = remaining
+			}
+			nextY := p.y + vstep
+			if !p.CheckTileCollision(tileProvider, p.x, nextY) {
+				p.y = nextY
+				remaining -= vstep
+				if remaining > 0 {
+					vstep = stepUnit
+				} else if remaining < 0 {
+					vstep = -stepUnit
+				}
+			} else {
+				// Hit floor or ceiling
+				if vstep > 0 {
+					p.onGround = true
+				} else {
+					p.onGround = false
+				}
+				p.vy = 0
+				break
+			}
+		}
+	} else {
+		// If no vertical movement, check if still grounded
+		p.onGround = p.CheckTileCollision(tileProvider, p.x, p.y+1)
 	}
 }
 

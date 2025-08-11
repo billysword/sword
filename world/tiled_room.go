@@ -8,6 +8,7 @@ import (
 	"sword/internal/tiled"
 	"github.com/hajimehoshi/ebiten/v2"
 	"sword/engine"
+	"sword/entities"
 )
 
 // TiledRoom adapts a Tiled map to our Room interface
@@ -16,6 +17,9 @@ type TiledRoom struct {
 	*BaseRoom
 	loaded *tiled.LoadedMap
 }
+
+// Ensure TiledRoom implements entities.TileSolidityProvider
+var _ entities.TileSolidityProvider = (*TiledRoom)(nil)
 
 // NewTiledRoomFromLoadedMap creates a Room from a parsed Tiled LoadedMap
 func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
@@ -123,6 +127,25 @@ func (tr *TiledRoom) getTileSprite(tileIndex int) *ebiten.Image {
 		engine.LogWarn(fmt.Sprintf("No sprite sheet mapping for tileset '%s' index %d; using fallback tile sheet", tsName, tileIndex))
 	}
 	return engine.GetTileSprite()
+}
+
+// IsSolidAtFlatIndex uses the collision layer if present; otherwise falls back to tile properties from render layer
+func (tr *TiledRoom) IsSolidAtFlatIndex(index int) bool {
+	if tr.loaded == nil {
+		return false
+	}
+	// Prefer explicit collision layer
+	if tr.loaded.CollisionLayer != nil && index >= 0 && index < len(tr.loaded.CollisionLayer.Data) {
+		return tr.loaded.CollisionLayer.Data[index] != 0
+	}
+	// Fallback: derive from render layer tile properties
+	if tr.loaded.RenderLayer != nil && index >= 0 && index < len(tr.loaded.RenderLayer.Data) {
+		gid := tiled.NormalizeGID(tr.loaded.RenderLayer.Data[index])
+		if props, ok := tr.loaded.PropertiesForGID(gid); ok {
+			return props.Solid
+		}
+	}
+	return false
 }
 
 // Utility to create a stable room id from zone and file path like r01.tmj -> "zone/r01"
