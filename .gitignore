@@ -5,6 +5,11 @@
 *.so
 *.dylib
 sword
+game
+
+*.tmx~
+*.tsx~
+*.tiled-session
 
 # Test binary, built with `go test -c`
 *.test

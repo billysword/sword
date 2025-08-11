@@ -66,8 +66,8 @@ func NewSimpleRoomFromLayout(zoneID string, layout [][]int) *SimpleRoom {
 	// Determine base layout dimensions
 	baseWidth, baseHeight := GetLayoutDimensions(layout)
 	// Scale up the room dimensions by 4x as requested
-	scaledWidth := baseWidth * 4
-	scaledHeight := baseHeight * 4
+	scaledWidth := baseWidth * 16
+	scaledHeight := baseHeight * 16
 
 	room := &SimpleRoom{
 		BaseRoom:    NewBaseRoom(zoneID, scaledWidth, scaledHeight),
