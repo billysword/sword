@@ -63,9 +63,14 @@ type SimpleRoom struct {
 // NewSimpleRoomFromLayout creates a new simple room sized to fit the provided
 // layout, then applies that layout.
 func NewSimpleRoomFromLayout(zoneID string, layout [][]int) *SimpleRoom {
-	width, height := GetLayoutDimensions(layout)
+	// Determine base layout dimensions
+	baseWidth, baseHeight := GetLayoutDimensions(layout)
+	// Scale up the room dimensions by 4x as requested
+	scaledWidth := baseWidth * 4
+	scaledHeight := baseHeight * 4
+
 	room := &SimpleRoom{
-		BaseRoom:    NewBaseRoom(zoneID, width, height),
+		BaseRoom:    NewBaseRoom(zoneID, scaledWidth, scaledHeight),
 		tileSize:    engine.GameConfig.TileSize,
 		tilesPerRow: 8,
 		forestTiles: make(map[int]*ebiten.Image),
@@ -73,7 +78,9 @@ func NewSimpleRoomFromLayout(zoneID string, layout [][]int) *SimpleRoom {
 
 	room.initializeParallaxLayers()
 	room.initializeForestTiles()
+	// Build outer walls and empty interior for the expanded room
 	room.buildRoom()
+	// Apply the provided layout into the top-left of the expanded room
 	ApplyLayout(room.BaseRoom, layout)
 	return room
 }
