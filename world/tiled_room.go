@@ -111,6 +111,7 @@ func (tr *TiledRoom) getTileSprite(tileIndex int) *ebiten.Image {
 		return engine.GetTileSpriteByType(tileIndex)
 	}
 	if sprite := engine.LoadSpriteByHex(tileIndex); sprite != nil {
+		engine.LogSprite(fmt.Sprintf("Sprite resolved via default LoadSpriteByHex idx=%d", tileIndex))
 		return sprite
 	}
 	// If default loading fails, attempt tileset-name-based mapping to sheet
@@ -126,6 +127,7 @@ func (tr *TiledRoom) getTileSprite(tileIndex int) *ebiten.Image {
 		}
 		engine.LogWarn(fmt.Sprintf("No sprite sheet mapping for tileset '%s' index %d; using fallback tile sheet", tsName, tileIndex))
 	}
+	engine.LogWarn(fmt.Sprintf("Falling back to engine.GetTileSprite for idx=%d", tileIndex))
 	return engine.GetTileSprite()
 }
 

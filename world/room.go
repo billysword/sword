@@ -5,6 +5,9 @@ import (
 	"sword/engine"
 	"sword/entities"
 	"math"
+	"fmt"
+	"image/color"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 /*
@@ -428,6 +431,11 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 
 	u := engine.GetPhysicsUnit()
 
+	// Emit tilemap debug once per draw
+	worldPixelW := br.tileMap.Width * u
+	worldPixelH := br.tileMap.Height * u
+	engine.LogTileMapDebug(br.zoneID, br.tileMap.Width, br.tileMap.Height, u, worldPixelW, worldPixelH)
+
 	// Compute visible tile bounds for culling
 	screenW, screenH := screen.Bounds().Dx(), screen.Bounds().Dy()
 	left := int(math.Floor((-cameraOffsetX) / float64(u))) - 1
@@ -444,13 +452,33 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 			tileIndex := br.tileMap.Tiles[y][x]
 			if tileIndex != -1 {
 				sprite := spriteProvider(tileIndex)
+				renderX := float64(x*u) + cameraOffsetX
+				renderY := float64(y*u) + cameraOffsetY
+				// Log the rendering info for this tile
+				engine.LogRenderingDebug(fmt.Sprintf("Tile idx=%d room=%s", tileIndex, br.zoneID), float64(x*u), float64(y*u), renderX, renderY, engine.GameConfig.TileScaleFactor)
+
 				if sprite != nil {
 					op := &ebiten.DrawImageOptions{}
 					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-					renderX := float64(x*u) + cameraOffsetX
-					renderY := float64(y*u) + cameraOffsetY
 					op.GeoM.Translate(renderX, renderY)
 					screen.DrawImage(sprite, op)
+				} else {
+					// Draw a translucent red box where a sprite is missing
+					missing := ebiten.NewImage(u, u)
+					missing.Fill(color.RGBA{255, 0, 0, 180})
+					op := &ebiten.DrawImageOptions{}
+					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
+					op.GeoM.Translate(renderX, renderY)
+					screen.DrawImage(missing, op)
+					engine.LogSprite(fmt.Sprintf("Missing sprite: room=%s idx=%d tile=(%d,%d)", br.zoneID, tileIndex, x, y))
+				}
+
+				// Optional overlay: draw tile index text for inspection
+				if engine.GameConfig.ShowDebugOverlay {
+					text := fmt.Sprintf("%d", tileIndex)
+					offsetX := int(renderX)
+					offsetY := int(renderY)
+					ebitenutil.DebugPrintAt(screen, text, offsetX+2, offsetY+2)
 				}
 			}
 		}
