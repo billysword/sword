@@ -169,7 +169,7 @@ func (pr *ParallaxRenderer) drawLayer(screen *ebiten.Image, layer ParallaxLayer,
 	// Always draw via colorm to respect both alpha and depth color shifts
 	colorOp := &colorm.DrawImageOptions{}
 	colorOp.GeoM = op.GeoM
-	colorOp.Blend = op.Blend
+	colorOp.CompositeMode = op.CompositeMode
 	colorOp.Filter = op.Filter
 	colorm.DrawImage(screen, layerImage, cm, colorOp)
 }
