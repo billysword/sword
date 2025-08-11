@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"sword/resources/images"
+	"sword/assets/tilesets"
 	"sword/resources/images/platformer"
 )
 
@@ -42,7 +42,7 @@ var SpriteSheetConfigs = []SpriteSheetConfig{
 	},
 	{
 		Name:       "forest",
-		ImageData:  images.ForestTiles_png,
+		ImageData:  tilesets.ForestTiles_png,
 		TileWidth:  16,
 		TileHeight: 16,
 	},

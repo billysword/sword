@@ -4,7 +4,4 @@ import (
 	_ "embed"
 )
 
-var (
-	//go:embed forest-tiles.png
-	ForestTiles_png []byte
-)
+// No embedded images in this package currently
