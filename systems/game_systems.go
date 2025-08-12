@@ -2,6 +2,7 @@ package systems
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -208,7 +209,8 @@ func (cs *CameraSystem) SetRoom(room world.Room) {
 	if cs.camera != nil && room != nil {
 		if tileMap := room.GetTileMap(); tileMap != nil {
 			u := engine.GetPhysicsUnit()
-			cs.camera.SetWorldBounds(tileMap.Width*u, tileMap.Height*u)
+			scale := engine.GameConfig.TileScaleFactor
+			cs.camera.SetWorldBounds(int(float64(tileMap.Width*u)*scale), int(float64(tileMap.Height*u)*scale))
 		}
 	}
 }
@@ -222,8 +224,9 @@ func (cs *CameraSystem) Update() error {
 	// Get player position for camera tracking
 	playerX, playerY := cs.player.GetPosition()
 
-	// Update camera position
-	cs.camera.Update(playerX, playerY)
+	// Update camera position in scaled screen pixels
+	s := engine.GameConfig.TileScaleFactor
+	cs.camera.Update(int(float64(playerX)*s), int(float64(playerY)*s))
 
 	return nil
 }
@@ -310,11 +313,31 @@ func (rs *RoomSystem) Update() error {
 			}
 
 			if newRoom != nil {
-							// Notify other systems about the room change
+				// Recompute tile scale to fit the new room to the current window (zoom in small rooms)
+				if tm := newRoom.GetTileMap(); tm != nil {
+					u := engine.GetPhysicsUnit()
+					winW, winH := ebiten.WindowSize()
+					roomPxW := tm.Width * u
+					roomPxH := tm.Height * u
+					fitScaleW := float64(winW) / float64(roomPxW)
+					fitScaleH := float64(winH) / float64(roomPxH)
+					fitScale := math.Min(fitScaleW, fitScaleH)
+					// Clamp between 1x and 4x
+					if fitScale < 1.0 {
+						fitScale = 1.0
+					}
+					if fitScale > 4.0 {
+						fitScale = 4.0
+					}
+					engine.GameConfig.TileScaleFactor = fitScale
+				}
+
+				// Notify other systems about the room change
 				if rs.physicsSystem != nil {
 					rs.physicsSystem.SetRoom(newRoom)
 				}
 				if rs.cameraSystem != nil {
+					// After updating scale, update camera bounds for new room
 					rs.cameraSystem.SetRoom(newRoom)
 				}
 			}
