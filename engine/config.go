@@ -186,11 +186,11 @@ func DefaultConfig() Config {
 		// Debug settings
 		ShowDebugInfo:    true,  // Enable debug info by default for development
 		ShowDebugOverlay: true,  // Debug overlay ON by default
-		GridColor:        [4]uint8{128, 128, 128, 64}, // Faint gray grid
-		UsePlaceholderSprites: true, // Use placeholder sprites by default for debugging
+				GridColor:        [4]uint8{128, 128, 128, 64}, // Faint gray grid
+		UsePlaceholderSprites: false,
 
+		}
 	}
-}
 
 
 
