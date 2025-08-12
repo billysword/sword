@@ -9,8 +9,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"sword/engine"
 	"sword/entities"
-	"sword/room_layouts"
-	roomsres "sword/resources/rooms"
 	"sword/systems"
 	"sword/world"
 )
@@ -55,9 +53,6 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get window size for viewport setup
 	windowWidth, windowHeight := ebiten.WindowSize()
 
-	// Safety room: simple empty layout for fallback teleport if player falls out of world
-	safetyRoom := world.NewSimpleRoomFromLayout("safety", room_layouts.EmptyRoom)
-
 	// Initialize world map and room transition system
 	worldMap := world.NewWorldMap()
 	roomTransitionMgr := world.NewRoomTransitionManager(worldMap)
@@ -69,59 +64,49 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	playerSpawnX, playerSpawnY := 0, 0
 
 	zoneName := "cradle"
-	if err := world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, "."); err == nil {
-		// Choose a deterministic first room id if available
-		mainRoomID := ""
-		for _, id := range roomTransitionMgr.ListRoomIDs() {
-			if strings.HasSuffix(id, "/r01") {
-				mainRoomID = id
-				break
-			}
-		}
-		if mainRoomID == "" {
-			ids := roomTransitionMgr.ListRoomIDs()
-			if len(ids) > 0 {
-				mainRoomID = ids[0]
-			}
-		}
-
-		if mainRoomID != "" {
-			mainRoom = roomTransitionMgr.GetRoom(mainRoomID)
-			roomTransitionMgr.RegisterRoom(safetyRoom)
-			_ = roomTransitionMgr.SetCurrentRoom(mainRoomID)
+	if err := world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, "."); err != nil {
+		panic(fmt.Errorf("failed to load Tiled zone '%s': %w", zoneName, err))
+	}
+	// Choose a deterministic first room id if available
+	mainRoomID := ""
+	for _, id := range roomTransitionMgr.ListRoomIDs() {
+		if strings.HasSuffix(id, "/r01") {
+			mainRoomID = id
+			break
 		}
 	}
+	if mainRoomID == "" {
+		ids := roomTransitionMgr.ListRoomIDs()
+		if len(ids) == 0 {
+			panic("no rooms loaded from Tiled zone")
+		}
+		mainRoomID = ids[0]
+	}
 
-	// Fallback: simple demo rooms if Tiled zone failed to load
+	mainRoom = roomTransitionMgr.GetRoom(mainRoomID)
 	if mainRoom == nil {
-		mainRoom = world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
-		forestRight := world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
-		forestLeft := world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
-		roomTransitionMgr.RegisterRoom(mainRoom)
-		roomTransitionMgr.RegisterRoom(forestRight)
-		roomTransitionMgr.RegisterRoom(forestLeft)
-		roomTransitionMgr.RegisterRoom(safetyRoom)
-		roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
+		panic(fmt.Errorf("main room '%s' not found after Tiled load", mainRoomID))
+	}
+	if err := roomTransitionMgr.SetCurrentRoom(mainRoomID); err != nil {
+		panic(err)
 	}
 
 	// Compute initial scale framing using the resolved mainRoom
-	if mainRoom != nil {
-		if tm := mainRoom.GetTileMap(); tm != nil {
-			roomPxW := tm.Width * engine.GameConfig.TileSize
-			roomPxH := tm.Height * engine.GameConfig.TileSize
-			fitScaleW := float64(windowWidth) / float64(roomPxW)
-			fitScaleH := float64(windowHeight) / float64(roomPxH)
-			fitScale := fitScaleW
-			if fitScaleH < fitScale {
-				fitScale = fitScaleH
-			}
-			if fitScale > 1.0 {
-				maxScale := 4.0
-				if fitScale > maxScale {
-					engine.GameConfig.TileScaleFactor = maxScale
-				} else {
-					engine.GameConfig.TileScaleFactor = fitScale
-				}
+	if tm := mainRoom.GetTileMap(); tm != nil {
+		roomPxW := tm.Width * engine.GameConfig.TileSize
+		roomPxH := tm.Height * engine.GameConfig.TileSize
+		fitScaleW := float64(windowWidth) / float64(roomPxW)
+		fitScaleH := float64(windowHeight) / float64(roomPxH)
+		fitScale := fitScaleW
+		if fitScaleH < fitScale {
+			fitScale = fitScaleH
+		}
+		if fitScale > 1.0 {
+			maxScale := 4.0
+			if fitScale > maxScale {
+				engine.GameConfig.TileScaleFactor = maxScale
+			} else {
+				engine.GameConfig.TileScaleFactor = fitScale
 			}
 		}
 	}
@@ -130,29 +115,19 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	u = engine.GetPhysicsUnit()
 
 	// Determine spawn based on main room
-	if mainRoom != nil {
-		tileMap = mainRoom.GetTileMap()
-		playerSpawnX = (tileMap.Width / 2) * u
-		playerSpawnY = (tileMap.Height - 2) * u
-		if tileMap.Width > 10 || tileMap.Height > 10 {
-			if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
-				playerSpawnY = groundY
-			}
+	tileMap = mainRoom.GetTileMap()
+	playerSpawnX = (tileMap.Width / 2) * u
+	playerSpawnY = (tileMap.Height - 2) * u
+	if tileMap.Width > 10 || tileMap.Height > 10 {
+		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
+			playerSpawnY = groundY
 		}
 	}
 
 	// Create core entities
 	player := entities.NewPlayer(playerSpawnX, playerSpawnY)
 
-	// Load transitions and spawns from embedded JSON as fallback
-	_ = world.LoadTransitionsFromBytes // ensure linked
-	if err := world.LoadTransitionsFromBytes(roomTransitionMgr, roomsres.RoomTransitionsJSON); err != nil {
-		engine.LogInfo("failed to load embedded transitions: " + err.Error())
-	}
-	if err := roomTransitionMgr.SpawnPlayerInRoom(player, mainRoom.GetZoneID(), "main_spawn"); err != nil {
-		engine.LogInfo("spawn fallback: " + err.Error())
-	}
-
+	// Set world map room and initial trail position
 	worldMap.SetCurrentRoom(mainRoom.GetZoneID())
 	px, py := player.GetPosition()
 	worldMap.AddPlayerPosition(px, py)
