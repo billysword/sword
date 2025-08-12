@@ -430,18 +430,19 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 	engine.LogDebug("DRAW_LAYER: RoomTiles(" + br.zoneID + ")")
 
 	u := engine.GetPhysicsUnit()
+	scale := engine.GameConfig.TileScaleFactor
 
 	// Emit tilemap debug once per draw
-	worldPixelW := br.tileMap.Width * u
-	worldPixelH := br.tileMap.Height * u
+	worldPixelW := int(float64(br.tileMap.Width*u) * scale)
+	worldPixelH := int(float64(br.tileMap.Height*u) * scale)
 	engine.LogTileMapDebug(br.zoneID, br.tileMap.Width, br.tileMap.Height, u, worldPixelW, worldPixelH)
 
-	// Compute visible tile bounds for culling
+	// Compute visible tile bounds for culling. Offsets and screen are in scaled pixels.
 	screenW, screenH := screen.Bounds().Dx(), screen.Bounds().Dy()
-	left := int(math.Floor((-cameraOffsetX) / float64(u))) - 1
-	top := int(math.Floor((-cameraOffsetY) / float64(u))) - 1
-	right := int(math.Ceil((float64(screenW)-cameraOffsetX) / float64(u))) + 1
-	bottom := int(math.Ceil((float64(screenH)-cameraOffsetY) / float64(u))) + 1
+	left := int(math.Floor((-cameraOffsetX) / (float64(u) * scale))) - 1
+	top := int(math.Floor((-cameraOffsetY) / (float64(u) * scale))) - 1
+	right := int(math.Ceil((float64(screenW)-cameraOffsetX) / (float64(u) * scale))) + 1
+	bottom := int(math.Ceil((float64(screenH)-cameraOffsetY) / (float64(u) * scale))) + 1
 	if left < 0 { left = 0 }
 	if top < 0 { top = 0 }
 	if right > br.tileMap.Width { right = br.tileMap.Width }
@@ -452,23 +453,24 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 			tileIndex := br.tileMap.Tiles[y][x]
 			if tileIndex != -1 {
 				sprite := spriteProvider(tileIndex)
-				renderX := float64(x*u) + cameraOffsetX
-				renderY := float64(y*u) + cameraOffsetY
+				// Compute screen-space translation: scaled world position plus camera offset (already scaled)
+				translateX := float64(x*u)*scale + cameraOffsetX
+				translateY := float64(y*u)*scale + cameraOffsetY
 				// Log the rendering info for this tile
-				engine.LogRenderingDebug(fmt.Sprintf("Tile idx=%d room=%s", tileIndex, br.zoneID), float64(x*u), float64(y*u), renderX, renderY, engine.GameConfig.TileScaleFactor)
+				engine.LogRenderingDebug(fmt.Sprintf("Tile idx=%d room=%s", tileIndex, br.zoneID), float64(x*u), float64(y*u), translateX, translateY, engine.GameConfig.TileScaleFactor)
 
 				if sprite != nil {
 					op := &ebiten.DrawImageOptions{}
-					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-					op.GeoM.Translate(renderX, renderY)
+					op.GeoM.Scale(scale, scale)
+					op.GeoM.Translate(translateX, translateY)
 					screen.DrawImage(sprite, op)
 				} else {
 					// Draw a translucent red box where a sprite is missing
 					missing := ebiten.NewImage(u, u)
 					missing.Fill(color.RGBA{255, 0, 0, 180})
 					op := &ebiten.DrawImageOptions{}
-					op.GeoM.Scale(engine.GameConfig.TileScaleFactor, engine.GameConfig.TileScaleFactor)
-					op.GeoM.Translate(renderX, renderY)
+					op.GeoM.Scale(scale, scale)
+					op.GeoM.Translate(translateX, translateY)
 					screen.DrawImage(missing, op)
 					engine.LogSprite(fmt.Sprintf("Missing sprite: room=%s idx=%d tile=(%d,%d)", br.zoneID, tileIndex, x, y))
 				}
@@ -476,8 +478,8 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 				// Optional overlay: draw tile index text for inspection
 				if engine.GameConfig.ShowDebugOverlay {
 					text := fmt.Sprintf("%d", tileIndex)
-					offsetX := int(renderX)
-					offsetY := int(renderY)
+					offsetX := int(translateX)
+					offsetY := int(translateY)
 					ebitenutil.DebugPrintAt(screen, text, offsetX+2, offsetY+2)
 				}
 			}

@@ -135,14 +135,18 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Create camera and viewport systems
 	camera := engine.NewCamera(windowWidth, windowHeight)
 	if tileMap != nil {
-		worldWidth := tileMap.Width * u
-		worldHeight := tileMap.Height * u
-		camera.SetWorldBounds(worldWidth, worldHeight)
+		u := engine.GetPhysicsUnit()
+		scaledWorldWidth := int(float64(tileMap.Width*u) * engine.GameConfig.TileScaleFactor)
+		scaledWorldHeight := int(float64(tileMap.Height*u) * engine.GameConfig.TileScaleFactor)
+		camera.SetWorldBounds(scaledWorldWidth, scaledWorldHeight)
 	}
 
 	viewportRenderer := engine.NewViewportRenderer(windowWidth, windowHeight)
 	if tileMap != nil {
-		viewportRenderer.SetWorldBounds(tileMap.Width*u, tileMap.Height*u)
+		u := engine.GetPhysicsUnit()
+		scaledWorldWidth := int(float64(tileMap.Width*u) * engine.GameConfig.TileScaleFactor)
+		scaledWorldHeight := int(float64(tileMap.Height*u) * engine.GameConfig.TileScaleFactor)
+		viewportRenderer.SetWorldBounds(scaledWorldWidth, scaledWorldHeight)
 	}
 
 	// Initialize HUD system
@@ -374,7 +378,16 @@ func (ris *InGameState) Draw(screen *ebiten.Image) {
 
 	// Draw viewport frame/borders for small rooms
 	if ris.viewportRenderer != nil {
+		// Ensure viewport renderer has up-to-date world bounds based on current room
+		if currentRoom != nil {
+			if tm := currentRoom.GetTileMap(); tm != nil {
+				u := engine.GetPhysicsUnit()
+				// Keep viewport frame in unscaled physics world since it draws in screen pixels but uses offset in scaled space
+				ris.viewportRenderer.SetWorldBounds(tm.Width*u, tm.Height*u)
+			}
+		}
 		offsetX, offsetY := ris.camera.GetOffset()
+		// Camera offset is already in screen pixels; pass through
 		ris.viewportRenderer.SetOffset(offsetX, offsetY)
 		ris.viewportRenderer.DrawFrame(screen)
 	}
@@ -569,11 +582,11 @@ func (ris *InGameState) updateCameraViewport() {
 		if currentRoom != nil {
 			tileMap := currentRoom.GetTileMap()
 			if tileMap != nil {
-							u := engine.GetPhysicsUnit()
-			worldWidth := tileMap.Width * u
-			worldHeight := tileMap.Height * u
-			ris.camera.SetWorldBounds(worldWidth, worldHeight)
-			ris.viewportRenderer.SetWorldBounds(worldWidth, worldHeight)
+				u := engine.GetPhysicsUnit()
+				scaledWorldWidth := int(float64(tileMap.Width*u) * engine.GameConfig.TileScaleFactor)
+				scaledWorldHeight := int(float64(tileMap.Height*u) * engine.GameConfig.TileScaleFactor)
+				ris.camera.SetWorldBounds(scaledWorldWidth, scaledWorldHeight)
+				ris.viewportRenderer.SetWorldBounds(scaledWorldWidth, scaledWorldHeight)
 
 				// Update camera system
 				if cameraSystem := ris.systemManager.GetSystem("Camera"); cameraSystem != nil {

@@ -72,19 +72,21 @@ func (vr *ViewportRenderer) DrawFrame(screen *ebiten.Image) {
 		vr.black.Fill(color.Black)
 	}
 
-	// Calculate visible world bounds
+	// Treat offset in screen pixels and world bounds in unscaled pixels (physics units):
+	// convert world bounds to screen space using the current tile scale factor.
+	s := GameConfig.TileScaleFactor
 	worldLeft := vr.offsetX
 	worldTop := vr.offsetY
-	worldRight := worldLeft + float64(vr.worldWidth)
-	worldBottom := worldTop + float64(vr.worldHeight)
-	
+	worldRight := worldLeft + float64(vr.worldWidth)*s
+	worldBottom := worldTop + float64(vr.worldHeight)*s
+
 	// Left border
 	if worldLeft > 0 {
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Scale(worldLeft, float64(vr.screenHeight))
 		screen.DrawImage(vr.black, opts)
 	}
-	
+
 	// Right border
 	if worldRight < float64(vr.screenWidth) {
 		opts := &ebiten.DrawImageOptions{}
@@ -93,14 +95,14 @@ func (vr *ViewportRenderer) DrawFrame(screen *ebiten.Image) {
 		opts.GeoM.Scale(width, float64(vr.screenHeight))
 		screen.DrawImage(vr.black, opts)
 	}
-	
+
 	// Top border
 	if worldTop > 0 {
 		opts := &ebiten.DrawImageOptions{}
 		opts.GeoM.Scale(float64(vr.screenWidth), worldTop)
 		screen.DrawImage(vr.black, opts)
 	}
-	
+
 	// Bottom border
 	if worldBottom < float64(vr.screenHeight) {
 		opts := &ebiten.DrawImageOptions{}
