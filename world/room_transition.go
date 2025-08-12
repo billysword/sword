@@ -241,7 +241,7 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	// Find the specific spawn point
 	for _, spawn := range spawnPoints {
 		if spawn.ID == spawnID {
-			x, y := rtm.findNonSolidPosition(roomID, spawn.X, spawn.Y)
+			x, y := rtm.findSafeSpawnPosition(player, roomID, spawn.X, spawn.Y)
 			player.SetPosition(x, y)
 			// Set player facing direction based on spawn.FacingID (optional)
 			switch strings.ToLower(spawn.FacingID) {
@@ -258,7 +258,7 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	// Fallback: use first spawn point if specific one not found
 	if len(spawnPoints) > 0 {
 		spawn := spawnPoints[0]
-		x, y := rtm.findNonSolidPosition(roomID, spawn.X, spawn.Y)
+		x, y := rtm.findSafeSpawnPosition(player, roomID, spawn.X, spawn.Y)
 		player.SetPosition(x, y)
 		engine.LogInfo(fmt.Sprintf("Spawned player at fallback spawn %s in room %s", spawn.ID, roomID))
 		return nil
@@ -270,7 +270,7 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 			u := engine.GetPhysicsUnit()
 			centerX := (tileMap.Width / 2) * u
 			centerY := (tileMap.Height / 2) * u
-			centerX, centerY = rtm.findNonSolidPosition(roomID, centerX, centerY)
+			centerX, centerY = rtm.findSafeSpawnPosition(player, roomID, centerX, centerY)
 			player.SetPosition(centerX, centerY)
 			engine.LogInfo(fmt.Sprintf("Spawned player at room center (%d, %d) in %s", centerX, centerY, roomID))
 			return nil
@@ -278,6 +278,82 @@ func (rtm *RoomTransitionManager) SpawnPlayerInRoom(player *entities.Player, roo
 	}
 
 	return fmt.Errorf("could not determine spawn location for room %s", roomID)
+}
+
+// findSafeSpawnPosition adjusts a position to align the player's collision box with the floor
+// and avoid spawning overlapping solid tiles. It prefers placing the player exactly on the
+// floor at the given X, then searches nearby positions if necessary. Returns original if
+// a better position cannot be found.
+func (rtm *RoomTransitionManager) findSafeSpawnPosition(player *entities.Player, roomID string, startX, startY int) (int, int) {
+	room, exists := rtm.rooms[roomID]
+	if !exists || room == nil {
+		return startX, startY
+	}
+	// Tile map required for collision checks
+	tileMap := room.GetTileMap()
+	if tileMap == nil {
+		return startX, startY
+	}
+
+	u := engine.GetPhysicsUnit()
+
+	// Helper to compute Y so that the player's collision box sits on top of floor at X
+	computeYOnFloor := func(testX int) (int, bool) {
+		floorY := room.FindFloorAtX(testX)
+		if floorY <= 0 {
+			return 0, false
+		}
+		cfg := &engine.GameConfig.PlayerPhysics
+		// Collision box dimensions in physics units (char scale applies to sprite dims)
+		spriteH := int(float64(cfg.SpriteHeight) * engine.GameConfig.CharScaleFactor)
+		offsetY := int(float64(spriteH) * cfg.CollisionBoxOffsetY)
+		boxH := int(float64(spriteH) * cfg.CollisionBoxHeight)
+		// Position top-left of sprite such that bottom of collision box is exactly at floor
+		newY := floorY - (offsetY + boxH)
+		return newY, true
+	}
+
+	// Prefer aligning to floor at the requested X
+	candidateX := startX
+	candidateY, ok := computeYOnFloor(candidateX)
+	if !ok {
+		candidateY = startY
+	}
+
+	// Check collision at the candidate position using player's collision box
+	if tp, okTP := any(room).(entities.TileProvider); okTP {
+		if !player.CheckTileCollision(tp, candidateX, candidateY) {
+			return candidateX, candidateY
+		}
+	}
+
+	// Search nearby X positions (within +-2 tiles) and align to floor at each
+	offsets := []int{0, 1 * u, -1 * u, 2 * u, -2 * u}
+	for _, dx := range offsets {
+		testX := startX + dx
+		// Clamp within room bounds
+		if testX < 0 {
+			testX = 0
+		}
+		maxX := tileMap.Width*u - 1
+		if testX > maxX {
+			testX = maxX
+		}
+
+		testY, ok := computeYOnFloor(testX)
+		if !ok {
+			continue
+		}
+		if tp, okTP := any(room).(entities.TileProvider); okTP {
+			if !player.CheckTileCollision(tp, testX, testY) {
+				return testX, testY
+			}
+		}
+	}
+
+	// Fallback: use simple non-solid tile search near the original point
+	fx, fy := rtm.findNonSolidPosition(roomID, startX, startY)
+	return fx, fy
 }
 
 // findNonSolidPosition adjusts a position to a nearby non-solid tile if necessary.
