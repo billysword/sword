@@ -12,7 +12,7 @@ import (
 
 // LoadZoneRoomsFromData scans data/zones/<zoneName> for .tmj files and registers rooms and transitions
 func LoadZoneRoomsFromData(rtm *RoomTransitionManager, zoneName string, baseDir string) error {
-	zoneDir := filepath.Join(baseDir, "data", "zones", zoneName)
+	zoneDir := filepath.Join(baseDir, "zones", zoneName)
 	entries, err := os.ReadDir(zoneDir)
 	if err != nil {
 		return fmt.Errorf("read zone dir: %w", err)

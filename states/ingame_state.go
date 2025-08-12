@@ -64,7 +64,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	playerSpawnX, playerSpawnY := 0, 0
 
 	zoneName := "cradle"
-	if err := world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, "."); err != nil {
+	if err := world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, "assets"); err != nil {
 		panic(fmt.Errorf("failed to load Tiled zone '%s': %w", zoneName, err))
 	}
 	// Choose a deterministic first room id if available

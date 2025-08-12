@@ -671,7 +671,7 @@ func (s *SettingsState) drawDeveloperTab(screen *ebiten.Image, startY int) {
 				enabled = engine.IsGridEnabled()
 			} else if opt.Name == "Smooth Camera" {
 				enabled = engine.GameConfig.CameraSmoothing > 0.0
-
+			}
 		}
 		
 		status := map[bool]string{true: "[ON]", false: "[OFF]"}[enabled]
