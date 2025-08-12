@@ -105,8 +105,6 @@ type Config struct {
 	GridColor        [4]uint8 // RGBA color for debug grid
 	UsePlaceholderSprites bool // Use placeholder sprites instead of actual sprites
 
-	// Content loading settings
-	UseTiledMaps bool // Toggle between Tiled maps and original demo rooms
 }
 
 /*
@@ -191,8 +189,6 @@ func DefaultConfig() Config {
 		GridColor:        [4]uint8{128, 128, 128, 64}, // Faint gray grid
 		UsePlaceholderSprites: true, // Use placeholder sprites by default for debugging
 
-		// Content loading settings
-		UseTiledMaps: true, // Prefer Tiled maps by default (fallback to demo rooms if unavailable)
 	}
 }
 

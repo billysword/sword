@@ -55,59 +55,66 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Get window size for viewport setup
 	windowWidth, windowHeight := ebiten.WindowSize()
 
-	// Create and register rooms either from Tiled data or fallback simple layouts
-	// Attempt to load a starter zone from data (e.g., cradle). If unavailable, use simple rooms.
-	var mainRoom world.Room
-	var forestRight world.Room
-	var forestLeft world.Room
 	// Safety room: simple empty layout for fallback teleport if player falls out of world
 	safetyRoom := world.NewSimpleRoomFromLayout("safety", room_layouts.EmptyRoom)
 
-	// Try loading Tiled maps from data/zones if enabled
-	rtmProbe := world.NewRoomTransitionManager(nil)
-	var mainRoomID string
-	if engine.GameConfig.UseTiledMaps {
-		if err := world.LoadZoneRoomsFromData(rtmProbe, "cradle", "."); err == nil {
-			// Choose a deterministic first room id if available
-			for _, id := range rtmProbe.ListRoomIDs() {
-				if strings.HasSuffix(id, "/r01") {
-					mainRoomID = id
-					break
-				}
-			}
-			if mainRoomID == "" {
-				ids := rtmProbe.ListRoomIDs()
-				if len(ids) > 0 {
-					mainRoomID = ids[0]
-				}
+	// Initialize world map and room transition system
+	worldMap := world.NewWorldMap()
+	roomTransitionMgr := world.NewRoomTransitionManager(worldMap)
+
+	// Load Tiled zone rooms once into the active manager
+	mainRoom := world.Room(nil)
+	tileMap := (*world.TileMap)(nil)
+	u := engine.GetPhysicsUnit()
+	playerSpawnX, playerSpawnY := 0, 0
+
+	zoneName := "cradle"
+	if err := world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, "."); err == nil {
+		// Choose a deterministic first room id if available
+		mainRoomID := ""
+		for _, id := range roomTransitionMgr.ListRoomIDs() {
+			if strings.HasSuffix(id, "/r01") {
+				mainRoomID = id
+				break
 			}
 		}
+		if mainRoomID == "" {
+			ids := roomTransitionMgr.ListRoomIDs()
+			if len(ids) > 0 {
+				mainRoomID = ids[0]
+			}
+		}
+
+		if mainRoomID != "" {
+			mainRoom = roomTransitionMgr.GetRoom(mainRoomID)
+			roomTransitionMgr.RegisterRoom(safetyRoom)
+			_ = roomTransitionMgr.SetCurrentRoom(mainRoomID)
+		}
 	}
-	// Fallback to simple rooms if we did not resolve a Tiled main room id
-	if mainRoomID == "" {
+
+	// Fallback: simple demo rooms if Tiled zone failed to load
+	if mainRoom == nil {
 		mainRoom = world.NewSimpleRoomFromLayout("main", room_layouts.EmptyRoom)
-		forestRight = world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
-		forestLeft = world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
-	} else {
-		// Defer resolving mainRoom until after we load the zone into the active manager
+		forestRight := world.NewSimpleRoomFromLayout("forest_right", room_layouts.ForestRight)
+		forestLeft := world.NewSimpleRoomFromLayout("forest_left", room_layouts.ForestLeft)
+		roomTransitionMgr.RegisterRoom(mainRoom)
+		roomTransitionMgr.RegisterRoom(forestRight)
+		roomTransitionMgr.RegisterRoom(forestLeft)
+		roomTransitionMgr.RegisterRoom(safetyRoom)
+		roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
 	}
 
-	// Layouts already applied by constructor
-
-	// Potentially adjust scale to better frame small rooms
-	// Use main room for initial framing (for Tiled we will resolve after active load; handle below as well)
+	// Compute initial scale framing using the resolved mainRoom
 	if mainRoom != nil {
-		if tileMap := mainRoom.GetTileMap(); tileMap != nil {
-			roomPxW := tileMap.Width * engine.GameConfig.TileSize
-			roomPxH := tileMap.Height * engine.GameConfig.TileSize
-			// Compute scale to fit the smaller dimension, capped
+		if tm := mainRoom.GetTileMap(); tm != nil {
+			roomPxW := tm.Width * engine.GameConfig.TileSize
+			roomPxH := tm.Height * engine.GameConfig.TileSize
 			fitScaleW := float64(windowWidth) / float64(roomPxW)
 			fitScaleH := float64(windowHeight) / float64(roomPxH)
 			fitScale := fitScaleW
 			if fitScaleH < fitScale {
 				fitScale = fitScaleH
 			}
-			// Clamp: never go below 1.0, cap to a reasonable max to avoid extreme zoom
 			if fitScale > 1.0 {
 				maxScale := 4.0
 				if fitScale > maxScale {
@@ -120,19 +127,15 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	}
 
 	// Recompute physics unit after potential scale change (physics unit is base tile size)
-	u := engine.GetPhysicsUnit()
+	u = engine.GetPhysicsUnit()
 
-	// Calculate spawn position based on main room (may adjust after Tiled load below)
-	tileMap := (*world.TileMap)(nil)
-	playerSpawnX, playerSpawnY := 0, 0
+	// Determine spawn based on main room
 	if mainRoom != nil {
 		tileMap = mainRoom.GetTileMap()
 		playerSpawnX = (tileMap.Width / 2) * u
 		playerSpawnY = (tileMap.Height - 2) * u
-		// For larger rooms, use floor detection
 		if tileMap.Width > 10 || tileMap.Height > 10 {
-			groundY := mainRoom.FindFloorAtX(playerSpawnX)
-			if groundY > 0 {
+			if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
 				playerSpawnY = groundY
 			}
 		}
@@ -141,63 +144,16 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Create core entities
 	player := entities.NewPlayer(playerSpawnX, playerSpawnY)
 
-	// Initialize world map
-	worldMap := world.NewWorldMap()
-
-	// Initialize room transition system
-	roomTransitionMgr := world.NewRoomTransitionManager(worldMap)
-
-	if mainRoomID != "" && engine.GameConfig.UseTiledMaps {
-		// Load the entire zone once into the active manager and derive mainRoom from it
-		zoneName := strings.SplitN(mainRoomID, "/", 2)[0]
-		_ = world.LoadZoneRoomsFromData // ensure linked
-		if err := world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, "."); err == nil {
-			mainRoom = roomTransitionMgr.GetRoom(mainRoomID)
-			// Update tileMap and spawn based on resolved mainRoom
-			if mainRoom != nil {
-				tileMap = mainRoom.GetTileMap()
-				playerSpawnX = (tileMap.Width / 2) * u
-				playerSpawnY = (tileMap.Height - 2) * u
-				if tileMap.Width > 10 || tileMap.Height > 10 {
-					if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
-						playerSpawnY = groundY
-					}
-				}
-			}
-		}
-		// Always register safety room
-		roomTransitionMgr.RegisterRoom(safetyRoom)
-		// Set current room to the chosen Tiled room id
-		roomTransitionMgr.SetCurrentRoom(mainRoomID)
-	} else {
-		// Simple/fallback rooms path
-		roomTransitionMgr.RegisterRoom(mainRoom)
-		roomTransitionMgr.RegisterRoom(forestRight)
-		roomTransitionMgr.RegisterRoom(forestLeft)
-		roomTransitionMgr.RegisterRoom(safetyRoom)
-		roomTransitionMgr.SetCurrentRoom(mainRoom.GetZoneID())
-	}
-
-	// If our rooms came from Tiled and the toggle is on, we have already loaded the zone above; skip duplicate loads
-	// _ = world.LoadZoneRoomsFromData // ensure linked
-	// if engine.GameConfig.UseTiledMaps && strings.Contains(mainRoom.GetZoneID(), "/") {
-	// 	zoneName := strings.SplitN(mainRoom.GetZoneID(), "/", 2)[0]
-	// 	_ = world.LoadZoneRoomsFromData(roomTransitionMgr, zoneName, ".")
-	// }
-
 	// Load transitions and spawns from embedded JSON as fallback
 	_ = world.LoadTransitionsFromBytes // ensure linked
 	if err := world.LoadTransitionsFromBytes(roomTransitionMgr, roomsres.RoomTransitionsJSON); err != nil {
 		engine.LogInfo("failed to load embedded transitions: " + err.Error())
 	}
-	// Spawn player at configured spawn in main room (fallback id if not defined by Tiled)
 	if err := roomTransitionMgr.SpawnPlayerInRoom(player, mainRoom.GetZoneID(), "main_spawn"); err != nil {
 		engine.LogInfo("spawn fallback: " + err.Error())
 	}
 
 	worldMap.SetCurrentRoom(mainRoom.GetZoneID())
-
-	// Start tracking player position for map/trail
 	px, py := player.GetPosition()
 	worldMap.AddPlayerPosition(px, py)
 
@@ -216,12 +172,8 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 
 	// Initialize HUD system
 	hudManager := engine.NewHUDManager()
-
-	// Set up debug HUD
 	debugHUD := engine.NewDebugHUD()
 	hudManager.AddComponent(debugHUD)
-
-	// Set up minimap and world map overlay
 	minimapRenderer := world.NewMiniMapRenderer(worldMap, player, 200, windowWidth-220, 20)
 	hudManager.AddComponent(minimapRenderer)
 	zoneMapOverlay := world.NewZoneMapOverlay(worldMap, player)
