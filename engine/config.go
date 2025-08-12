@@ -122,7 +122,7 @@ func DefaultConfig() Config {
 		// Rendering settings
 		TileSize:         16,    // Standard 16x16 tiles
 		TileScaleFactor:  1.0,   // No scaling for zoomed-out view
-		CharScaleFactor:  1.0,   // Render player at ~32x32 by default
+		CharScaleFactor:  0.5,   // Render player at half-size by default
 		
 		// Camera settings
 		CameraSmoothing:    0.05,  // Fast camera for responsiveness
