@@ -117,9 +117,9 @@ Parameters:
   - screen: The target screen/image to render the enemy to
 */
 func (be *BaseEnemy) Draw(screen *ebiten.Image) {
-	// Use enemy sprite (placeholder or actual)
+		// Use enemy sprite (placeholder or actual)
 	sprite := engine.GetEnemySprite()
-
+	
 	// Update scale based on movement direction
 	switch {
 	case be.vx > 0:
@@ -127,12 +127,13 @@ func (be *BaseEnemy) Draw(screen *ebiten.Image) {
 	case be.vx < 0:
 		be.scaleX = -engine.GameConfig.CharScaleFactor // Face left (flip)
 	}
-
-	// Set up drawing options
+	
+	// Set up drawing options (apply world scale)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(be.scaleX, be.scaleY)
-	op.GeoM.Translate(float64(be.x), float64(be.y))
-
+	s := engine.GameConfig.TileScaleFactor
+	op.GeoM.Scale(be.scaleX*s, be.scaleY*s)
+	op.GeoM.Translate(float64(be.x)*s, float64(be.y)*s)
+	
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
 }
@@ -161,10 +162,12 @@ func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraO
 
 	// Set up drawing options with camera offset
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(be.scaleX, be.scaleY)
-	// Convert enemy position (already pixels) and apply camera offset
-	renderX := float64(be.x) + cameraOffsetX
-	renderY := float64(be.y) + cameraOffsetY
+	// Apply world scale to character scale
+	s := engine.GameConfig.TileScaleFactor
+	op.GeoM.Scale(be.scaleX*s, be.scaleY*s)
+	// Convert world position to screen pixels and apply camera offset
+	renderX := float64(be.x)*s + cameraOffsetX
+	renderY := float64(be.y)*s + cameraOffsetY
 	op.GeoM.Translate(renderX, renderY)
 
 	// Draw the sprite
@@ -192,11 +195,11 @@ func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffset
 		boxColor = color.RGBA{0, 255, 0, 128} // Green when on ground
 	}
 
-	// Use default enemy size for bounding box (can be overridden by specific enemies)
-	// These are reasonable defaults based on typical sprite sizes
-	spriteWidth := 32.0 * be.scaleX
-	spriteHeight := 32.0 * be.scaleY
-
+		// Use default enemy size for bounding box in scaled space
+	s := engine.GameConfig.TileScaleFactor
+	spriteWidth := 32.0 * be.scaleX * s
+	spriteHeight := 32.0 * be.scaleY * s
+	
 	// Draw bounding box
 	ebitenutil.DrawRect(screen, renderX, renderY, spriteWidth, spriteHeight, boxColor)
 
