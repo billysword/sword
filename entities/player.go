@@ -270,21 +270,20 @@ func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffse
 
 	// Set up drawing options
 	op := &ebiten.DrawImageOptions{}
-	// Flip horizontally based on facing direction
+	// Apply scale: tile/world scale and character scale; flip horizontally if needed
+	s := engine.GameConfig.TileScaleFactor
 	if p.facingRight {
-		op.GeoM.Scale(engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
+		op.GeoM.Scale(engine.GameConfig.CharScaleFactor*s, engine.GameConfig.CharScaleFactor*s)
 	} else {
-		// Negative X scale to flip sprite
-		op.GeoM.Scale(-engine.GameConfig.CharScaleFactor, engine.GameConfig.CharScaleFactor)
+		op.GeoM.Scale(-engine.GameConfig.CharScaleFactor*s, engine.GameConfig.CharScaleFactor*s)
 	}
-	// Convert player position (already in pixels) and apply camera offset
-	renderX := float64(p.x) + cameraOffsetX
-	renderY := float64(p.y) + cameraOffsetY
+	// Convert world position to screen pixels and apply camera offset
+	renderX := float64(p.x)*s + cameraOffsetX
+	renderY := float64(p.y)*s + cameraOffsetY
 	// When flipped, translate by sprite width to correct position
 	if !p.facingRight {
-		// Assume placeholder/player width of 32 before scaling
 		w := float64(engine.GameConfig.PlayerPhysics.SpriteWidth) * engine.GameConfig.CharScaleFactor
-		op.GeoM.Translate(renderX+w, renderY)
+		op.GeoM.Translate(renderX+w*s, renderY)
 	} else {
 		op.GeoM.Translate(renderX, renderY)
 	}
@@ -305,14 +304,15 @@ Parameters:
   - cameraOffsetY: Camera Y offset for viewport transformation
 */
 func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Convert player position (already in pixels) to render position
+		// Convert player position to scaled screen-space
 	config := &engine.GameConfig.PlayerPhysics
-	renderX := float64(p.x) + cameraOffsetX
-	renderY := float64(p.y) + cameraOffsetY
-
-	// Calculate sprite bounds with scaling
-	spriteWidth := float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor
-	spriteHeight := float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor
+	s := engine.GameConfig.TileScaleFactor
+	renderX := float64(p.x)*s + cameraOffsetX
+	renderY := float64(p.y)*s + cameraOffsetY
+	
+	// Calculate sprite bounds in scaled screen-space
+	spriteWidth := float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor * s
+	spriteHeight := float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor * s
 
 	// Calculate collision box based on configuration
 	collisionX := renderX + (spriteWidth * config.CollisionBoxOffsetX)

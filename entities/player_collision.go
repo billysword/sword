@@ -21,7 +21,7 @@ collision box configuration in PlayerPhysicsConfig.
 func (p *Player) GetCollisionBox() CollisionBox {
 	config := &engine.GameConfig.PlayerPhysics
 	
-	// Calculate sprite dimensions in pixels (physics units now equal base pixels)
+	// Calculate sprite dimensions in physics units (render scale does not affect physics)
 	spriteWidth := int(float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor)
 	spriteHeight := int(float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor)
 	
