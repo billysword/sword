@@ -60,7 +60,7 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Load Tiled zone rooms once into the active manager
 	mainRoom := world.Room(nil)
 	tileMap := (*world.TileMap)(nil)
-	u := engine.GetPhysicsUnit()
+
 	playerSpawnX, playerSpawnY := 0, 0
 
 	zoneName := "cradle"
@@ -111,13 +111,15 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		}
 	}
 
-	// Recompute physics unit after potential scale change (physics unit is base tile size)
-	u = engine.GetPhysicsUnit()
-
 	// Determine spawn at room center
 	tileMap = mainRoom.GetTileMap()
-	playerSpawnX = (tileMap.Width / 2) * u
-	playerSpawnY = (tileMap.Height / 2) * u
+	playerSpawnX = (tileMap.Width / 2)
+	playerSpawnY = (tileMap.Height - 2)
+	if tileMap.Width > 10 || tileMap.Height > 10 {
+		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
+			playerSpawnY = groundY
+		}
+	}
 
 	// Create core entities
 	player := entities.NewPlayer(playerSpawnX, playerSpawnY)
