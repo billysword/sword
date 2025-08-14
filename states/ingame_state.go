@@ -114,15 +114,10 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 	// Recompute physics unit after potential scale change (physics unit is base tile size)
 	u = engine.GetPhysicsUnit()
 
-	// Determine spawn based on main room
+	// Determine spawn at room center
 	tileMap = mainRoom.GetTileMap()
 	playerSpawnX = (tileMap.Width / 2) * u
-	playerSpawnY = (tileMap.Height - 2) * u
-	if tileMap.Width > 10 || tileMap.Height > 10 {
-		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
-			playerSpawnY = groundY
-		}
-	}
+	playerSpawnY = (tileMap.Height / 2) * u
 
 	// Create core entities
 	player := entities.NewPlayer(playerSpawnX, playerSpawnY)
