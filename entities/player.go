@@ -257,40 +257,38 @@ func (p *Player) Draw(screen *ebiten.Image) {
 DrawWithCamera renders the player with a camera offset applied.
 */
 func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-	// Choose sprite based on movement direction (placeholder enforced in engine)
-	var sprite *ebiten.Image
-	switch {
-	case p.vx > 0:
-		sprite = engine.GetPlayerSprite("right")
-	case p.vx < 0:
-		sprite = engine.GetPlayerSprite("left")
-	default:
-		sprite = engine.GetPlayerSprite("idle")
-	}
-
-	// Set up drawing options
-	op := &ebiten.DrawImageOptions{}
-	// Apply scale: tile/world scale and character scale; flip horizontally if needed
+	// Render a simple box with a facing indicator instead of a sprite
 	s := engine.GameConfig.TileScaleFactor
-	if p.facingRight {
-		op.GeoM.Scale(engine.GameConfig.CharScaleFactor*s, engine.GameConfig.CharScaleFactor*s)
-	} else {
-		op.GeoM.Scale(-engine.GameConfig.CharScaleFactor*s, engine.GameConfig.CharScaleFactor*s)
-	}
-	// Convert world position to screen pixels and apply camera offset
-	renderX := float64(p.x)*s + cameraOffsetX
-	renderY := float64(p.y)*s + cameraOffsetY
-	// When flipped, translate by sprite width to correct position
-	if !p.facingRight {
-		w := float64(engine.GameConfig.PlayerPhysics.SpriteWidth) * engine.GameConfig.CharScaleFactor
-		op.GeoM.Translate(renderX+w*s, renderY)
-	} else {
-		op.GeoM.Translate(renderX, renderY)
+
+	// Base box size derived from configured sprite size and character scale
+	boxW := float32(float64(engine.GameConfig.PlayerPhysics.SpriteWidth) * engine.GameConfig.CharScaleFactor * s)
+	boxH := float32(float64(engine.GameConfig.PlayerPhysics.SpriteHeight) * engine.GameConfig.CharScaleFactor * s)
+
+	// World to screen
+	renderX := float32(float64(p.x)*s + cameraOffsetX)
+	renderY := float32(float64(p.y)*s + cameraOffsetY)
+
+	// Box color varies if in air
+	boxColor := color.RGBA{80, 180, 255, 255}
+	if !p.onGround {
+		boxColor = color.RGBA{255, 200, 80, 255}
 	}
 
-	// Draw the sprite
-	screen.DrawImage(sprite, op)
-	engine.LogDebug(fmt.Sprintf("DRAW_OBJECT: Player(%d,%d)", p.x, p.y))
+	// Draw filled box
+	vector.DrawFilledRect(screen, renderX, renderY, boxW, boxH, boxColor, false)
+
+	// Facing indicator: small triangle/notch on the facing side
+	indicatorW := boxW * 0.2
+	indicatorH := boxH * 0.25
+	ix := renderX
+	if p.facingRight {
+		iX := renderX + boxW - indicatorW
+		vector.DrawFilledRect(screen, iX, renderY+(boxH-indicatorH)/2, indicatorW, indicatorH, color.RGBA{255, 50, 50, 255}, false)
+	} else {
+		vector.DrawFilledRect(screen, ix, renderY+(boxH-indicatorH)/2, indicatorW, indicatorH, color.RGBA{255, 50, 50, 255}, false)
+	}
+
+	engine.LogDebug(fmt.Sprintf("DRAW_OBJECT: PlayerBox(%d,%d)", p.x, p.y))
 }
 
 /*
