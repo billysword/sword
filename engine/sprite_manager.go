@@ -88,8 +88,10 @@ func (sm *SpriteManager) LoadSpriteSheet(name string, image *ebiten.Image, tileW
 	sm.sheets[name] = sheet
 	sm.cache[name] = make(map[int]*ebiten.Image)
 
-	LogSprite(fmt.Sprintf("Loaded sprite sheet '%s': %dx%d tiles (%d total)", 
-		name, tilesPerRow, tilesPerCol, totalTiles))
+	if shouldLog(LogLevelInfo) {
+		LogInfo(fmt.Sprintf("Loaded sprite sheet '%s': %dx%d tiles (%d total)", 
+			name, tilesPerRow, tilesPerCol, totalTiles))
+	}
 
 	return nil
 }
@@ -108,13 +110,17 @@ Returns the tile image, or nil if not found.
 func (sm *SpriteManager) GetTileByIndex(sheetName string, index int) *ebiten.Image {
 	sheet, exists := sm.sheets[sheetName]
 	if !exists {
-		LogSprite(fmt.Sprintf("Sprite sheet '%s' not found", sheetName))
+		if shouldLog(LogLevelWarn) {
+			LogWarn(fmt.Sprintf("Sprite sheet '%s' not found", sheetName))
+		}
 		return nil
 	}
 
 	if index < 0 || index >= sheet.TotalTiles {
-		LogSprite(fmt.Sprintf("Tile index %d out of range for sheet '%s' (0-%d)", 
-			index, sheetName, sheet.TotalTiles-1))
+		if shouldLog(LogLevelWarn) {
+			LogWarn(fmt.Sprintf("Tile index %d out of range for sheet '%s' (0-%d)", 
+				index, sheetName, sheet.TotalTiles-1))
+		}
 		return nil
 	}
 
@@ -250,7 +256,9 @@ func LoadSpriteByHex(hexIndex int) *ebiten.Image {
 		}
 	}
 	
-	LogSprite(fmt.Sprintf("No suitable sprite sheet found for hex index 0x%02X", hexIndex))
+	if shouldLog(LogLevelWarn) {
+		LogWarn(fmt.Sprintf("No suitable sprite sheet found for hex index 0x%02X", hexIndex))
+	}
 	return nil
 }
 

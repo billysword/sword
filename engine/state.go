@@ -132,6 +132,20 @@ DrawGridWithCamera renders a faint grid overlay that moves with the camera.
 This version of the grid rendering adjusts for camera movement, ensuring
 grid lines always align with tile boundaries regardless of camera position.
 
+The grid is essential for debugging collision detection in the center of rooms.
+Each grid cell represents exactly one tile (16x16 pixels by default), making it
+easy to see:
+- Where collision boundaries should be
+- How player position aligns with tiles
+- Whether collision detection is working properly at tile boundaries
+- Room layout and tile positioning accuracy
+
+To use for collision debugging:
+1. Enable grid overlay in settings or call engine.EnableGrid()
+2. The grid moves with the camera to always show tile boundaries
+3. Check that player collision box aligns with grid when colliding
+4. Verify that collision tiles match the visual grid layout
+
 Parameters:
   - screen: The target screen/image to draw the grid on
   - cameraOffsetX: Horizontal camera offset in pixels

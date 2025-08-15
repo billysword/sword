@@ -472,7 +472,7 @@ func (br *BaseRoom) DrawTilesWithCamera(screen *ebiten.Image, spriteProvider fun
 					op.GeoM.Scale(scale, scale)
 					op.GeoM.Translate(translateX, translateY)
 					screen.DrawImage(missing, op)
-					engine.LogSprite(fmt.Sprintf("Missing sprite: room=%s idx=%d tile=(%d,%d)", br.zoneID, tileIndex, x, y))
+					engine.LogWarn(fmt.Sprintf("Missing sprite: room=%s idx=%d tile=(%d,%d)", br.zoneID, tileIndex, x, y))
 				}
 
 				// Optional overlay: draw tile index text for inspection

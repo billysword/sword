@@ -113,8 +113,8 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 
 	// Determine spawn at room center
 	tileMap = mainRoom.GetTileMap()
-	playerSpawnX = (tileMap.Width / 2)
-	playerSpawnY = (tileMap.Height - 2)
+	playerSpawnX = 100
+	playerSpawnY = 100
 	if tileMap.Width > 10 || tileMap.Height > 10 {
 		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
 			playerSpawnY = groundY

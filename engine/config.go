@@ -141,9 +141,8 @@ func DefaultConfig() Config {
 		
 		// Player physics configuration
 		PlayerPhysics: PlayerPhysicsConfig{
-			// Sprite dimensions (32x32 base sprite)
-			SpriteWidth:  32,
-			SpriteHeight: 32,
+			SpriteWidth:  16,
+			SpriteHeight: 16,
 			
 			// Collision box (centered horizontally, bottom-aligned)
 			CollisionBoxOffsetX: 0.25,  // 25% from left = centered for 50% width

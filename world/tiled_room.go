@@ -36,7 +36,7 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 	for _, ts := range lm.Tilesets {
 		img := ts.TSX.Image.Source
 		sz := fmt.Sprintf("%dx%d", ts.TSX.TileWidth, ts.TSX.TileHeight)
-		engine.LogSprite("Tileset '" + ts.TSX.Name + "' img='" + img + "' tile=" + sz + 
+		engine.LogInfo("Tileset '" + ts.TSX.Name + "' img='" + img + "' tile=" + sz + 
 			fmt.Sprintf(" cols=%d count=%d firstGID=%d", ts.TSX.Columns, ts.TSX.TileCount, ts.FirstGID))
 		if ts.TSX.TileWidth != u || ts.TSX.TileHeight != u {
 			engine.LogWarn(fmt.Sprintf("Tileset '%s' tile size (%dx%d) differs from physics unit %d; verify sprite indices and scaling.", ts.TSX.Name, ts.TSX.TileWidth, ts.TSX.TileHeight, u))
@@ -67,7 +67,7 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 		}
 	}
 
-	engine.LogSprite(fmt.Sprintf("Tiled room '%s' tiles mapped: %d/%d (%.1f%%)", zoneID, mapped, nonEmpty, percent(mapped, nonEmpty)))
+	engine.LogInfo(fmt.Sprintf("Tiled room '%s' tiles mapped: %d/%d (%.1f%%)", zoneID, mapped, nonEmpty, percent(mapped, nonEmpty)))
 
 	return room
 }
@@ -111,7 +111,7 @@ func (tr *TiledRoom) getTileSprite(tileIndex int) *ebiten.Image {
 		return engine.GetTileSpriteByType(tileIndex)
 	}
 	if sprite := engine.LoadSpriteByHex(tileIndex); sprite != nil {
-		engine.LogSprite(fmt.Sprintf("Sprite resolved via default LoadSpriteByHex idx=%d", tileIndex))
+		engine.LogDebug(fmt.Sprintf("Sprite resolved via default LoadSpriteByHex idx=%d", tileIndex))
 		return sprite
 	}
 	// If default loading fails, attempt tileset-name-based mapping to sheet
@@ -121,7 +121,7 @@ func (tr *TiledRoom) getTileSprite(tileIndex int) *ebiten.Image {
 		sheet := engine.MapTilesetToSheet(tsName)
 		if sheet != "" {
 			if spr := engine.LoadTileFromSheet(sheet, tileIndex); spr != nil {
-				engine.LogSprite(fmt.Sprintf("Mapped Tiled tileset '%s' -> sheet '%s' for index %d", tsName, sheet, tileIndex))
+				engine.LogDebug(fmt.Sprintf("Mapped Tiled tileset '%s' -> sheet '%s' for index %d", tsName, sheet, tileIndex))
 				return spr
 			}
 		}
