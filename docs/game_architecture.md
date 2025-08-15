@@ -48,7 +48,7 @@ graph TB
     subgraph "World System"
         WorldMap[WorldMap<br/>Room Discovery & Navigation]
         Room[Room Interface<br/>Level Abstraction]
-        SimpleRoom[SimpleRoom<br/>Tile-based Levels]
+        TiledRoom[TiledRoom<br/>Tile-based Levels]
         TileMap[TileMap<br/>2D Tile Grid]
         RoomTransitionManager[RoomTransitionManager<br/>Room Transitions]
         Minimap[MiniMapRenderer<br/>Navigation Aid]
@@ -96,7 +96,7 @@ graph TB
     InGameState --> ViewportRenderer
     HUDManager --> DebugHUD
     HUDManager --> Minimap
-    SimpleRoom --> ParallaxRenderer
+    TiledRoom --> ParallaxRenderer
     StateManager --> SpriteManager
     SpriteManager --> PlaceholderSprites
 
@@ -117,9 +117,9 @@ graph TB
     InGameState --> WorldMap
     InGameState --> RoomTransitionManager
     RoomTransitionManager --> Room
-    Room --> SimpleRoom
-    SimpleRoom --> TileMap
-    SimpleRoom --> TileProvider
+    Room --> TiledRoom
+    TiledRoom --> TileMap
+    TiledRoom --> TileProvider
     WorldMap --> Minimap
 
     %% Entity system connections
@@ -137,7 +137,6 @@ graph TB
     SpriteManager --> Images
     Images --> Platformer
     Images --> ForestTiles
-    SimpleRoom --> RoomLayouts
 
     %% External dependencies
     Game --> Ebiten
@@ -154,7 +153,7 @@ graph TB
 
     class StateManager,Config,Logger,Camera,SpriteManager,HUDManager,DebugHUD,ParallaxRenderer,ViewportRenderer,PlaceholderSprites core
     class StartState,InGameState,PauseState,SettingsState,TileDebugState state
-    class WorldMap,Room,SimpleRoom,TileMap,RoomTransitionManager,Minimap world
+    class WorldMap,Room,TiledRoom,TileMap,RoomTransitionManager,Minimap world
     class Player,PlayerCollision,BaseEnemy,SlimeEnemy,WandererEnemy,EnemyInterface,TileProvider entity
     class Images,Platformer,ForestTiles,RoomLayouts resource
     class Ebiten,Go external
@@ -196,7 +195,7 @@ graph TB
 ### World System
 - **WorldMap**: Manages room discovery, connectivity, and minimap data
 - **Room Interface**: Abstract interface for different room implementations
-- **SimpleRoom**: Concrete room implementation using tile-based levels
+- **TiledRoom**: Concrete room implementation using tile-based levels
 - **TileMap**: 2D grid of tiles with collision and rendering data
 - **RoomTransitionManager**: Handles room transitions, spawn points, and player positioning
 - **MiniMapRenderer**: HUD component that displays discovered rooms and player location

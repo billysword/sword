@@ -10,7 +10,6 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - **[02_metroidvania_changes.md](02_metroidvania_changes.md)** - Metroidvania-style changes and features
 - **[03_claude_notes.md](03_claude_notes.md)** - Development notes and Claude AI assistance information
 - **[04_hexadecimal_layouts.md](04_hexadecimal_layouts.md)** - Hexadecimal room layout system and debugging
-- **[05_simple_room_layouts.md](05_simple_room_layouts.md)** - Simple room layout system (CURRENT)
 
 ### Project Architecture (10-19)
 - **[game_architecture.md](game_architecture.md)** - Complete game architecture overview with Mermaid diagram
@@ -51,18 +50,15 @@ Welcome to the Sword game documentation! This index provides links to all availa
 2. Review [game_architecture.md](game_architecture.md) for complete system overview
 3. Check [01_config_usage.md](01_config_usage.md) for configuration options
 4. Study [26_enemies_interface.md](26_enemies_interface.md) for current enemy system architecture
-5. Explore [05_simple_room_layouts.md](05_simple_room_layouts.md) for room layout tools
 
 ### For Game Designers
 1. Review [02_metroidvania_changes.md](02_metroidvania_changes.md) for game features
 2. Study [26_enemies_interface.md](26_enemies_interface.md) for enemy behavior patterns
 3. See [01_config_usage.md](01_config_usage.md) for gameplay tuning options
-4. Use [05_simple_room_layouts.md](05_simple_room_layouts.md) for level design workflows
 
 ### For Level Designers
-1. Check [05_simple_room_layouts.md](05_simple_room_layouts.md) for room layout creation
-2. Review [04_hexadecimal_layouts.md](04_hexadecimal_layouts.md) for advanced room debugging
-3. See [01_config_usage.md](01_config_usage.md) for room configuration options
+1. Review [04_hexadecimal_layouts.md](04_hexadecimal_layouts.md) for advanced room debugging
+2. See [01_config_usage.md](01_config_usage.md) for room configuration options
 
 ### For Contributors
 1. Read [03_claude_notes.md](03_claude_notes.md) for development context
@@ -92,7 +88,7 @@ Welcome to the Sword game documentation! This index provides links to all availa
 - Logging and debugging systems
 
 ### Tools & Utilities
-- Room layout systems (simple and hexadecimal)
+- Hexadecimal room layout system
 - Debug output generation
 - Configuration management
 - Sprite management workflows

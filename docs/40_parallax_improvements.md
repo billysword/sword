@@ -54,7 +54,6 @@ type ParallaxLayer struct {
 **Files Created/Modified:**
 - `engine/parallax_renderer.go`: New multi-layer parallax renderer
 - `engine/config.go`: Extended configuration for parallax layers and depth effects
-- `world/simple_room.go`: Integrated enhanced parallax system
 - `states/ingame_state.go`: Added debug controls and viewport management
 
 #### Depth of Field Effects

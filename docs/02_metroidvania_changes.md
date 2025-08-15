@@ -24,7 +24,7 @@ This document summarizes the changes made to transform the game into a proper me
   - Parallax background scrolling (30% speed)
   - Helper methods for coordinate conversion and visibility checks
 
-### 4. Room Size (gamestate/simple_room.go)
+### 4. Room Size
 - Increased room size to **120x60 tiles** (1920x960 pixels)
 - This creates a massive explorable area with the 800x450 viewport
 - Added extensive platform layouts:
@@ -55,9 +55,6 @@ This document summarizes the changes made to transform the game into a proper me
   - Added `DrawWithCamera` method to interface
   - Added `DrawTilesWithCamera` method for tile rendering with offset
   
-- **SimpleRoom** (gamestate/simple_room.go):
-  - Implemented `DrawWithCamera` with parallax background
-  - Updated tile rendering to use camera offset
 
 ### 7. Debug Features (gamestate/state.go)
 - Added `DrawGridWithCamera` function that moves the debug grid with the camera
