@@ -9,9 +9,8 @@ This milestone connects the initial rooms and dials in baseline player feel.
 
 #### How to add a room
 
-1) Create a layout in `room_layouts/` (see `forest_left.go`, `forest_right.go`).
-2) Instantiate the room in `states/ingame_state.go` using `world.NewSimpleRoomFromLayout("your_id", layout)` and register it with the `RoomTransitionManager`.
-3) Add spawns and transitions in `resources/rooms/room_transitions.json`.
+1) Create a Tiled map in `resources/rooms/` (see existing room files for reference).
+2) Add spawns and transitions in `resources/rooms/room_transitions.json` so the loader can handle room creation.
 
 Example spawn with facing:
 

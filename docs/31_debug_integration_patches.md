@@ -85,7 +85,8 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		stateManager: sm,
 		player:       entities.NewPlayer(50*physicsUnit, groundY),
 		enemies:      make([]entities.Enemy, 0),
-		currentRoom:  world.NewSimpleRoom("main"),
+                // loadedMap represents a parsed Tiled map
+                currentRoom:  world.NewTiledRoomFromLoadedMap("main", loadedMap),
 		camera:       engine.NewCamera(windowWidth, windowHeight),
 	}
 }

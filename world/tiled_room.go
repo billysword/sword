@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	
-	"sword/internal/tiled"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"sword/engine"
 	"sword/entities"
+	"sword/internal/tiled"
 )
 
 // TiledRoom adapts a Tiled map to our Room interface
@@ -36,7 +36,7 @@ func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
 	for _, ts := range lm.Tilesets {
 		img := ts.TSX.Image.Source
 		sz := fmt.Sprintf("%dx%d", ts.TSX.TileWidth, ts.TSX.TileHeight)
-		engine.LogInfo("Tileset '" + ts.TSX.Name + "' img='" + img + "' tile=" + sz + 
+		engine.LogInfo("Tileset '" + ts.TSX.Name + "' img='" + img + "' tile=" + sz +
 			fmt.Sprintf(" cols=%d count=%d firstGID=%d", ts.TSX.Columns, ts.TSX.TileCount, ts.FirstGID))
 		if ts.TSX.TileWidth != u || ts.TSX.TileHeight != u {
 			engine.LogWarn(fmt.Sprintf("Tileset '%s' tile size (%dx%d) differs from physics unit %d; verify sprite indices and scaling.", ts.TSX.Name, ts.TSX.TileWidth, ts.TSX.TileHeight, u))
@@ -148,6 +148,36 @@ func (tr *TiledRoom) IsSolidAtFlatIndex(index int) bool {
 		}
 	}
 	return false
+}
+
+// FindFloorAtX finds the floor Y position at the given X coordinate.
+// Returns the Y position in physics units where the player should stand.
+func (tr *TiledRoom) FindFloorAtX(x int) int {
+	if tr.tileMap == nil {
+		return 0
+	}
+
+	u := engine.GetPhysicsUnit()
+	tileX := x / u
+
+	// Clamp X to valid tile range
+	if tileX < 0 {
+		tileX = 0
+	}
+	if tileX >= tr.tileMap.Width {
+		tileX = tr.tileMap.Width - 1
+	}
+
+	// Scan from top to bottom to find first solid tile
+	for tileY := 0; tileY < tr.tileMap.Height; tileY++ {
+		index := tileY*tr.tileMap.Width + tileX
+		if tr.IsSolidAtFlatIndex(index) {
+			return tileY * u
+		}
+	}
+
+	// Fallback: bottom of map if no solid tile found
+	return (tr.tileMap.Height - 1) * u
 }
 
 // Utility to create a stable room id from zone and file path like r01.tmj -> "zone/r01"

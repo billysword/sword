@@ -1,6 +1,6 @@
 # Room Layouts
 
-Simple room layouts that can be imported and used in your rooms.
+Predefined room layouts that can be imported and used in your rooms.
 
 ## Usage
 

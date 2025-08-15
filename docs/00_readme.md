@@ -47,7 +47,6 @@ go build -o game
 - `main.go` - Entry point and sprite loading
 - `gamestate/` - Game state management and room system
   - `room.go` - Base room interface and tilemap system
-  - `simple_room.go` - Forest-themed room implementation
   - `ingame_state.go` - Main gameplay state
   - `state.go` - State management framework
 - `resources/images/` - Game assets
