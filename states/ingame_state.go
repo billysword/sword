@@ -41,8 +41,7 @@ type InGameState struct {
 	viewportRenderer *engine.ViewportRenderer
 	hudManager       *engine.HUDManager
 
-	// Configuration and state
-	parallaxConfigIndex int
+
 }
 
 /*
@@ -165,7 +164,6 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		camera:              camera,
 		viewportRenderer:    viewportRenderer,
 		hudManager:          hudManager,
-		parallaxConfigIndex: 0,
 	}
 
 	// Initialize modular systems
@@ -511,49 +509,7 @@ func (ris *InGameState) toggleDepthOfField() {
 /*
 cycleParallaxLayers cycles through different parallax layer configurations.
 */
-func (ris *InGameState) cycleParallaxLayers() {
-	// Define layer configurations
-	layerConfigs := [][]engine.ParallaxLayer{
-		// Config 0: Full layers (default)
-		{
-			{Speed: 0.1, OffsetY: 0},   // Far background
-			{Speed: 0.3, OffsetY: 50},  // Mid background
-			{Speed: 0.5, OffsetY: 100}, // Near background
-			{Speed: 0.7, OffsetY: 150}, // Foreground
-		},
-		// Config 1: Simple two-layer
-		{
-			{Speed: 0.2, OffsetY: 0},   // Background
-			{Speed: 0.6, OffsetY: 100}, // Foreground
-		},
-		// Config 2: Single static background
-		{
-			{Speed: 0.0, OffsetY: 0}, // Static
-		},
-		// Config 3: Extreme depth
-		{
-			{Speed: 0.05, OffsetY: 0},  // Very far
-			{Speed: 0.2, OffsetY: 30},  // Far
-			{Speed: 0.4, OffsetY: 60},  // Mid
-			{Speed: 0.6, OffsetY: 90},  // Near
-			{Speed: 0.8, OffsetY: 120}, // Very near
-		},
-	}
 
-	// Cycle to next configuration
-	ris.parallaxConfigIndex = (ris.parallaxConfigIndex + 1) % len(layerConfigs)
-
-	// Apply new configuration
-	currentRoom := ris.roomTransitionMgr.GetCurrentRoom()
-	if currentRoom != nil {
-		if simpleRoom, ok := currentRoom.(*world.SimpleRoom); ok {
-			renderer := simpleRoom.GetParallaxRenderer()
-			if renderer != nil {
-				renderer.SetLayers(layerConfigs[ris.parallaxConfigIndex])
-			}
-		}
-	}
-}
 
 /*
 updateCameraViewport handles window resize events.
