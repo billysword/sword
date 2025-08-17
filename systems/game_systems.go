@@ -160,15 +160,45 @@ func (ps *PhysicsSystem) ClearEnemies() {
 
 // Update updates physics for all entities
 func (ps *PhysicsSystem) Update() error {
-		// Update player physics with tiles when room is present
+	// Log player state before physics update
+	px, py := ps.player.GetPosition()
+	vx, vy := ps.player.GetVelocity()
+	onGround := ps.player.IsOnGround()
+	
+	roomName := "NoRoom"
 	if ps.room != nil {
-				if tileProvider, ok := ps.room.(entities.TileProvider); ok {
+		roomName = ps.room.GetZoneID()
+	}
+	
+	engine.LogDebug(fmt.Sprintf("PHYSICS_BEFORE: Room=%s Pos=(%d,%d) Vel=(%d,%d) OnGround=%v", 
+		roomName, px, py, vx, vy, onGround))
+	
+	// Update player physics with tiles when room is present
+	if ps.room != nil {
+		if tileProvider, ok := ps.room.(entities.TileProvider); ok {
+			engine.LogDebug("PHYSICS: Using UpdateWithTileCollision")
 			ps.player.UpdateWithTileCollision(tileProvider)
 		} else {
+			engine.LogDebug("PHYSICS: Room doesn't implement TileProvider, using basic Update")
 			ps.player.Update()
 		}
 	} else {
+		engine.LogDebug("PHYSICS: No room, using basic Update")
 		ps.player.Update()
+	}
+	
+	// Log player state after physics update
+	px2, py2 := ps.player.GetPosition()
+	vx2, vy2 := ps.player.GetVelocity()
+	onGround2 := ps.player.IsOnGround()
+	
+	engine.LogDebug(fmt.Sprintf("PHYSICS_AFTER: Room=%s Pos=(%d,%d) Vel=(%d,%d) OnGround=%v", 
+		roomName, px2, py2, vx2, vy2, onGround2))
+	
+	// Log movement delta if any
+	if px != px2 || py != py2 {
+		engine.LogDebug(fmt.Sprintf("PHYSICS_DELTA: ΔPos=(%d,%d) ΔVel=(%d,%d)", 
+			px2-px, py2-py, vx2-vx, vy2-vy))
 	}
 	
 	// Update enemies

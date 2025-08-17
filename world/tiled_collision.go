@@ -18,22 +18,23 @@ func (ts *tiledSolidity) IsSolidAtFlatIndex(index int) bool {
 	if ts.loaded == nil {
 		return false
 	}
-	// Prefer explicit collision layer
-	if ts.loaded.CollisionLayer != nil && index >= 0 && index < len(ts.loaded.CollisionLayer.Data) {
-		return ts.loaded.CollisionLayer.Data[index] != 0
-	}
-	// Fallback: derive from render layer tile properties
+	
+	// TEMPORARY FIX: Use render layer logic instead of collision layer
+	// because collision layer doesn't match render layer visually
 	if ts.loaded.RenderLayer != nil && index >= 0 && index < len(ts.loaded.RenderLayer.Data) {
 		gid := tiled.NormalizeGID(ts.loaded.RenderLayer.Data[index])
-		if props, ok := ts.loaded.PropertiesForGID(gid); ok {
-			return props.Solid
-		}
+		
+		// Use simple render-based collision: 0 = air, anything else = solid
+		isSolid := gid != 0
+		
+		return isSolid
 	}
+	
 	return false
 }
 
 // findFloorAtX finds the floor Y position at the given X coordinate using the provided solidity function.
-// Returns the Y position in physics units where entities should stand.
+// Returns the Y position in physics units where entities should stand (just above solid ground).
 func findFloorAtX(tm *TileMap, isSolidAt func(int) bool, x int) int {
 	if tm == nil {
 		return 0
@@ -50,14 +51,21 @@ func findFloorAtX(tm *TileMap, isSolidAt func(int) bool, x int) int {
 		tileX = tm.Width - 1
 	}
 
-	// Scan from top to bottom to find first solid tile
-	for tileY := 0; tileY < tm.Height; tileY++ {
-		index := tileY*tm.Width + tileX
-		if isSolidAt != nil && isSolidAt(index) {
+	// Scan from top to bottom to find air space above solid ground
+	for tileY := 0; tileY < tm.Height-1; tileY++ {
+		currentIndex := tileY*tm.Width + tileX
+		nextIndex := (tileY+1)*tm.Width + tileX
+		
+		// Check if current tile is air and next tile is solid
+		currentSolid := isSolidAt != nil && isSolidAt(currentIndex)
+		nextSolid := isSolidAt != nil && isSolidAt(nextIndex)
+		
+		if !currentSolid && nextSolid {
+			// Found air above solid ground - return the Y position of the air tile (where player stands)
 			return tileY * u
 		}
 	}
 
-	// Fallback: bottom of map if no solid tile found
-	return (tm.Height - 1) * u
+	// Fallback: if no proper floor found, return near bottom of map
+	return (tm.Height - 2) * u
 }

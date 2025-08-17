@@ -31,6 +31,9 @@ type Player struct {
 
 	// Direction state
 	facingRight bool // Whether the player is facing right
+	
+	// Collision detection
+	collisionService *CollisionService // Encapsulates collision logic
 }
 
 /*
@@ -72,6 +75,7 @@ func (p *Player) ProcessInput() {
 	}
 
 	// Horizontal movement
+	oldVx := p.vx
 	p.vx = 0
 	moveSpeed := config.MoveSpeed
 	if !p.onGround {
@@ -100,6 +104,7 @@ func (p *Player) ProcessInput() {
 
 	// Execute jump if buffered and able
 	if p.jumpBufferTimer > 0 && canJump {
+		engine.LogInfo(fmt.Sprintf("PLAYER_JUMP: Pos=(%d,%d) JumpPower=%d", p.x, p.y, config.JumpPower))
 		p.Jump()
 		p.jumpBufferTimer = 0
 		p.coyoteTimer = 0
@@ -110,6 +115,7 @@ func (p *Player) ProcessInput() {
 		// Calculate how much to reduce jump
 		minVelocity := int(float64(-config.JumpPower) * config.MinJumpHeight)
 		if p.vy < minVelocity {
+			engine.LogInfo(fmt.Sprintf("PLAYER_JUMP_CUT: vy %d -> %d", p.vy, minVelocity))
 			p.vy = minVelocity
 		}
 		p.isJumping = false
@@ -118,8 +124,17 @@ func (p *Player) ProcessInput() {
 	// Fast fall when holding down
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		if p.vy > 0 {
+			oldVy := p.vy
 			p.vy = int(float64(p.vy) * config.FastFallMultiplier)
+			if oldVy != p.vy {
+				engine.LogInfo(fmt.Sprintf("PLAYER_FAST_FALL: vy %d -> %d", oldVy, p.vy))
+			}
 		}
+	}
+
+	// Log significant movement changes
+	if (oldVx == 0 && p.vx != 0) || (oldVx != 0 && p.vx == 0) {
+		engine.LogInfo(fmt.Sprintf("PLAYER_MOVE: vx changed %d -> %d, Ground=%v", oldVx, p.vx, p.onGround))
 	}
 }
 

@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"fmt"
 	"sword/engine"
 )
 
@@ -49,58 +50,12 @@ Parameters:
   - testX, testY: Position to test in physics units
 */
 func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int) bool {
-	// Save current position
-	oldX, oldY := p.x, p.y
-	
-	// Temporarily move to test position
-	p.x, p.y = testX, testY
-	box := p.GetCollisionBox()
-	
-	// Restore position
-	p.x, p.y = oldX, oldY
-	
-	// Get physics unit for conversion
-	// Convert collision box to tile coordinates (physics units -> tile indices)
-	leftTile := box.X / engine.GetPhysicsUnit()
-	rightTile := (box.X + box.Width - 1) / engine.GetPhysicsUnit()
-	topTile := box.Y / engine.GetPhysicsUnit()
-	bottomTile := (box.Y + box.Height - 1) / engine.GetPhysicsUnit()
-	
-	// Check all tiles the collision box overlaps
-	tiles := tileProvider.GetTiles()
-	roomWidth := tileProvider.GetWidth()
-	roomHeight := tileProvider.GetHeight()
-	
-	// Optional specialized solidity provider
-	var solidAt func(flatIndex int) bool
-	if sp, ok := any(tileProvider).(TileSolidityProvider); ok {
-		solidAt = sp.IsSolidAtFlatIndex
+	// Use collision service for better separation of concerns
+	if p.collisionService == nil {
+		p.collisionService = NewCollisionService(tileProvider)
 	}
 	
-	for y := topTile; y <= bottomTile; y++ {
-		for x := leftTile; x <= rightTile; x++ {
-			// Skip out-of-bounds tiles
-			if x < 0 || x >= roomWidth || y < 0 || y >= roomHeight {
-				continue
-			}
-			
-			// Get tile at this position
-			tileIndex := y*roomWidth + x
-			if tileIndex >= 0 && tileIndex < len(tiles) {
-				if solidAt != nil {
-					if solidAt(tileIndex) {
-						return true
-					}
-				} else {
-					if IsSolidTile(tiles[tileIndex]) {
-						return true
-					}
-				}
-			}
-		}
-	}
-	
-	return false
+	return p.collisionService.CheckPositionCollision(p, testX, testY)
 }
 
 /*
@@ -128,6 +83,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 	
 	// Horizontal movement (stepped)
 	if p.vx != 0 {
+		engine.LogDebug(fmt.Sprintf("HORIZONTAL_MOVE: Starting vx=%d from pos=(%d,%d)", p.vx, p.x, p.y))
 		remaining := p.vx
 		step := stepUnit
 		if remaining < 0 {
@@ -153,10 +109,12 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 				}
 			} else {
 				// Hit wall, stop horizontal movement
+				engine.LogDebug(fmt.Sprintf("HORIZONTAL_WALL: Hit wall at nextX=%d, stopping", nextX))
 				p.vx = 0
 				break
 			}
 		}
+		engine.LogDebug(fmt.Sprintf("HORIZONTAL_END: Final pos=(%d,%d), remaining=%d", p.x, p.y, remaining))
 	}
 	
 	// Apply gravity
@@ -167,6 +125,7 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 	
 	// Vertical movement (stepped)
 	if p.vy != 0 {
+		engine.LogDebug(fmt.Sprintf("VERTICAL_MOVE: Starting vy=%d from pos=(%d,%d)", p.vy, p.x, p.y))
 		remaining := p.vy
 		vstep := stepUnit
 		if remaining < 0 {
@@ -191,17 +150,24 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 			} else {
 				// Hit floor or ceiling
 				if vstep > 0 {
+					engine.LogDebug(fmt.Sprintf("VERTICAL_FLOOR: Hit floor at nextY=%d, landing", nextY))
 					p.onGround = true
 				} else {
+					engine.LogDebug(fmt.Sprintf("VERTICAL_CEILING: Hit ceiling at nextY=%d", nextY))
 					p.onGround = false
 				}
 				p.vy = 0
 				break
 			}
 		}
+		engine.LogDebug(fmt.Sprintf("VERTICAL_END: Final pos=(%d,%d), onGround=%v", p.x, p.y, p.onGround))
 	} else {
 		// If no vertical movement, check if still grounded
+		wasGrounded := p.onGround
 		p.onGround = p.CheckTileCollision(tileProvider, p.x, p.y+1)
+		if wasGrounded != p.onGround {
+			engine.LogDebug(fmt.Sprintf("GROUND_CHECK: Ground state changed from %v to %v", wasGrounded, p.onGround))
+		}
 	}
 }
 

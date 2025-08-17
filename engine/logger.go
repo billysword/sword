@@ -23,7 +23,7 @@ const (
 var (
 	// CurrentLogLevel controls what messages are logged
 	// Set to LogLevelWarn to reduce sprite loading noise, LogLevelOff for production
-	CurrentLogLevel = LogLevelWarn
+	CurrentLogLevel = LogLevelInfo
 )
 
 // SetLogLevel sets the global logging level

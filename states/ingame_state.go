@@ -110,13 +110,18 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		}
 	}
 
-	// Determine spawn at room center
+	// Determine spawn position - find a safe open area  
 	tileMap = mainRoom.GetTileMap()
-	playerSpawnX = 100
-	playerSpawnY = 100
-	if tileMap.Width > 10 || tileMap.Height > 10 {
-		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY > 0 {
+	playerSpawnX = 80  // Try middle of room (tile X=5, 5*16=80)
+	playerSpawnY = 32  // Fallback Y position
+	
+	// Try to find the floor at this X position
+	if tileMap != nil {
+		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY >= 0 {
 			playerSpawnY = groundY
+			engine.LogInfo(fmt.Sprintf("Found floor at Y=%d for X=%d, spawning player at (%d,%d)", groundY, playerSpawnX, playerSpawnX, playerSpawnY))
+		} else {
+			engine.LogInfo(fmt.Sprintf("No valid floor found at X=%d, using fallback spawn position (%d,%d)", playerSpawnX, playerSpawnX, playerSpawnY))
 		}
 	}
 

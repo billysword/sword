@@ -23,6 +23,10 @@ var _ entities.TileSolidityProvider = (*TiledRoom)(nil)
 
 // NewTiledRoomFromLoadedMap creates a Room from a parsed Tiled LoadedMap
 func NewTiledRoomFromLoadedMap(zoneID string, lm *tiled.LoadedMap) *TiledRoom {
+	// Debug layer comparison for the main room
+	if zoneID == "cradle/r01" {
+		DebugCompareLayers(lm)
+	}
 	// Initialize base room and copy render layer into our TileMap as indices
 	width := lm.TMJ.Width
 	height := lm.TMJ.Height
