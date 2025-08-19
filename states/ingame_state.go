@@ -9,7 +9,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"sword/engine"
 	"sword/entities"
-	"sword/systems"
+	"sword/game/systems"
 	"sword/world"
 )
 
@@ -40,8 +40,6 @@ type InGameState struct {
 	camera           *engine.Camera
 	viewportRenderer *engine.ViewportRenderer
 	hudManager       *engine.HUDManager
-
-
 }
 
 /*
@@ -110,11 +108,11 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 		}
 	}
 
-	// Determine spawn position - find a safe open area  
+	// Determine spawn position - find a safe open area
 	tileMap = mainRoom.GetTileMap()
-	playerSpawnX = 80  // Try middle of room (tile X=5, 5*16=80)
-	playerSpawnY = 32  // Fallback Y position
-	
+	playerSpawnX = 80 // Try middle of room (tile X=5, 5*16=80)
+	playerSpawnY = 32 // Fallback Y position
+
 	// Try to find the floor at this X position
 	if tileMap != nil {
 		if groundY := mainRoom.FindFloorAtX(playerSpawnX); groundY >= 0 {
@@ -161,14 +159,14 @@ func NewInGameState(sm *engine.StateManager) *InGameState {
 
 	// Create the refactored state
 	state := &InGameState{
-		stateManager:        sm,
-		player:              player,
-		enemies:             make([]entities.Enemy, 0),
-		roomTransitionMgr:   roomTransitionMgr,
-		worldMap:            worldMap,
-		camera:              camera,
-		viewportRenderer:    viewportRenderer,
-		hudManager:          hudManager,
+		stateManager:      sm,
+		player:            player,
+		enemies:           make([]entities.Enemy, 0),
+		roomTransitionMgr: roomTransitionMgr,
+		worldMap:          worldMap,
+		camera:            camera,
+		viewportRenderer:  viewportRenderer,
+		hudManager:        hudManager,
 	}
 
 	// Initialize modular systems
@@ -294,14 +292,14 @@ func (ris *InGameState) updateDebugHUD() {
 			}
 			dh.UpdateRoomInfo(roomInfo)
 
-				// Update player position
+			// Update player position
 			playerX, playerY := ris.player.GetPosition()
-					u := engine.GetPhysicsUnit()
-		playerTileX := playerX / u
-		playerTileY := playerY / u
-		playerPos := fmt.Sprintf("World(px): (%d, %d) | Tiles: (%d, %d)",
-			playerX, playerY, playerTileX, playerTileY)
-		dh.UpdatePlayerPos(playerPos)
+			u := engine.GetPhysicsUnit()
+			playerTileX := playerX / u
+			playerTileY := playerY / u
+			playerPos := fmt.Sprintf("World(px): (%d, %d) | Tiles: (%d, %d)",
+				playerX, playerY, playerTileX, playerTileY)
+			dh.UpdatePlayerPos(playerPos)
 
 			// Update player velocity
 			vx, vy := ris.player.GetVelocity()
@@ -514,7 +512,6 @@ func (ris *InGameState) toggleDepthOfField() {
 /*
 cycleParallaxLayers cycles through different parallax layer configurations.
 */
-
 
 /*
 updateCameraViewport handles window resize events.
