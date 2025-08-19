@@ -32,8 +32,9 @@ func LoadZoneRoomsFromData(rtm *RoomTransitionManager, zoneName string, baseDir 
 		room := NewTiledRoomFromLoadedMap(roomID, lm)
 		rtm.RegisterRoom(room)
 
-		// Add transitions from portals
+		// Add transitions and spawn points from portals
 		u := engine.GetPhysicsUnit()
+		_ = u
 		for _, p := range lm.Portals {
 			toZone := p.ToZone
 			toRoom := p.ToRoom
@@ -45,15 +46,13 @@ func LoadZoneRoomsFromData(rtm *RoomTransitionManager, zoneName string, baseDir 
 				continue
 			}
 			targetID := toZone + "/" + toRoom
-			// Trigger rect in physics units
+			// Trigger rect in physics units (TMJ stores pixels compatible with our physics unit)
 			rx := int(p.RectPx[0])
 			ry := int(p.RectPx[1])
 			rw := int(p.RectPx[2])
 			rh := int(p.RectPx[3])
-			// Convert from pixel coordinates in TMJ to our physics units (tile px)
-			// TMJ uses same base pixels as physics unit; numbers are already in px
 			trigger := Rectangle{X: rx, Y: ry, Width: rw, Height: rh}
-			// Direction heuristic based on portal name
+			// Direction from portal name
 			dir := directionFromPortalName(p.Name)
 			transition := TransitionPoint{
 				Type:          TransitionDoor,
@@ -63,9 +62,19 @@ func LoadZoneRoomsFromData(rtm *RoomTransitionManager, zoneName string, baseDir 
 				IsEnabled:     true,
 				Direction:     dir,
 			}
-			_ = u // reserved; may use scaling if needed
 			if err := rtm.AddTransitionPoint(roomID, transition); err != nil {
 				engine.LogInfo("failed adding transition: " + err.Error())
+			}
+
+			// Register a spawn point at this portal for the current room
+			spawn := SpawnPoint{
+				ID:       p.Name,
+				X:        rx + rw/2,
+				Y:        ry + rh/2,
+				FacingID: oppositeDirectionString(dir),
+			}
+			if err := rtm.AddSpawnPoint(roomID, spawn); err != nil {
+				engine.LogInfo("failed adding spawn point: " + err.Error())
 			}
 		}
 	}
@@ -85,5 +94,21 @@ func directionFromPortalName(name string) Direction {
 		return South
 	default:
 		return East
+	}
+}
+
+// oppositeDirectionString returns the opposite facing for spawn placement
+func oppositeDirectionString(d Direction) string {
+	switch d {
+	case West:
+		return "east"
+	case East:
+		return "west"
+	case North:
+		return "south"
+	case South:
+		return "north"
+	default:
+		return "east"
 	}
 }
