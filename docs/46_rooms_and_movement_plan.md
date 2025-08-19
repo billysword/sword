@@ -3,14 +3,14 @@
 This milestone connects the initial rooms and dials in baseline player feel.
 
 - Connected rooms: `main` → `forest_right` → `forest_left` (and back)
-- Transitions and spawns are data-driven via `resources/rooms/room_transitions.json`
+- Transitions and spawns are data-driven via Tiled TMJ data (`portals` and `spawns` layers)
 - Spawns can set initial player facing using `facing_id` ("east"/"west"/"right"/"left")
 - Movement tuning adjustments: higher jump power, stronger air control, corrected coyote time
 
 #### How to add a room
 
-1) Create a Tiled map in `resources/rooms/` (see existing room files for reference).
-2) Add spawns and transitions in `resources/rooms/room_transitions.json` so the loader can handle room creation.
+1) Create a Tiled map in `data/zones/<zone>/` (see existing zone files for reference).
+2) Define portals and optional spawn points within the TMJ file so the loader can handle room creation.
 
 Example spawn with facing:
 

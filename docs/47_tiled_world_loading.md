@@ -32,13 +32,13 @@ The game can now load rooms directly from Tiled maps exported as JSON (`.tmj`) i
 1. Startup tries to load `cradle` via `LoadZoneRoomsFromData(...)`
 2. A starting room is selected (prefers `<zone>/r01`, otherwise the first found)
 3. All rooms from the zone are registered in the `RoomTransitionManager`
-4. Transitions are built from `portals` objects
-5. Spawn falls back to `main_spawn` from legacy JSON or room center if not defined
+4. Transitions are built exclusively from `portals` objects in the TMJ data; `room_transitions.json` is no longer used
+5. Player spawn uses Tiled-defined points when available or falls back to the room center
 
 ## Notes and Limitations
 
 - Collision: Tiled collision layer is parsed by the internal loader and can be used for future physics improvements, but room-level collision still relies on existing helpers.
-- Spawns: Spawn points are currently still sourced from embedded JSON (fallback). Tiled-based spawns can be added in a follow-up.
+- Spawns: Spawn points can be defined in the Tiled map (e.g., a `spawns` object layer). If none exist, the player starts at the room center.
 - Directions: Portal `name` infers direction for the world map graph. Use `left|right|up|down` names in Tiled for best results.
 
 ## Next Steps

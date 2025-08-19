@@ -102,7 +102,7 @@ For the most current information, always check the individual documentation file
 
 ## Rooms + Movement Milestone
 
-- First connected rooms are live: `main` ↔ `forest_right` ↔ `forest_left` with JSON-driven transitions.
-- Player spawn now supports `facing_id` in `resources/rooms/room_transitions.json`.
+- First connected rooms are live: `main` ↔ `forest_right` ↔ `forest_left` with TMJ portal-driven transitions.
+- Player spawn now supports `facing_id` via TMJ definitions.
 - Movement tuned: higher jump power, better air control, proper coyote time.
 - See `docs/46_rooms_and_movement_plan.md` for how to add rooms and tweak movement.
