@@ -133,18 +133,10 @@ type SpawnPoint struct {
 
 ### Spawn Point Configuration
 
-Spawn points are defined in JSON files like `resources/rooms/room_transitions.json`:
+Spawn points are defined in the zone's TMJ file (e.g., using a `spawns` object layer):
 
 ```json
-{
-  "rooms": {
-    "main": {
-      "spawn_points": [
-        {"id": "main_spawn", "x": 128, "y": 96, "facing_id": "east"}
-      ]
-    }
-  }
-}
+{"id": "main_spawn", "x": 128, "y": 96, "facing_id": "east"}
 ```
 
 ### Safe Spawn Positioning
