@@ -259,7 +259,10 @@ func strconvParseFloat(s string) (float64, error) {
 // Utility to iterate the collision grid as booleans using either explicit collision layer or tile properties.
 func (lm *LoadedMap) IsSolidAt(index int) bool {
 	if lm.CollisionLayer != nil && index >= 0 && index < len(lm.CollisionLayer.Data) {
-		return lm.CollisionLayer.Data[index] != 0
+		// Treat value 1 as definitely solid
+		// Value 2 needs context - it's used for boundaries that might be one-way or special
+		// For now, treat both 1 and 2 as solid to be safe, but this could be refined
+		return lm.CollisionLayer.Data[index] == 1 || lm.CollisionLayer.Data[index] == 2
 	}
 	if lm.RenderLayer != nil && index >= 0 && index < len(lm.RenderLayer.Data) {
 		gid := NormalizeGID(lm.RenderLayer.Data[index])
@@ -268,4 +271,13 @@ func (lm *LoadedMap) IsSolidAt(index int) bool {
 		}
 	}
 	return false
+}
+
+// GetCollisionValue returns the raw collision value at the given index.
+// This allows for more nuanced collision handling when needed.
+func (lm *LoadedMap) GetCollisionValue(index int) uint32 {
+	if lm.CollisionLayer != nil && index >= 0 && index < len(lm.CollisionLayer.Data) {
+		return lm.CollisionLayer.Data[index]
+	}
+	return 0
 }
