@@ -54,6 +54,11 @@ func (r Rectangle) Contains(x, y int) bool {
 	return x >= r.X && x < r.X+r.Width && y >= r.Y && y < r.Y+r.Height
 }
 
+// Intersects checks if this rectangle overlaps another rectangle (AABB)
+func (r Rectangle) Intersects(o Rectangle) bool {
+	return r.X < o.X+o.Width && r.X+r.Width > o.X && r.Y < o.Y+o.Height && r.Y+r.Height > o.Y
+}
+
 // SpawnPoint represents a place where players can appear in a room
 type SpawnPoint struct {
 	ID       string `json:"id"`        // Unique identifier for this spawn point
@@ -164,7 +169,10 @@ func (rtm *RoomTransitionManager) CheckTransitions(player *entities.Player, acti
 		return false
 	}
 
-	playerX, playerY := player.GetPosition()
+	// Build player's collision rectangle for robust trigger detection
+	box := player.GetCollisionBox()
+	playerRect := Rectangle{X: box.X, Y: box.Y, Width: box.Width, Height: box.Height}
+
 	transitions := rtm.transitionPoints[rtm.currentRoomID]
 
 	for _, transition := range transitions {
@@ -172,8 +180,8 @@ func (rtm *RoomTransitionManager) CheckTransitions(player *entities.Player, acti
 			continue
 		}
 
-		// Check if player is in trigger area
-		if transition.TriggerBounds.Contains(playerX, playerY) {
+		// Check rectangle overlap instead of point; works even if player's origin isn't inside trigger
+		if transition.TriggerBounds.Intersects(playerRect) {
 			// Check if action is required and was pressed
 			if transition.RequiresAction && !actionPressed {
 				continue

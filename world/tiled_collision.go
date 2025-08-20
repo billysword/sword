@@ -19,18 +19,8 @@ func (ts *tiledSolidity) IsSolidAtFlatIndex(index int) bool {
 		return false
 	}
 	
-	// TEMPORARY FIX: Use render layer logic instead of collision layer
-	// because collision layer doesn't match render layer visually
-	if ts.loaded.RenderLayer != nil && index >= 0 && index < len(ts.loaded.RenderLayer.Data) {
-		gid := tiled.NormalizeGID(ts.loaded.RenderLayer.Data[index])
-		
-		// Use simple render-based collision: 0 = air, anything else = solid
-		isSolid := gid != 0
-		
-		return isSolid
-	}
-	
-	return false
+	// Prefer explicit collision layer when present; fallback to tile properties from render layer
+	return ts.loaded.IsSolidAt(index)
 }
 
 // findFloorAtX finds the floor Y position at the given X coordinate using the provided solidity function.
