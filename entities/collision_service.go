@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"reflect"
 	"sword/engine"
 )
 
@@ -13,6 +14,10 @@ type CollisionService struct {
 	solidityProvider TileSolidityProvider
 	roomWidth        int
 	roomHeight       int
+	// tiles holds a flattened snapshot of the provider's tiles for fallback collision
+	// when no explicit TileSolidityProvider is available
+	tiles       []int
+	providerPtr uintptr
 }
 
 /*
@@ -23,8 +28,10 @@ Parameters:
 */
 func NewCollisionService(tileProvider TileProvider) *CollisionService {
 	cs := &CollisionService{
-		roomWidth:  tileProvider.GetWidth(),
-		roomHeight: tileProvider.GetHeight(),
+		roomWidth:   tileProvider.GetWidth(),
+		roomHeight:  tileProvider.GetHeight(),
+		tiles:       tileProvider.GetTiles(),
+		providerPtr: reflect.ValueOf(tileProvider).Pointer(),
 	}
 	
 	// Check if room supports advanced collision detection
@@ -38,6 +45,16 @@ func NewCollisionService(tileProvider TileProvider) *CollisionService {
 	return cs
 }
 
+// IsForProvider returns true if this collision service matches the given tile provider
+func (cs *CollisionService) IsForProvider(tileProvider TileProvider) bool {
+	if cs == nil || tileProvider == nil {
+		return false
+	}
+	return cs.providerPtr == reflect.ValueOf(tileProvider).Pointer() &&
+		cs.roomWidth == tileProvider.GetWidth() &&
+		cs.roomHeight == tileProvider.GetHeight()
+}
+
 /*
 CheckBoxCollision checks if a collision box would collide with solid tiles.
 Parameters:
@@ -45,10 +62,6 @@ Parameters:
 Returns true if the box would collide with any solid tiles.
 */
 func (cs *CollisionService) CheckBoxCollision(box CollisionBox) bool {
-	if cs.solidityProvider == nil {
-		return false
-	}
-	
 	// Convert collision box to tile coordinates
 	physicsUnit := engine.GetPhysicsUnit()
 	leftTile := box.X / physicsUnit
@@ -66,8 +79,17 @@ func (cs *CollisionService) CheckBoxCollision(box CollisionBox) bool {
 			
 			// Check if this tile is solid
 			tileIndex := y*cs.roomWidth + x
-			if cs.solidityProvider.IsSolidAtFlatIndex(tileIndex) {
-				return true
+			if cs.solidityProvider != nil {
+				if cs.solidityProvider.IsSolidAtFlatIndex(tileIndex) {
+					return true
+				}
+			} else if len(cs.tiles) == cs.roomWidth*cs.roomHeight {
+				// Fallback to tile index based solidity if available
+				if tileIndex >= 0 && tileIndex < len(cs.tiles) {
+					if IsSolidTile(cs.tiles[tileIndex]) {
+						return true
+					}
+				}
 			}
 		}
 	}
