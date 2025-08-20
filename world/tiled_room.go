@@ -79,17 +79,6 @@ func (tr *TiledRoom) IsSolidAtFlatIndex(index int) bool {
 	return tr.solidity.IsSolidAtFlatIndex(index)
 }
 
-// GetCollisionTypeAt returns the collision type at the given flat index
-func (tr *TiledRoom) GetCollisionTypeAt(index int) CollisionType {
-	if tr.loaded == nil || tr.loaded.CollisionLayer == nil {
-		return CollisionNone
-	}
-	if index >= 0 && index < len(tr.loaded.CollisionLayer.Data) {
-		return GetCollisionType(tr.loaded.CollisionLayer.Data[index])
-	}
-	return CollisionNone
-}
-
 // FindFloorAtX finds the floor Y position at the given X coordinate.
 // Returns the Y position in physics units where the player should stand.
 func (tr *TiledRoom) FindFloorAtX(x int) int {

@@ -272,12 +272,3 @@ func (lm *LoadedMap) IsSolidAt(index int) bool {
 	}
 	return false
 }
-
-// GetCollisionValue returns the raw collision value at the given index.
-// This allows for more nuanced collision handling when needed.
-func (lm *LoadedMap) GetCollisionValue(index int) uint32 {
-	if lm.CollisionLayer != nil && index >= 0 && index < len(lm.CollisionLayer.Data) {
-		return lm.CollisionLayer.Data[index]
-	}
-	return 0
-}

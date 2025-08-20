@@ -5,6 +5,16 @@ import (
 	"sword/internal/tiled"
 )
 
+const (
+	// Collision layer values
+	CollisionEmpty    = 0 // No collision
+	CollisionSolid    = 1 // Always solid
+	CollisionSpecial  = 2 // Context-dependent (decorative on row 1, solid elsewhere)
+	
+	// Special row for decorative ceiling
+	DecorativeCeilingRow = 1
+)
+
 // tiledSolidity provides per-cell solidity derived from the Tiled collision layer or tile properties.
 type tiledSolidity struct {
 	loaded *tiled.LoadedMap
@@ -23,25 +33,24 @@ func (ts *tiledSolidity) IsSolidAtFlatIndex(index int) bool {
 	if ts.loaded.CollisionLayer != nil && index >= 0 && index < len(ts.loaded.CollisionLayer.Data) {
 		val := ts.loaded.CollisionLayer.Data[index]
 		
-		// Value 1 is always solid
-		if val == 1 {
+		// Always solid tiles
+		if val == CollisionSolid {
 			return true
 		}
 		
-		// Value 2 needs context - check position
-		// Row 1 (index 16-31) should be passable (decorative ceiling)
-		// Other value 2s should be solid (walls)
-		if val == 2 {
+		// Context-dependent tiles
+		if val == CollisionSpecial {
 			width := ts.loaded.TMJ.Width
 			row := index / width
-			// Row 1 is decorative and should be passable
-			if row == 1 {
+			// Decorative ceiling row should be passable
+			if row == DecorativeCeilingRow {
 				return false
 			}
-			// Other rows with value 2 are solid (walls)
+			// Other rows with special value are solid (walls)
 			return true
 		}
 		
+		// Empty or unknown values are passable
 		return false
 	}
 	
