@@ -23,8 +23,8 @@ func (p *Player) GetCollisionBox() CollisionBox {
 	config := &engine.GameConfig.PlayerPhysics
 	
 	// Calculate sprite dimensions in physics units (render scale does not affect physics)
-	spriteWidth := int(float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor)
-	spriteHeight := int(float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor)
+	spriteWidth := config.SpriteWidth
+	spriteHeight := config.SpriteHeight
 	
 	// Calculate collision box based on configuration
 	offsetX := int(float64(spriteWidth) * config.CollisionBoxOffsetX)
@@ -52,6 +52,10 @@ Parameters:
 func (p *Player) CheckTileCollision(tileProvider TileProvider, testX, testY int) bool {
 	// Use collision service for better separation of concerns
 	if p.collisionService == nil {
+		p.collisionService = NewCollisionService(tileProvider)
+	}
+	// Recreate service if provider changed (e.g., room transition)
+	if !p.collisionService.IsForProvider(tileProvider) {
 		p.collisionService = NewCollisionService(tileProvider)
 	}
 	

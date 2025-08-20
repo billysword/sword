@@ -312,8 +312,8 @@ func (rtm *RoomTransitionManager) findSafeSpawnPosition(player *entities.Player,
 			return 0, false
 		}
 		cfg := &engine.GameConfig.PlayerPhysics
-		// Collision box dimensions in physics units (char scale applies to sprite dims)
-		spriteH := int(float64(cfg.SpriteHeight) * engine.GameConfig.CharScaleFactor)
+		// Collision box dimensions in physics units
+		spriteH := cfg.SpriteHeight
 		offsetY := int(float64(spriteH) * cfg.CollisionBoxOffsetY)
 		boxH := int(float64(spriteH) * cfg.CollisionBoxHeight)
 		// Position top-left of sprite such that bottom of collision box is exactly at floor
