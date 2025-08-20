@@ -175,27 +175,4 @@ func (p *Player) UpdateWithTileCollision(tileProvider TileProvider) {
 	}
 }
 
-// IsSolidTile checks if a tile index represents a solid tile for collision.
-// This is a copy of the logic from world package to avoid circular dependency.
-func IsSolidTile(tileIndex int) bool {
-	// Define which tile indices are solid for collision
-	switch tileIndex {
-	case -1: // empty
-		return false
-	case 0: // dirt - solid
-		return true
-	case 1, 2, 3, 4, 5, 6, 7, 8: // walls, corners, ceilings - solid
-		return true
-	case 9, 10, 11, 12, 13, 14, 15: // platform tiles - solid
-		return true
-	case 16, 17, 18, 19: // inner corners - solid
-		return true
-	case 20, 21: // floor tiles - solid
-		return true
-	case 22, 23: // more walls - solid
-		return true
-	default:
-		// Unknown tiles are considered non-solid by default
-		return false
-	}
-}
+

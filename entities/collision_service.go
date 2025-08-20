@@ -85,11 +85,8 @@ func (cs *CollisionService) CheckBoxCollision(box CollisionBox) bool {
 				}
 			} else if len(cs.tiles) == cs.roomWidth*cs.roomHeight {
 				// Fallback to tile index based solidity if available
-				if tileIndex >= 0 && tileIndex < len(cs.tiles) {
-					if IsSolidTile(cs.tiles[tileIndex]) {
-						return true
-					}
-				}
+				// Note: Without IsSolidTile, we can't determine solidity from tile index alone
+				// This fallback is disabled to avoid incorrect collision detection
 			}
 		}
 	}

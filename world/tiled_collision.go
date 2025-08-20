@@ -5,6 +5,16 @@ import (
 	"sword/internal/tiled"
 )
 
+const (
+	// Collision layer values
+	CollisionEmpty    = 0 // No collision
+	CollisionSolid    = 1 // Always solid
+	CollisionSpecial  = 2 // Context-dependent (decorative on row 1, solid elsewhere)
+	
+	// Special row for decorative ceiling
+	DecorativeCeilingRow = 1
+)
+
 // tiledSolidity provides per-cell solidity derived from the Tiled collision layer or tile properties.
 type tiledSolidity struct {
 	loaded *tiled.LoadedMap
@@ -19,8 +29,39 @@ func (ts *tiledSolidity) IsSolidAtFlatIndex(index int) bool {
 		return false
 	}
 	
-	// Prefer explicit collision layer when present; fallback to tile properties from render layer
-	return ts.loaded.IsSolidAt(index)
+	// Check collision layer
+	if ts.loaded.CollisionLayer != nil && index >= 0 && index < len(ts.loaded.CollisionLayer.Data) {
+		val := ts.loaded.CollisionLayer.Data[index]
+		
+		// Always solid tiles
+		if val == CollisionSolid {
+			return true
+		}
+		
+		// Context-dependent tiles
+		if val == CollisionSpecial {
+			width := ts.loaded.TMJ.Width
+			row := index / width
+			// Decorative ceiling row should be passable
+			if row == DecorativeCeilingRow {
+				return false
+			}
+			// Other rows with special value are solid (walls)
+			return true
+		}
+		
+		// Empty or unknown values are passable
+		return false
+	}
+	
+	// Fallback to tile properties from render layer
+	if ts.loaded.RenderLayer != nil && index >= 0 && index < len(ts.loaded.RenderLayer.Data) {
+		gid := tiled.NormalizeGID(ts.loaded.RenderLayer.Data[index])
+		if props, ok := ts.loaded.PropertiesForGID(gid); ok {
+			return props.Solid
+		}
+	}
+	return false
 }
 
 // findFloorAtX finds the floor Y position at the given X coordinate using the provided solidity function.
