@@ -13,17 +13,17 @@ import (
 type LogLevel int
 
 const (
-	LogLevelOff LogLevel = iota  // No logging
-	LogLevelError                // Only errors
-	LogLevelWarn                 // Warnings and errors
-	LogLevelInfo                 // Info, warnings, and errors
-	LogLevelDebug                // All messages including debug
+	LogLevelOff   LogLevel = iota // No logging
+	LogLevelError                 // Only errors
+	LogLevelWarn                  // Warnings and errors
+	LogLevelInfo                  // Info, warnings, and errors
+	LogLevelDebug                 // All messages including debug
 )
 
 var (
 	// CurrentLogLevel controls what messages are logged
 	// Set to LogLevelWarn to reduce sprite loading noise, LogLevelOff for production
-	CurrentLogLevel = LogLevelInfo
+	CurrentLogLevel = LogLevelDebug
 )
 
 // SetLogLevel sets the global logging level
@@ -236,8 +236,8 @@ func (l *Logger) LogCameraDebug(cameraX, cameraY, targetX, targetY float64, view
 		if worldW <= 0 || worldH <= 0 {
 			warning += " [WARNING: Invalid world bounds]"
 		}
-		
-		l.logger.Printf("[CAMERA_DEBUG] Pos:(%.2f,%.2f) Target:(%.2f,%.2f) Viewport:(%dx%d) World:(%dx%d)%s", 
+
+		l.logger.Printf("[CAMERA_DEBUG] Pos:(%.2f,%.2f) Target:(%.2f,%.2f) Viewport:(%dx%d) World:(%dx%d)%s",
 			cameraX, cameraY, targetX, targetY, viewportW, viewportH, worldW, worldH, warning)
 	}
 }
@@ -261,8 +261,8 @@ func (l *Logger) LogViewportDebug(windowW, windowH int, tileScale, charScale flo
 		if physicsUnit <= 0 {
 			warning += " [WARNING: Invalid physics unit]"
 		}
-		
-		l.logger.Printf("[VIEWPORT_DEBUG] Window:(%dx%d) TileScale:%.2f CharScale:%.2f PhysicsUnit:%d%s", 
+
+		l.logger.Printf("[VIEWPORT_DEBUG] Window:(%dx%d) TileScale:%.2f CharScale:%.2f PhysicsUnit:%d%s",
 			windowW, windowH, tileScale, charScale, physicsUnit, warning)
 	}
 }
@@ -279,7 +279,7 @@ func (l *Logger) LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, w
 		if roomName == "" {
 			roomName = "<EMPTY_ROOM>"
 		}
-		
+
 		// Fix Bug #2: Add validation warnings
 		warning := ""
 		if mapW <= 0 || mapH <= 0 {
@@ -288,8 +288,8 @@ func (l *Logger) LogTileMapDebug(roomName string, mapW, mapH, physicsUnit int, w
 		if physicsUnit <= 0 {
 			warning += " [WARNING: Invalid physics unit]"
 		}
-		
-		l.logger.Printf("[TILEMAP_DEBUG] Room:%s TileMap:(%dx%d) PhysicsUnit:%d WorldPixels:(%dx%d)%s", 
+
+		l.logger.Printf("[TILEMAP_DEBUG] Room:%s TileMap:(%dx%d) PhysicsUnit:%d WorldPixels:(%dx%d)%s",
 			roomName, mapW, mapH, physicsUnit, worldPixelW, worldPixelH, warning)
 	}
 }
@@ -306,14 +306,14 @@ func (l *Logger) LogRenderingDebug(objectType string, worldX, worldY, renderX, r
 		if objectType == "" {
 			objectType = "<UNKNOWN_OBJECT>"
 		}
-		
+
 		// Fix Bug #2: Add validation warnings
 		warning := ""
 		if scale <= 0 {
 			warning += " [WARNING: Invalid scale]"
 		}
-		
-		l.logger.Printf("[RENDER_DEBUG] %s World:(%.2f,%.2f) Render:(%.2f,%.2f) Scale:%.2f%s", 
+
+		l.logger.Printf("[RENDER_DEBUG] %s World:(%.2f,%.2f) Render:(%.2f,%.2f) Scale:%.2f%s",
 			objectType, worldX, worldY, renderX, renderY, scale, warning)
 	}
 }
@@ -330,8 +330,8 @@ func (l *Logger) LogCoordinateConversion(conversionType string, inputX, inputY, 
 		if conversionType == "" {
 			conversionType = "<UNKNOWN_CONVERSION>"
 		}
-		
-		l.logger.Printf("[COORD_DEBUG] %s In:(%d,%d) Out:(%d,%d)", 
+
+		l.logger.Printf("[COORD_DEBUG] %s In:(%d,%d) Out:(%d,%d)",
 			conversionType, inputX, inputY, outputX, outputY)
 	}
 }

@@ -2,11 +2,12 @@ package entities
 
 import (
 	"fmt"
+	"image/color"
+	"sword/engine"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-	"image/color"
-	"sword/engine"
 )
 
 /*
@@ -31,7 +32,7 @@ type Player struct {
 
 	// Direction state
 	facingRight bool // Whether the player is facing right
-	
+
 	// Collision detection
 	collisionService *CollisionService // Encapsulates collision logic
 }
@@ -197,22 +198,8 @@ func (p *Player) Update() {
 		p.coyoteTimer--
 	}
 
-	// Ground collision - using config ground level
-	groundY := engine.GameConfig.GroundLevel * engine.GetPhysicsUnit()
-	if p.y > groundY {
-		p.y = groundY
-		p.vy = 0
-		wasInAir := !p.onGround
-		p.onGround = true
-		p.isJumping = false
-
-		// Reset coyote timer when landing
-		if wasInAir {
-			p.coyoteTimer = config.CoyoteTime
-		}
-	} else {
-		p.onGround = false
-	}
+	engine.LogInfo("PLAYER_UPDATE: Fallback mode - no Tiled floor detection")
+	p.onGround = false
 
 	// Apply friction
 	if p.onGround {
@@ -317,12 +304,12 @@ Parameters:
   - cameraOffsetY: Camera Y offset for viewport transformation
 */
 func (p *Player) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffsetY float64) {
-		// Convert player position to scaled screen-space
+	// Convert player position to scaled screen-space
 	config := &engine.GameConfig.PlayerPhysics
 	s := engine.GameConfig.TileScaleFactor
 	renderX := float64(p.x)*s + cameraOffsetX
 	renderY := float64(p.y)*s + cameraOffsetY
-	
+
 	// Calculate sprite bounds in scaled screen-space
 	spriteWidth := float64(config.SpriteWidth) * engine.GameConfig.CharScaleFactor * s
 	spriteHeight := float64(config.SpriteHeight) * engine.GameConfig.CharScaleFactor * s
