@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
@@ -75,28 +76,86 @@ func (p *Player) ProcessInput() {
 		p.jumpBufferTimer--
 	}
 
-	// Horizontal movement
+	// Horizontal movement using acceleration curves
 	oldVx := p.vx
-	p.vx = 0
-	moveSpeed := config.MoveSpeed
-	if !p.onGround {
-		// Apply air control
-		moveSpeed = int(float64(moveSpeed) * config.AirControl)
-	}
-
+	target := 0
 	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-		p.vx = -moveSpeed
+		target = -config.MoveSpeed
 		p.facingRight = false
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-		p.vx = moveSpeed
+		target = config.MoveSpeed
 		p.facingRight = true
 	}
 
-	// Jump input handling
-	jumpPressed := ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyW)
+	// Apply air control to target
+	if !p.onGround {
+		target = int(float64(target) * config.AirControl)
+	}
 
-	if jumpPressed {
+	// Determine acceleration/deceleration time
+	accelTime := config.AccelTimeGround
+	decelTime := config.DecelTimeGround
+	if !p.onGround {
+		accelTime = config.AccelTimeAir
+		decelTime = config.DecelTimeAir
+	}
+	if accelTime <= 0 {
+		accelTime = 1
+	}
+	if decelTime <= 0 {
+		decelTime = 1
+	}
+
+	// Compute per-frame step from curve
+	if target == 0 || (p.vx != 0 && (target > 0) != (p.vx > 0)) {
+		// Decelerate to zero or prepare to reverse
+		t := 1.0 / float64(decelTime)
+		factor := engine.EaseValue(config.DecelCurve, t, config.CurvePower)
+		step := int(float64(config.MoveSpeed) * factor)
+		if step < 1 {
+			step = 1
+		}
+		if p.vx > 0 {
+			p.vx -= step
+			if p.vx < 0 {
+				p.vx = 0
+			}
+		}
+		if p.vx < 0 {
+			p.vx += step
+			if p.vx > 0 {
+				p.vx = 0
+			}
+		}
+	} else {
+		// Accelerate towards target
+		t := 1.0 / float64(accelTime)
+		factor := engine.EaseValue(config.AccelCurve, t, config.CurvePower)
+		step := int(float64(config.MoveSpeed) * factor)
+		if step < 1 {
+			step = 1
+		}
+		if p.vx < target {
+			p.vx += step
+			if p.vx > target {
+				p.vx = target
+			}
+		}
+		if p.vx > target {
+			p.vx -= step
+			if p.vx < target {
+				p.vx = target
+			}
+		}
+	}
+
+	// Jump input handling
+	// Edge-trigger buffer: only set when the key is newly pressed to prevent bounce on land
+	jumpJustPressed := inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsKeyJustPressed(ebiten.KeyW)
+	jumpHeld := ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyW)
+
+	if jumpJustPressed {
 		p.jumpBufferTimer = config.JumpBufferTime
 	}
 
@@ -112,7 +171,7 @@ func (p *Player) ProcessInput() {
 	}
 
 	// Variable jump height - reduce upward velocity if jump released early
-	if config.VariableJumpHeight && p.isJumping && !jumpPressed && p.vy < 0 {
+	if config.VariableJumpHeight && p.isJumping && !jumpHeld && p.vy < 0 {
 		// Calculate how much to reduce jump
 		minVelocity := int(float64(-config.JumpPower) * config.MinJumpHeight)
 		if p.vy < minVelocity {
@@ -282,13 +341,11 @@ func (p *Player) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraOffse
 	// Facing indicator: small triangle/notch on the facing side
 	indicatorW := boxW * 0.2
 	indicatorH := boxH * 0.25
-	ix := renderX
+	iX := renderX
 	if p.facingRight {
-		iX := renderX + boxW - indicatorW
-		vector.DrawFilledRect(screen, iX, renderY+(boxH-indicatorH)/2, indicatorW, indicatorH, color.RGBA{255, 50, 50, 255}, false)
-	} else {
-		vector.DrawFilledRect(screen, ix, renderY+(boxH-indicatorH)/2, indicatorW, indicatorH, color.RGBA{255, 50, 50, 255}, false)
+		iX = renderX + boxW - indicatorW
 	}
+	vector.DrawFilledRect(screen, iX, renderY+(boxH-indicatorH)/2, indicatorW, indicatorH, color.RGBA{255, 50, 50, 255}, false)
 
 	engine.LogDebug(fmt.Sprintf("DRAW_OBJECT: PlayerBox(%d,%d)", p.x, p.y))
 }
@@ -452,7 +509,7 @@ Useful for respawning, level restarts, or room transitions.
 
 Parameters:
   - x: Reset position horizontal coordinate in physics units
-  - y: Reset position vertical coordinate in physics units
+  - y: Reset position vertical position in physics units
 */
 func (p *Player) Reset(x, y int) {
 	p.x = x

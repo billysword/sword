@@ -7,10 +7,10 @@ import (
 
 const (
 	// Collision layer values
-	CollisionEmpty    = 0 // No collision
-	CollisionSolid    = 1 // Always solid
-	CollisionSpecial  = 2 // Context-dependent (decorative on row 1, solid elsewhere)
-	
+	CollisionEmpty   = 0 // No collision
+	CollisionSolid   = 1 // Always solid
+	CollisionSpecial = 2 // Context-dependent (decorative on row 1, solid elsewhere)
+
 	// Special row for decorative ceiling
 	DecorativeCeilingRow = 1
 )
@@ -28,17 +28,19 @@ func (ts *tiledSolidity) IsSolidAtFlatIndex(index int) bool {
 	if ts.loaded == nil {
 		return false
 	}
-	
+
 	// Check collision layer
 	if ts.loaded.CollisionLayer != nil && index >= 0 && index < len(ts.loaded.CollisionLayer.Data) {
 		val := ts.loaded.CollisionLayer.Data[index]
-		
-		// Always solid tiles
+
+		// Two collision encoding modes are supported:
+		// 1) Discrete mask values: 0=empty, 1=solid, 2=special
+		// 2) Full tileset GIDs: use tile properties to determine solidity
+		//
+		// Mode 1: discrete values
 		if val == CollisionSolid {
 			return true
 		}
-		
-		// Context-dependent tiles
 		if val == CollisionSpecial {
 			width := ts.loaded.TMJ.Width
 			row := index / width
@@ -49,11 +51,18 @@ func (ts *tiledSolidity) IsSolidAtFlatIndex(index int) bool {
 			// Other rows with special value are solid (walls)
 			return true
 		}
-		
-		// Empty or unknown values are passable
+		if val == CollisionEmpty {
+			return false
+		}
+
+		// Mode 2: treat value as a TMJ GID and resolve tile properties
+		gid := tiled.NormalizeGID(val)
+		if props, ok := ts.loaded.PropertiesForGID(gid); ok {
+			return props.Solid
+		}
 		return false
 	}
-	
+
 	// Fallback to tile properties from render layer
 	if ts.loaded.RenderLayer != nil && index >= 0 && index < len(ts.loaded.RenderLayer.Data) {
 		gid := tiled.NormalizeGID(ts.loaded.RenderLayer.Data[index])
@@ -86,11 +95,11 @@ func findFloorAtX(tm *TileMap, isSolidAt func(int) bool, x int) int {
 	for tileY := 0; tileY < tm.Height-1; tileY++ {
 		currentIndex := tileY*tm.Width + tileX
 		nextIndex := (tileY+1)*tm.Width + tileX
-		
+
 		// Check if current tile is air and next tile is solid
 		currentSolid := isSolidAt != nil && isSolidAt(currentIndex)
 		nextSolid := isSolidAt != nil && isSolidAt(nextIndex)
-		
+
 		if !currentSolid && nextSolid {
 			// Found air above solid ground - return the Y position of the air tile (where player stands)
 			return tileY * u
