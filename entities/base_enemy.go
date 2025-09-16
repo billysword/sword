@@ -117,9 +117,9 @@ Parameters:
   - screen: The target screen/image to render the enemy to
 */
 func (be *BaseEnemy) Draw(screen *ebiten.Image) {
-		// Use enemy sprite (placeholder or actual)
+	// Use enemy sprite (placeholder or actual)
 	sprite := engine.GetEnemySprite()
-	
+
 	// Update scale based on movement direction
 	switch {
 	case be.vx > 0:
@@ -127,13 +127,13 @@ func (be *BaseEnemy) Draw(screen *ebiten.Image) {
 	case be.vx < 0:
 		be.scaleX = -engine.GameConfig.CharScaleFactor // Face left (flip)
 	}
-	
+
 	// Set up drawing options (apply world scale)
 	op := &ebiten.DrawImageOptions{}
 	s := engine.GameConfig.TileScaleFactor
 	op.GeoM.Scale(be.scaleX*s, be.scaleY*s)
 	op.GeoM.Translate(float64(be.x)*s, float64(be.y)*s)
-	
+
 	// Draw the sprite
 	screen.DrawImage(sprite, op)
 }
@@ -177,7 +177,8 @@ func (be *BaseEnemy) DrawWithCamera(screen *ebiten.Image, cameraOffsetX, cameraO
 
 /*
 DrawDebug renders debug visualization for the enemy.
-TODO: Implement debug visualization (bounding box, position markers, movement vectors)
+It draws a color-coded bounding box, center point, velocity vector, and debug text
+that reflect the enemy's state while applying the provided camera offsets.
 
 Parameters:
   - screen: The target screen/image to render debug info to
@@ -195,11 +196,11 @@ func (be *BaseEnemy) DrawDebug(screen *ebiten.Image, cameraOffsetX, cameraOffset
 		boxColor = color.RGBA{0, 255, 0, 128} // Green when on ground
 	}
 
-		// Use default enemy size for bounding box in scaled space
+	// Use default enemy size for bounding box in scaled space
 	s := engine.GameConfig.TileScaleFactor
 	spriteWidth := 32.0 * be.scaleX * s
 	spriteHeight := 32.0 * be.scaleY * s
-	
+
 	// Draw bounding box
 	ebitenutil.DrawRect(screen, renderX, renderY, spriteWidth, spriteHeight, boxColor)
 
