@@ -8,20 +8,21 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
 // --- TSX (Tileset) ---
 
 type TSXTileset struct {
-	XMLName    xml.Name     `xml:"tileset"`
-	Name       string       `xml:"name,attr"`
-	TileWidth  int          `xml:"tilewidth,attr"`
-	TileHeight int          `xml:"tileheight,attr"`
-	TileCount  int          `xml:"tilecount,attr"`
-	Columns    int          `xml:"columns,attr"`
-	Image      TSXImage     `xml:"image"`
-	Tiles      []TSXTile    `xml:"tile"`
+	XMLName    xml.Name  `xml:"tileset"`
+	Name       string    `xml:"name,attr"`
+	TileWidth  int       `xml:"tilewidth,attr"`
+	TileHeight int       `xml:"tileheight,attr"`
+	TileCount  int       `xml:"tilecount,attr"`
+	Columns    int       `xml:"columns,attr"`
+	Image      TSXImage  `xml:"image"`
+	Tiles      []TSXTile `xml:"tile"`
 }
 
 type TSXImage struct {
@@ -31,25 +32,25 @@ type TSXImage struct {
 }
 
 type TSXTile struct {
-	ID         int                `xml:"id,attr"`
-	Properties []TSXTileProperty  `xml:"properties>property"`
+	ID         int               `xml:"id,attr"`
+	Properties []TSXTileProperty `xml:"properties>property"`
 }
 
 type TSXTileProperty struct {
-	Name  string  `xml:"name,attr"`
-	Type  string  `xml:"type,attr"`
-	Value string  `xml:"value,attr"`
+	Name  string `xml:"name,attr"`
+	Type  string `xml:"type,attr"`
+	Value string `xml:"value,attr"`
 }
 
 // --- TMJ (Map) ---
 
 type TMJMap struct {
-	Width      int           `json:"width"`
-	Height     int           `json:"height"`
-	TileWidth  int           `json:"tilewidth"`
-	TileHeight int           `json:"tileheight"`
-	Layers     []TMJLayer    `json:"layers"`
-	Tilesets   []TMJTileset  `json:"tilesets"`
+	Width      int          `json:"width"`
+	Height     int          `json:"height"`
+	TileWidth  int          `json:"tilewidth"`
+	TileHeight int          `json:"tileheight"`
+	Layers     []TMJLayer   `json:"layers"`
+	Tilesets   []TMJTileset `json:"tilesets"`
 }
 
 type TMJTileset struct {
@@ -58,15 +59,15 @@ type TMJTileset struct {
 }
 
 type TMJLayer struct {
-	ID        int              `json:"id"`
-	Name      string           `json:"name"`
-	Type      string           `json:"type"`
-	Visible   bool             `json:"visible"`
-	Opacity   float64          `json:"opacity"`
-	Width     int              `json:"width"`
-	Height    int              `json:"height"`
-	Data      []uint32         `json:"data"`
-	Objects   []TMJObject      `json:"objects"`
+	ID      int         `json:"id"`
+	Name    string      `json:"name"`
+	Type    string      `json:"type"`
+	Visible bool        `json:"visible"`
+	Opacity float64     `json:"opacity"`
+	Width   int         `json:"width"`
+	Height  int         `json:"height"`
+	Data    []uint32    `json:"data"`
+	Objects []TMJObject `json:"objects"`
 }
 
 type TMJObject struct {
@@ -89,25 +90,25 @@ type TMJObjectProperty struct {
 // --- Resolved structures ---
 
 type TileProperties struct {
-	Kind    string
-	Solid   bool
-	OneWay  string
-	SlopeM  float64
-	SlopeB  float64
+	Kind   string
+	Solid  bool
+	OneWay string
+	SlopeM float64
+	SlopeB float64
 }
 
 type Portal struct {
-	Name      string
-	RectPx    [4]float64 // x, y, w, h
-	ToZone    string
-	ToRoom    string
-	ToPortal  string
+	Name     string
+	RectPx   [4]float64 // x, y, w, h
+	ToZone   string
+	ToRoom   string
+	ToPortal string
 }
 
 type LoadedTileset struct {
-	FirstGID  int
-	TSX       TSXTileset
-	ByGID     map[uint32]TileProperties
+	FirstGID int
+	TSX      TSXTileset
+	ByGID    map[uint32]TileProperties
 }
 
 type LoadedMap struct {
@@ -157,9 +158,15 @@ func LoadMap(path string) (*LoadedMap, error) {
 				case "one_way":
 					props.OneWay = p.Value
 				case "slopeM":
-					props.SlopeM = parseFloat(p.Value)
+					props.SlopeM = math.NaN()
+					if f, err := strconv.ParseFloat(p.Value, 64); err == nil {
+						props.SlopeM = f
+					}
 				case "slopeB":
-					props.SlopeB = parseFloat(p.Value)
+					props.SlopeB = math.NaN()
+					if f, err := strconv.ParseFloat(p.Value, 64); err == nil {
+						props.SlopeB = f
+					}
 				}
 			}
 			gid := uint32(ts.FirstGID + t.ID)
@@ -239,21 +246,6 @@ func resolveRelative(basePath, rel string) string {
 		return rel
 	}
 	return filepath.Clean(filepath.Join(filepath.Dir(basePath), rel))
-}
-
-func parseFloat(s string) float64 {
-	f, err := strconvParseFloat(s)
-	if err != nil {
-		return math.NaN()
-	}
-	return f
-}
-
-// local wrapper to keep imports minimal if strconv is not preferred in this snippet
-func strconvParseFloat(s string) (float64, error) {
-	var f float64
-	_, err := fmt.Sscan(s, &f)
-	return f, err
 }
 
 // Utility to iterate the collision grid as booleans using either explicit collision layer or tile properties.
