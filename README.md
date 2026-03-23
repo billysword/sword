@@ -44,3 +44,8 @@
 3. Validate behaviour with `go test ./...` and, when relevant, exercise the game via `go run main.go` to manually verify changes.
 4. Update documentation (including this README) when you add new systems or assets so newcomers can stay oriented.
 5. Open a pull request that explains **what** changed and **why**, noting any assets or tooling requirements reviewers need to reproduce the results.
+
+## Planning and Agent Guidance
+- **`AGENTS.md`** – Working guidance for coding agents, including the metroidvania target, architectural constraints, and task selection rules.
+- **`docs/metroidvania-roadmap.md`** – Ordered roadmap for the metroidvania vertical slice.
+- **`docs/agent-task-breakdown.md`** – Parallelizable task list and prompt templates for focused follow-up work.
